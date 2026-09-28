@@ -18,11 +18,12 @@ async function saveRestoredDataToDrive(json){
   await driveFind();
   const body=JSON.stringify(json),r=driveFileId
     ?await driveFetch('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(driveFileId)+'?uploadType=media',{method:'PATCH',headers:driveHeaders(),body})
-    :await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary=soxe-restore'},body:'--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({name:DRIVE_FILE,parents:['appDataFolder'],mimeType:'application/json'})+'\r\n--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--soxe-restore--'});
+    :await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary=soxe-restore'},body:'--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({name:DRIVE_FILE,parents:[await ensureOrganizationDriveFolder()],mimeType:'application/json'})+'\r\n--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--soxe-restore--'});
   if(!r.ok)throw new Error('Không lưu được dữ liệu khôi phục lên Google Drive (mã '+r.status+').');
   driveFileId=(await r.json()).id||driveFileId;
 }
 async function restoreBrowserBackup(file){
+  if(!window.orgIsAdmin?.())throw new Error('Chỉ Admin được khôi phục dữ liệu.');
   if(!navigator.onLine||!token)throw new Error('Hãy kết nối Google Drive và Internet trước khi khôi phục.');
   if(syncRunning||window.restoreBusy)throw new Error('Đang đồng bộ dữ liệu. Hãy thử lại sau.');
   if(typeof JSZip==='undefined')throw new Error('Chưa tải được bộ đọc ZIP. Hãy mở lại ứng dụng.');
