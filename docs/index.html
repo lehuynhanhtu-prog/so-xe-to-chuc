@@ -13,7 +13,7 @@
 <link rel="icon" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css?v=27">
-<link rel="stylesheet" href="organization.css?v=2">
+<link rel="stylesheet" href="organization.css?v=3">
 <script src="https://accounts.google.com/gsi/client" async defer>
 </script>
 </head>
@@ -21,13 +21,14 @@
 <section class="org-gate" id="orgGate" hidden data-i18n-skip>
 <div class="org-gate-card">
 <img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập an toàn để quản lý đội xe và chi phí theo người sử dụng.</p>
+<div id="orgChoice" class="org-choice"><h2>Bắt đầu</h2><p>Chọn cách bạn muốn sử dụng Sổ Xe Tổ Chức.</p><button class="btn primary" id="orgChooseCreate" type="button">Tạo tổ chức mới</button><button class="btn" id="orgChooseExisting" type="button">Đăng nhập tổ chức đã có</button></div>
 <div class="org-auth-grid">
 <form id="orgBootstrapLogin" class="org-auth-panel"><h2>Bước 1 · Đăng nhập Admin</h2><label>Tên đăng nhập<input value="admin" readonly autocomplete="username"></label><label>Mật khẩu ban đầu<input id="orgBootstrapPassword" type="password" autocomplete="current-password" required></label><small>Mật khẩu ban đầu: 123456. Ứng dụng sẽ yêu cầu đổi ngay sau bước này.</small><button class="btn primary">Tiếp tục</button></form>
 <form id="orgChangePassword" class="org-auth-panel" hidden><h2>Bước 2 · Đổi mật khẩu</h2><label>Mật khẩu mới<input id="orgNewPassword" type="password" minlength="8" autocomplete="new-password" required></label><label>Nhập lại mật khẩu<input id="orgConfirmPassword" type="password" minlength="8" autocomplete="new-password" required></label><button class="btn primary">Đổi mật khẩu</button></form>
 <form id="orgAdminForm" class="org-auth-panel" hidden><h2>Bước 3 · Tạo tổ chức</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" value="Admin" required></label><label>Mật khẩu mã hóa tổ chức (ít nhất 12 ký tự)<input id="orgAdminEncryption" type="password" minlength="12" autocomplete="new-password" required></label><label>Thư mục Google Drive dùng chung<input id="orgAdminFolder" type="url" value="https://drive.google.com/drive/folders/1aRweBt7ksHzvN5ouO9-e8nB58igmTjMh?usp=sharing" required></label><button class="btn primary">Hoàn tất</button></form>
 <form id="orgLoginForm" class="org-auth-panel" hidden><h2>Đăng nhập tổ chức</h2><label>Tên đăng nhập<input id="orgLoginUsername" autocomplete="off" required></label><label>Mật khẩu<input id="orgLoginPasswordNew" type="password" autocomplete="current-password"></label><button class="btn primary">Đăng nhập</button><small>Người dùng mới được Admin tạo sẽ đặt mật khẩu ở lần đầu.</small></form>
 <form id="orgSetupForm" class="org-auth-panel" hidden><h2>Đặt mật khẩu lần đầu</h2><label>Mật khẩu mới<input id="orgSetupPassword" type="password" minlength="6" autocomplete="new-password" required></label><button class="btn primary">Đặt mật khẩu</button></form>
-</div><div class="org-mode-switch"><button class="btn" id="orgUseExisting" type="button">Đã có tổ chức? Kết nối Drive</button><button class="btn" id="orgStartNew" type="button" hidden>Tạo tổ chức mới</button></div><p class="org-gate-message" id="orgGateMessage"></p><label>Mật khẩu mã hóa tổ chức (dùng khi đồng bộ)<input id="orgEncryptionPassword" type="password" autocomplete="off"></label><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Ứng dụng chỉ xin quyền đối với tệp được ứng dụng tạo/chọn. Thư mục có sẵn cần được cấp quyền qua Google Picker hoặc máy chủ đồng bộ. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
+</div><div class="org-mode-switch"><button class="btn" id="orgUseExisting" type="button">Đăng nhập tổ chức đã có</button><button class="btn" id="orgStartNew" type="button">Tạo tổ chức mới</button></div><p class="org-gate-message" id="orgGateMessage"></p><label>Mật khẩu mã hóa tổ chức (dùng khi đồng bộ)<input id="orgEncryptionPassword" type="password" autocomplete="off"></label><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Ứng dụng chỉ xin quyền đối với tệp được ứng dụng tạo/chọn. Thư mục có sẵn cần được cấp quyền qua Google Picker hoặc máy chủ đồng bộ. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
 </div></section>
 <div class="shell">
 <aside class="side">
@@ -500,10 +501,10 @@
 <script src="i18n.js?v=6"></script>
 <script src="backup-zip.js?v=1"></script>
 <script src="jszip.min.js?v=1"></script>
-<script src="organization-crypto.js?v=1"></script>
-<script src="app.js?v=6">
+<script src="organization-crypto.js?v=2"></script>
+<script src="app.js?v=7">
 </script>
 <script src="backup-restore.js?v=4"></script>
-<script src="organization.js?v=6"></script>
+<script src="organization.js?v=7"></script>
 </body>
 </html>
