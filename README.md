@@ -1,27 +1,24 @@
 # Sổ Xe Tổ Chức
 
-Phiên bản độc lập dành cho tổ chức quản lý nhiều xe, nhiều người quản lý/lái xe và lịch sử chi phí minh bạch.
+Bản web/PWA nằm trong `docs/`. Tổ chức lưu `so-xe-organization-data.json` và tệp đính kèm trong một thư mục Google Drive được cấu hình bằng đường dẫn thư mục. Mặc định màn hình khởi tạo gợi ý thư mục do chủ dự án cung cấp; Admin có thể đổi trong mục Tổ chức. Trước khi đổi, cần tự chuyển tệp và thư mục đính kèm từ thư mục cũ.
 
-## Chức năng tổ chức
+## Tài khoản và vai trò
 
-- Thiết bị đầu tiên đăng ký Admin, tên tổ chức và mật khẩu ứng dụng.
-- Admin tạo file mời theo email Google; ứng dụng tự chia sẻ thư mục Drive của tổ chức cho email đó.
-- Người quản lý/lái xe nhập file mời, đăng ký tên và mật khẩu rồi chờ Admin duyệt.
-- Thiết bị đã đăng nhập được ghi nhớ tên người dùng và có thể tiếp tục nhanh ở lần sau.
-- Admin phân công xe, lập biên bản bàn giao theo ngày và ODO.
-- Mọi người dùng được nhập chi phí cho mọi xe; giao dịch lưu người quản lý/lái xe, người nhập và trạng thái `Nhập hộ`.
-- Báo cáo Excel chứa ODO và thông tin người quản lý/người nhập.
+- Admin đầu tiên tạo tổ chức, tên đăng nhập và mật khẩu ứng dụng.
+- Admin tạo tên đăng nhập và chọn vai trò `Admin`, `Admin · chỉ xem`, hoặc `Người quản lý/lái xe`. Người dùng đặt mật khẩu ở lần đăng nhập đầu tiên. Không dùng file mời hay email riêng cho từng tài khoản ứng dụng.
+- Admin tạo xe trước, sau đó phân công lái xe. Admin thấy toàn bộ giao dịch và được sửa dữ liệu. Admin chỉ xem thấy toàn bộ nhưng không có quyền sửa/xóa qua giao diện. Lái xe thấy giao dịch do mình nhập và toàn bộ giao dịch của xe hiện được phân công, kể cả giao dịch người khác nhập hộ; chỉ sửa/xóa giao dịch do mình nhập.
+- Trên thiết bị mới, nhập URL thư mục tổ chức và kết nối Drive để tải danh sách tài khoản trước khi đăng nhập.
 
-## Bảo mật
+## Giới hạn cần biết
 
-File mời không chứa mật khẩu Google, access token hay refresh token. Mỗi thành viên đăng nhập tài khoản Google riêng. Dữ liệu nằm trong thư mục Drive dùng chung do Admin tạo và cấp quyền.
+GitHub Pages là trang tĩnh. URL thư mục chia sẻ không cấp quyền ghi Drive. Mỗi trình duyệt vẫn phải kết nối một phiên Google có quyền ghi thư mục. OAuth của bản web cần quyền Google Drive đầy đủ để chọn một thư mục tồn tại trước và đồng bộ file trong thư mục đó; cấu hình OAuth consent và xác minh ứng dụng của Google có thể cần được cập nhật trước khi tài khoản ngoài danh sách thử nghiệm sử dụng, dù tài khoản **trong ứng dụng** không cần email Google riêng. Ứng dụng không lưu mật khẩu Google. Không nhập mật khẩu Google vào ô mật khẩu ứng dụng.
 
-Mật khẩu ứng dụng chỉ lưu dưới dạng SHA-256 trong dữ liệu tổ chức. Đây là lớp nhận diện nội bộ, không thay thế xác thực Google và quyền truy cập Drive.
+Dữ liệu dùng chung là một file JSON, bao gồm mã băm SHA-256 của mật khẩu ứng dụng. Phân quyền ở phía trình duyệt, chưa có máy chủ xác thực và thực thi quyền truy cập. Người có quyền truy cập trực tiếp vào thư mục Drive có thể đọc/sửa toàn bộ file bất kể vai trò trong giao diện. Không dùng cho dữ liệu nhạy cảm hoặc xem đây là cơ chế bảo mật thực sự. Để bỏ hoàn toàn phiên Google trên thiết bị lái xe và cưỡng chế phân quyền, cần triển khai máy chủ có xác thực, lưu bí mật Drive ở máy chủ và API lọc dữ liệu theo quyền.
 
 ## Nền tảng
 
 - Web/PWA: `docs/`
 - Windows portable: đóng gói từ bản Web
-- Android: mã nguồn trong `app/`; cần cấu hình khóa ký cố định trước khi phát hành chính thức.
+- Android: cần cấu hình khóa ký cố định trước khi phát hành chính thức.
 
-Ứng dụng Sổ Xe cá nhân tại repository `so-xe-android` không bị thay đổi và không dùng chung dữ liệu cục bộ với phiên bản này.
+Bản Sổ Xe cá nhân ở repository `so-xe-android` không bị thay đổi.
