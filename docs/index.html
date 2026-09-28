@@ -21,11 +21,11 @@
 <section class="org-gate" id="orgGate" hidden data-i18n-skip>
 <div class="org-gate-card">
 <img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập an toàn để quản lý đội xe và chi phí theo người sử dụng.</p>
-<div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><button class="btn primary" id="orgContinue">Tiếp tục</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
+<div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><label>Mật khẩu ứng dụng<input id="orgLoginPassword" type="password" autocomplete="current-password"></label><button class="btn primary" id="orgContinue">Đăng nhập</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
 <div class="org-auth-grid">
 <form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Email Google<input id="orgAdminEmail" type="email" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><small>Mật khẩu chỉ được lưu dưới dạng mã băm; không lưu mật khẩu Google.</small><button class="btn primary" type="submit">Tạo tổ chức</button></form>
 <form id="orgJoinForm" class="org-auth-panel"><h2>Người quản lý/lái xe</h2><label class="btn" for="orgInviteFile">Nhập file mời của Admin</label><input class="fileinput" id="orgInviteFile" type="file" accept="application/json"><div id="orgJoinFields" hidden><p>Tổ chức: <b id="orgJoinOrganization"></b></p><label>Họ tên<input id="orgJoinName" required></label><label>Email Google<input id="orgJoinEmail" type="email" required></label><label>Mật khẩu ứng dụng<input id="orgJoinPassword" type="password" minlength="6" required></label><button class="btn primary" type="submit">Đăng ký và chờ duyệt</button></div></form>
-</div><p class="org-gate-message" id="orgGateMessage"></p>
+</div><p class="org-gate-message" id="orgGateMessage"></p><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button>
 </div></section>
 <div class="shell">
 <aside class="side">
@@ -495,9 +495,9 @@
 <script src="i18n.js?v=6"></script>
 <script src="backup-zip.js?v=1"></script>
 <script src="jszip.min.js?v=1"></script>
-<script src="app.js?v=1">
+<script src="app.js?v=2">
 </script>
 <script src="backup-restore.js"></script>
-<script src="organization.js?v=1"></script>
+<script src="organization.js?v=2"></script>
 </body>
 </html>
