@@ -5,7 +5,7 @@ Bản web/PWA nằm trong `docs/`. Tổ chức lưu `so-xe-organization-data.jso
 ## Tài khoản và vai trò
 
 - Admin đầu tiên tạo tổ chức, tên đăng nhập và mật khẩu ứng dụng.
-- Admin tạo tên đăng nhập và chọn vai trò `Admin`, `Admin · chỉ xem`, hoặc `Người quản lý/lái xe`. Người dùng đặt mật khẩu ở lần đăng nhập đầu tiên. Không dùng file mời hay email riêng cho từng tài khoản ứng dụng.
+- Admin tạo tên đăng nhập và chọn vai trò `Admin`, `Admin · chỉ xem`, hoặc `Người quản lý/lái xe`. Người dùng đặt mật khẩu ở lần đăng nhập đầu tiên. Không dùng file mời hay email riêng cho từng tài khoản ứng dụng. Admin có thể xóa tài khoản chưa từng được phân công xe và không liên quan đến giao dịch hoặc biên bản bàn giao; xóa được lưu bằng dấu xóa để đồng bộ giữa thiết bị mà không tạo lại tài khoản.
 - Admin tạo xe trước, sau đó phân công lái xe. Admin thấy toàn bộ giao dịch và được sửa dữ liệu. Admin chỉ xem thấy toàn bộ nhưng không có quyền sửa/xóa qua giao diện. Lái xe thấy giao dịch do mình nhập và toàn bộ giao dịch của xe hiện được phân công, kể cả giao dịch người khác nhập hộ; chỉ sửa/xóa giao dịch do mình nhập.
 - Trên thiết bị mới, nhập URL thư mục tổ chức và kết nối Drive để tải danh sách tài khoản trước khi đăng nhập.
 
