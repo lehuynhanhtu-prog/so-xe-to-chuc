@@ -26,7 +26,7 @@
 <form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Tên đăng nhập<input id="orgAdminUsername" autocomplete="username" required></label><label>Thư mục Google Drive dùng chung<input id="orgAdminFolder" type="url" value="https://drive.google.com/drive/folders/1aRweBt7ksHzvN5ouO9-e8nB58igmTjMh?usp=sharing" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><button class="btn primary">Tạo tổ chức</button></form>
 <form id="orgLoginForm" class="org-auth-panel"><h2>Đăng nhập tài khoản tổ chức</h2><label>Tên đăng nhập<input id="orgLoginUsername" autocomplete="username" required></label><label>Mật khẩu (bỏ trống nếu lần đầu)<input id="orgLoginPasswordNew" type="password" autocomplete="current-password"></label><button class="btn primary">Đăng nhập</button><small>Admin tạo tên đăng nhập; lần đầu người dùng tự đặt mật khẩu.</small></form>
 <form id="orgSetupForm" class="org-auth-panel" hidden><h2>Đặt mật khẩu lần đầu</h2><label>Mật khẩu mới<input id="orgSetupPassword" type="password" minlength="6" autocomplete="new-password" required></label><button class="btn primary">Đặt mật khẩu</button></form>
-</div><p class="org-gate-message" id="orgGateMessage"></p><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Link chia sẻ không cấp quyền ghi. Trình duyệt cần đăng nhập Google có quyền đối với thư mục. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
+</div><p class="org-gate-message" id="orgGateMessage"></p><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Ứng dụng chỉ xin quyền đối với tệp được ứng dụng tạo/chọn. Thư mục có sẵn cần được cấp quyền qua Google Picker hoặc máy chủ đồng bộ. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
 </div></section>
 <div class="shell">
 <aside class="side">
@@ -497,7 +497,7 @@
 <script src="i18n.js?v=6"></script>
 <script src="backup-zip.js?v=1"></script>
 <script src="jszip.min.js?v=1"></script>
-<script src="app.js?v=3">
+<script src="app.js?v=4">
 </script>
 <script src="backup-restore.js?v=3"></script>
 <script src="organization.js?v=3"></script>
