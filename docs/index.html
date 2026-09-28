@@ -236,7 +236,7 @@
 <div class="org-dashboard">
 <article class="card" data-admin-only><h2>Tạo tài khoản</h2><div class="formgrid"><div class="field"><label>Họ tên</label><input id="newOrgName"></div><div class="field"><label>Tên đăng nhập</label><input id="newOrgUsername" autocomplete="off"></div><div class="field"><label>Vai trò</label><select id="newOrgRole"><option value="driver">Người quản lý/lái xe</option><option value="admin">Admin</option><option value="viewer">Admin · chỉ xem</option></select></div></div><button class="btn primary" id="createOrgUser">Tạo tài khoản</button><p>Người dùng đặt mật khẩu khi đăng nhập lần đầu.</p></article>
 <article class="card" data-admin-only><h2>Thư mục Drive dùng chung</h2><label>Đường dẫn thư mục<input id="orgFolderLink" type="url"></label><button class="btn" id="saveOrgFolder">Lưu thư mục</button><button class="btn" id="migrateOrgData">Mã hóa dữ liệu Drive cũ</button><p>Đổi thư mục không tự chuyển dữ liệu cũ. Thiết bị cần phiên Google có quyền ghi vào thư mục này.</p></article>
-<article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
+<article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Phân công xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="assignmentCar"></select></div><div class="field"><label>Người quản lý/lái xe</label><select id="assignmentUser"></select></div></div><button class="btn primary" id="assignVehicle">Phân công</button><div class="tablewrap"><table><thead><tr><th>Xe</th><th>Người đang quản lý</th><th>Từ ngày</th></tr></thead><tbody id="orgAssignmentRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Bàn giao xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="handoverCar"></select></div><div class="field"><label>Bàn giao cho</label><select id="handoverTo"></select></div><div class="field"><label>Ngày bàn giao</label><input id="handoverDate" class="date-dmy" placeholder="dd/mm/yyyy"></div><div class="field"><label>ODO bàn giao</label><input id="handoverOdo" type="number" min="0"></div><div class="field full"><label>Ghi chú</label><input id="handoverNote"></div></div><button class="btn primary" id="saveHandover">Lưu bàn giao</button><div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Xe</th><th>Từ người</th><th>Đến người</th><th>ODO</th><th>Ghi chú</th></tr></thead><tbody id="orgHandoverRows"></tbody></table></div></article>
 </div>
@@ -502,6 +502,6 @@
 <script src="app.js?v=5">
 </script>
 <script src="backup-restore.js?v=4"></script>
-<script src="organization.js?v=4"></script>
+<script src="organization.js?v=5"></script>
 </body>
 </html>
