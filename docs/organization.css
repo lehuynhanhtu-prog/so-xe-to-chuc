@@ -13,3 +13,5 @@
 .org-auth-panel{padding:24px}
 .org-gate .org-gate-message:empty{display:none}
 #deleteOrganization{margin-top:12px}
+
+.org-choice{display:grid;gap:12px;margin:20px 0}.org-choice h2,.org-choice p{margin:0}.org-choice .btn{width:100%}
