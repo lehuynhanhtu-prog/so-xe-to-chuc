@@ -4,7 +4,7 @@ window.OrgCrypto=(()=>{
   let passphrase='',saltBytes=null;
   const b64=bytes=>btoa(String.fromCharCode(...bytes));
   const bytes=value=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
-  function setPassphrase(value){if(passphrase&&value!==passphrase)throw new Error('Không thể đổi mật khẩu mã hóa trong cùng phiên. Hãy tải lại ứng dụng.');if(typeof value!=='string'||value.length<12)throw new Error('Mật khẩu mã hóa tổ chức cần ít nhất 12 ký tự.');passphrase=value}
+  function setPassphrase(value){if(passphrase&&saltBytes&&value!==passphrase)throw new Error('Không thể đổi mật khẩu mã hóa trong cùng phiên. Hãy tải lại ứng dụng.');if(typeof value!=='string'||value.length<12)throw new Error('Mật khẩu mã hóa tổ chức cần ít nhất 12 ký tự.');passphrase=value}
   function ready(){return Boolean(passphrase)}
   function clear(){passphrase='';saltBytes=null}
   async function key(salt){if(!ready())throw new Error('Hãy nhập mật khẩu mã hóa tổ chức trước khi đồng bộ.');const source=await crypto.subtle.importKey('raw',encoder.encode(passphrase),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},source,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
