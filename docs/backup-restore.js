@@ -16,7 +16,7 @@ function relinkBackupData(json,idMap){
 }
 async function saveRestoredDataToDrive(json){
   await driveFind();
-  const body=JSON.stringify(json),r=driveFileId
+  const body=await OrgCrypto.encrypt(json),r=driveFileId
     ?await driveFetch('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(driveFileId)+'?uploadType=media',{method:'PATCH',headers:driveHeaders(),body})
     :await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary=soxe-restore'},body:'--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({name:DRIVE_FILE,parents:[await ensureOrganizationDriveFolder()],mimeType:'application/json'})+'\r\n--soxe-restore\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--soxe-restore--'});
   if(!r.ok)throw new Error('Không lưu được dữ liệu khôi phục lên Google Drive (mã '+r.status+').');
