@@ -1,5 +1,5 @@
-const CACHE='so-xe-organization-v5';
-const ASSETS=['./','./index.html','./styles.css?v=27','./organization.css?v=1','./i18n.js?v=6','./organization-crypto.js?v=1','./app.js?v=5','./organization.js?v=4','./backup-restore.js?v=4','./jszip.min.js?v=1','./backup-zip.js?v=1','./privacy.html','./terms.html','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png'];
+const CACHE='so-xe-organization-v6';
+const ASSETS=['./','./index.html','./styles.css?v=27','./organization.css?v=1','./i18n.js?v=6','./organization-crypto.js?v=1','./app.js?v=5','./organization.js?v=5','./backup-restore.js?v=4','./jszip.min.js?v=1','./backup-zip.js?v=1','./privacy.html','./terms.html','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))) });
 self.addEventListener('activate',event=>event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()])));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(cached=>cached||caches.match('./index.html'))))});
