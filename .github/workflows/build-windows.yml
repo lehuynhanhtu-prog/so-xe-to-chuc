@@ -1,0 +1,75 @@
+name: Build So Xe Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'windows-portable/**'
+      - 'docs/**'
+      - '.github/workflows/build-windows.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Compile native portable launcher
+        shell: pwsh
+        run: |
+          $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          if (-not (Test-Path $csc)) {
+            $csc = "$env:WINDIR\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+          }
+          $source = (Resolve-Path 'windows-portable\SoXeLauncher.cs').Path
+          $output = Join-Path $PWD 'windows-portable\SoXeLauncher.exe'
+          & $csc /nologo /target:winexe /optimize+ /reference:System.Windows.Forms.dll "/out:$output" "$source"
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path 'windows-portable/SoXeLauncher.exe')) {
+            throw 'Khong bien dich duoc SoXeLauncher.exe'
+          }
+      - name: Build lightweight portable ZIP
+        shell: pwsh
+        run: |
+          $stage = 'windows-portable/dist/So-Xe-To-Chuc-Windows-1.0.0'
+          $zip = 'windows-portable/dist/So-Xe-To-Chuc-Windows-1.0.0.zip'
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item 'windows-portable/Chay-So-Xe.bat' $stage
+          Copy-Item 'windows-portable/SoXeLauncher.exe' $stage
+          Copy-Item 'windows-portable/HUONG-DAN.txt' $stage
+          Copy-Item 'docs' (Join-Path $stage 'www') -Recurse
+          Compress-Archive -Path "$stage/*" -DestinationPath $zip -CompressionLevel Optimal -Force
+          Get-Item $zip | Select-Object Name, Length
+      - name: Create checksum
+        shell: pwsh
+        run: |
+          $file = 'windows-portable/dist/So-Xe-To-Chuc-Windows-1.0.0.zip'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash
+          "SHA-256: $hash`nFile: So-Xe-To-Chuc-Windows-1.0.0.zip" | Set-Content -Encoding UTF8 -NoNewline 'windows-portable/dist/So-Xe-To-Chuc-Windows-SHA256.txt'
+          Get-Content 'windows-portable/dist/So-Xe-To-Chuc-Windows-SHA256.txt'
+      - name: Publish Windows download
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'windows-v1.0.0'
+          $archive = 'windows-portable/dist/So-Xe-To-Chuc-Windows-1.0.0.zip'
+          $checksum = 'windows-portable/dist/So-Xe-To-Chuc-Windows-SHA256.txt'
+          if (gh release view $tag 2>$null) {
+            gh release upload $tag $archive $checksum --clobber
+          } else {
+            gh release create $tag $archive $checksum --target $env:GITHUB_SHA --title 'Sổ Xe Tổ Chức Windows 1.0.0' --notes 'Phiên bản tổ chức độc lập: quản lý thành viên, phân công và bàn giao xe, nhập hộ chi phí, đồng bộ thư mục Google Drive dùng chung.'
+          }
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: So-Xe-To-Chuc-Windows-1.0.0
+          path: |
+            windows-portable/dist/So-Xe-To-Chuc-Windows-1.0.0.zip
+            windows-portable/dist/So-Xe-To-Chuc-Windows-SHA256.txt
+          if-no-files-found: error
+          retention-days: 30
