@@ -13,19 +13,20 @@
 <link rel="icon" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css?v=27">
-<link rel="stylesheet" href="organization.css?v=3">
+<link rel="stylesheet" href="organization.css?v=1">
 <script src="https://accounts.google.com/gsi/client" async defer>
 </script>
 </head>
 <body>
 <section class="org-gate" id="orgGate" hidden data-i18n-skip>
 <div class="org-gate-card">
-<img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập với Google để quản lý đội xe và chi phí theo người sử dụng.</p>
-<div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><button class="btn primary" id="orgContinue">Đăng nhập</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
+<img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập an toàn để quản lý đội xe và chi phí theo người sử dụng.</p>
+<div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><label>Mật khẩu ứng dụng<input id="orgLoginPassword" type="password" autocomplete="current-password"></label><button class="btn primary" id="orgContinue">Đăng nhập</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
 <div class="org-auth-grid">
-<form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Email Google<input id="orgAdminEmail" type="email" required></label><small>Ứng dụng xác minh tài khoản Google và không yêu cầu hay lưu mật khẩu.</small><button class="btn primary" type="submit">Tạo tổ chức</button></form>
-<form id="orgJoinForm" class="org-auth-panel"><h2>Người quản lý/lái xe</h2><label class="btn" for="orgInviteFile">Nhập file mời của Admin</label><input class="fileinput" id="orgInviteFile" type="file" accept="application/json"><div id="orgJoinFields" hidden><p>Tổ chức: <b id="orgJoinOrganization"></b></p><label>Họ tên<input id="orgJoinName" required></label><label>Email Google<input id="orgJoinEmail" type="email" required></label><button class="btn primary" type="submit">Đăng ký và chờ duyệt</button></div></form>
-</div><p class="org-gate-message" id="orgGateMessage"></p><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button>
+<form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Tên đăng nhập<input id="orgAdminUsername" autocomplete="username" required></label><label>Thư mục Google Drive dùng chung<input id="orgAdminFolder" type="url" value="https://drive.google.com/drive/folders/1aRweBt7ksHzvN5ouO9-e8nB58igmTjMh?usp=sharing" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><button class="btn primary">Tạo tổ chức</button></form>
+<form id="orgLoginForm" class="org-auth-panel"><h2>Đăng nhập tài khoản tổ chức</h2><label>Tên đăng nhập<input id="orgLoginUsername" autocomplete="username" required></label><label>Mật khẩu (bỏ trống nếu lần đầu)<input id="orgLoginPasswordNew" type="password" autocomplete="current-password"></label><button class="btn primary">Đăng nhập</button><small>Admin tạo tên đăng nhập; lần đầu người dùng tự đặt mật khẩu.</small></form>
+<form id="orgSetupForm" class="org-auth-panel" hidden><h2>Đặt mật khẩu lần đầu</h2><label>Mật khẩu mới<input id="orgSetupPassword" type="password" minlength="6" autocomplete="new-password" required></label><button class="btn primary">Đặt mật khẩu</button></form>
+</div><p class="org-gate-message" id="orgGateMessage"></p><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Link chia sẻ không cấp quyền ghi. Trình duyệt cần đăng nhập Google có quyền đối với thư mục. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
 </div></section>
 <div class="shell">
 <aside class="side">
@@ -233,8 +234,9 @@
 <section class="view" id="organization" data-i18n-skip>
 <header class="top"><div><h1 id="organizationName">Tổ chức</h1><p>Thành viên, phân công và lịch sử bàn giao xe</p></div></header>
 <div class="org-dashboard">
-<article class="card" data-admin-only><h2>Mời thành viên</h2><p>Nhập email Google đã được chia sẻ thư mục Drive, sau đó gửi file mời cho người dùng.</p><div class="formgrid"><div class="field"><label>Họ tên dự kiến</label><input id="inviteName"></div><div class="field"><label>Email Google *</label><input id="inviteEmail" type="email"></div></div><button class="btn primary" id="createOrgInvite">Tạo và tải file mời</button></article>
-<article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
+<article class="card" data-admin-only><h2>Tạo tài khoản</h2><div class="formgrid"><div class="field"><label>Họ tên</label><input id="newOrgName"></div><div class="field"><label>Tên đăng nhập</label><input id="newOrgUsername" autocomplete="off"></div><div class="field"><label>Vai trò</label><select id="newOrgRole"><option value="driver">Người quản lý/lái xe</option><option value="admin">Admin</option><option value="viewer">Admin · chỉ xem</option></select></div></div><button class="btn primary" id="createOrgUser">Tạo tài khoản</button><p>Người dùng đặt mật khẩu khi đăng nhập lần đầu.</p></article>
+<article class="card" data-admin-only><h2>Thư mục Drive dùng chung</h2><label>Đường dẫn thư mục<input id="orgFolderLink" type="url"></label><button class="btn" id="saveOrgFolder">Lưu thư mục</button><p>Đổi thư mục không tự chuyển dữ liệu cũ. Thiết bị cần phiên Google có quyền ghi vào thư mục này.</p></article>
+<article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Phân công xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="assignmentCar"></select></div><div class="field"><label>Người quản lý/lái xe</label><select id="assignmentUser"></select></div></div><button class="btn primary" id="assignVehicle">Phân công</button><div class="tablewrap"><table><thead><tr><th>Xe</th><th>Người đang quản lý</th><th>Từ ngày</th></tr></thead><tbody id="orgAssignmentRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Bàn giao xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="handoverCar"></select></div><div class="field"><label>Bàn giao cho</label><select id="handoverTo"></select></div><div class="field"><label>Ngày bàn giao</label><input id="handoverDate" class="date-dmy" placeholder="dd/mm/yyyy"></div><div class="field"><label>ODO bàn giao</label><input id="handoverOdo" type="number" min="0"></div><div class="field full"><label>Ghi chú</label><input id="handoverNote"></div></div><button class="btn primary" id="saveHandover">Lưu bàn giao</button><div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Xe</th><th>Từ người</th><th>Đến người</th><th>ODO</th><th>Ghi chú</th></tr></thead><tbody id="orgHandoverRows"></tbody></table></div></article>
 </div>
@@ -254,7 +256,7 @@
 <article class="card">
 <div class="settings-note">
 <b>Google Drive</b>
-<br>Dữ liệu được lưu trong tệp <code>so-xe-organization-data.json</code> thuộc thư mục Drive dùng chung của tổ chức. Mỗi thành viên sử dụng tài khoản Google riêng đã được Admin cấp quyền.</div>
+<br>Dữ liệu được lưu trong tệp <code>so-xe-organization-data.json</code> thuộc thư mục Drive dùng chung của tổ chức. Các tài khoản trong ứng dụng dùng tên đăng nhập riêng. Để đồng bộ trực tiếp trên web, mỗi thiết bị vẫn cần một phiên Google có quyền ghi vào thư mục; không cần tạo Gmail riêng cho từng tài khoản ứng dụng.</div>
 <div class="settings-note">
 <b>Quyền riêng tư và điều khoản</b>
 <br><a href="privacy.html" target="_blank" rel="noopener">Chính sách quyền riêng tư</a> · <a href="terms.html" target="_blank" rel="noopener">Điều khoản sử dụng</a>
@@ -280,17 +282,17 @@
 <div class="backup-grid">
 <section class="backup-panel">
 <div class="backup-panel-title"><span class="backup-icon">↓</span><div><b>Sao lưu dữ liệu</b><small>Nên dùng bản ZIP đầy đủ để giữ cả ảnh và tệp đính kèm.</small></div></div>
-<button class="btn primary backup-main-action" id="backupBtn">Tải bản sao lưu đầy đủ (.zip)</button>
+<button class="btn primary backup-main-action" data-admin-data id="backupBtn">Tải bản sao lưu đầy đủ (.zip)</button>
 <small id="backupStatus" class="backup-status" role="status">Bao gồm dữ liệu JSON và các tệp trong thư mục Sổ xe. Cần kết nối Google Drive.</small>
-<div class="backup-secondary"><span>Chỉ cần dữ liệu cơ bản?</span><button class="btn" id="exportBtn">Tải riêng file JSON</button></div>
+<div class="backup-secondary"><span>Chỉ cần dữ liệu cơ bản?</span><button class="btn" data-admin-data id="exportBtn">Tải riêng file JSON</button></div>
 </section>
 <section class="backup-panel restore-panel">
 <div class="backup-panel-title"><span class="backup-icon restore">↥</span><div><b>Phục hồi dữ liệu</b><small>Hãy tạo một bản sao lưu hiện tại trước khi phục hồi.</small></div></div>
 <label class="btn primary backup-main-action" for="restoreBackupFile">Chọn bản sao lưu ZIP để phục hồi</label>
-<input class="fileinput" type="file" id="restoreBackupFile" accept=".zip,application/zip">
+<input class="fileinput" type="file" data-admin-data id="restoreBackupFile" accept=".zip,application/zip">
 <small id="restoreStatus" class="backup-status warning" role="status">Dữ liệu hiện tại sẽ được thay sau khi ảnh được tải lên Google Drive thành công.</small>
 <div class="backup-secondary"><span>File JSON cũ?</span><label class="btn" for="importFile">Nhập file JSON</label></div>
-<input class="fileinput" type="file" id="importFile" accept="application/json">
+<input class="fileinput" type="file" data-admin-data id="importFile" accept="application/json">
 </section>
 </div>
 </div>
@@ -497,7 +499,7 @@
 <script src="jszip.min.js?v=1"></script>
 <script src="app.js?v=3">
 </script>
-<script src="backup-restore.js"></script>
+<script src="backup-restore.js?v=3"></script>
 <script src="organization.js?v=3"></script>
 </body>
 </html>
