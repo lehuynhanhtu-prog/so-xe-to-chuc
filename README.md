@@ -22,3 +22,9 @@ Dữ liệu dùng chung là một file JSON, bao gồm mã băm SHA-256 của m�
 - Android: cần cấu hình khóa ký cố định trước khi phát hành chính thức.
 
 Bản Sổ Xe cá nhân ở repository `so-xe-android` không bị thay đổi.
+
+## Mã hóa dữ liệu
+
+File JSON và tệp đính kèm mới trên Drive được mã hóa AES-256-GCM. Khóa sinh từ mật khẩu mã hóa chung của tổ chức bằng PBKDF2-SHA256; mật khẩu chỉ giữ trong bộ nhớ phiên, không ghi vào Drive hoặc localStorage. Admin phải cung cấp mật khẩu này riêng cho các thành viên. Mất mật khẩu thì không khôi phục được dữ liệu. Dữ liệu ngoại tuyến trong localStorage và bản ZIP/JSON tải về hiện vẫn ở dạng rõ; hãy bảo vệ thiết bị và bản sao lưu.
+
+File JSON/tệp đính kèm tạo trước bản mã hóa vẫn ở dạng rõ. Ứng dụng từ chối đồng bộ file JSON cũ. Admin cần tải thủ công bản sao file JSON và thư mục tệp đính kèm từ Drive trước, rồi dùng nút **Mã hóa dữ liệu Drive cũ** trong mục Tổ chức. Công cụ tạo bản mã hóa mới và kiểm tra giải mã được trước khi xóa file JSON cũ và các tệp cũ được tham chiếu. Nếu chuyển đổi lỗi, kiểm tra thư mục Drive trước khi thử lại; các tệp không được tham chiếu cần kiểm tra và xóa thủ công.
