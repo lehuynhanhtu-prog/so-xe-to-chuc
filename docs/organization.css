@@ -6,4 +6,5 @@
 .org-dashboard{display:grid;gap:18px}.org-dashboard .card h2{margin-top:0}.org-dashboard .tablewrap{margin-top:16px}.org-on-behalf{align-self:end}.org-on-behalf label{display:flex;align-items:center;gap:8px}.org-on-behalf input{width:auto}
 [data-admin-only][hidden]{display:none!important}
 #orgKnownDevice{padding:14px;border-radius:12px;background:#eef6f1;margin-top:16px}#orgKnownDevice .btn{margin-right:8px}
+.org-gate-connect{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}.org-gate-connect small{color:#68756f}#orgLoginPassword{display:block;width:min(350px,100%);margin:8px 0 12px;padding:10px;border:1px solid #cfd8d2;border-radius:10px}
 @media(max-width:700px){.org-gate{padding:12px}.org-gate-card{padding:18px}.org-auth-grid{grid-template-columns:1fr}}
