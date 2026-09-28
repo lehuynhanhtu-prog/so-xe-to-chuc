@@ -11,7 +11,7 @@ Bản web/PWA nằm trong `docs/`. Tổ chức lưu `so-xe-organization-data.jso
 
 ## Giới hạn cần biết
 
-GitHub Pages là trang tĩnh. URL thư mục chia sẻ không cấp quyền ghi Drive. Mỗi trình duyệt vẫn phải kết nối một phiên Google có quyền ghi thư mục. OAuth của bản web cần quyền Google Drive đầy đủ để chọn một thư mục tồn tại trước và đồng bộ file trong thư mục đó; cấu hình OAuth consent và xác minh ứng dụng của Google có thể cần được cập nhật trước khi tài khoản ngoài danh sách thử nghiệm sử dụng, dù tài khoản **trong ứng dụng** không cần email Google riêng. Ứng dụng không lưu mật khẩu Google. Không nhập mật khẩu Google vào ô mật khẩu ứng dụng.
+GitHub Pages là trang tĩnh. URL thư mục chia sẻ không cấp quyền ghi Drive. Mỗi trình duyệt vẫn phải kết nối một phiên Google có quyền ghi thư mục. Bản web chỉ xin quyền `drive.file` với các tệp do ứng dụng tạo hoặc được chọn qua Google Picker. Link thư mục có sẵn tự nó không cấp quyền truy cập tệp cho ứng dụng; để dùng thư mục có sẵn cần tích hợp Google Picker với API key dự án Google Cloud hoặc triển khai máy chủ đồng bộ, dù tài khoản **trong ứng dụng** không cần email Google riêng. Ứng dụng không lưu mật khẩu Google. Không nhập mật khẩu Google vào ô mật khẩu ứng dụng.
 
 Dữ liệu dùng chung là một file JSON, bao gồm mã băm SHA-256 của mật khẩu ứng dụng. Phân quyền ở phía trình duyệt, chưa có máy chủ xác thực và thực thi quyền truy cập. Người có quyền truy cập trực tiếp vào thư mục Drive có thể đọc/sửa toàn bộ file bất kể vai trò trong giao diện. Không dùng cho dữ liệu nhạy cảm hoặc xem đây là cơ chế bảo mật thực sự. Để bỏ hoàn toàn phiên Google trên thiết bị lái xe và cưỡng chế phân quyền, cần triển khai máy chủ có xác thực, lưu bí mật Drive ở máy chủ và API lọc dữ liệu theo quyền.
 
