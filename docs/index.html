@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12372a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sổ Xe Tổ Chức">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Sổ Xe Tổ Chức — Quản lý đội xe</title>
+<meta name="description" content="Theo dõi xe xăng, xe điện, xe Điện-Xăng, bảo dưỡng và chi phí sử dụng ô tô">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css?v=27">
+<link rel="stylesheet" href="organization.css?v=1">
+<script src="https://accounts.google.com/gsi/client" async defer>
+</script>
+</head>
+<body>
+<section class="org-gate" id="orgGate" hidden data-i18n-skip>
+<div class="org-gate-card">
+<img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập an toàn để quản lý đội xe và chi phí theo người sử dụng.</p>
+<div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><button class="btn primary" id="orgContinue">Tiếp tục</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
+<div class="org-auth-grid">
+<form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Email Google<input id="orgAdminEmail" type="email" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><small>Mật khẩu chỉ được lưu dưới dạng mã băm; không lưu mật khẩu Google.</small><button class="btn primary" type="submit">Tạo tổ chức</button></form>
+<form id="orgJoinForm" class="org-auth-panel"><h2>Người quản lý/lái xe</h2><label class="btn" for="orgInviteFile">Nhập file mời của Admin</label><input class="fileinput" id="orgInviteFile" type="file" accept="application/json"><div id="orgJoinFields" hidden><p>Tổ chức: <b id="orgJoinOrganization"></b></p><label>Họ tên<input id="orgJoinName" required></label><label>Email Google<input id="orgJoinEmail" type="email" required></label><label>Mật khẩu ứng dụng<input id="orgJoinPassword" type="password" minlength="6" required></label><button class="btn primary" type="submit">Đăng ký và chờ duyệt</button></div></form>
+</div><p class="org-gate-message" id="orgGateMessage"></p>
+</div></section>
+<div class="shell">
+<aside class="side">
+<div class="brand">
+<img src="icons/icon.svg" alt="">
+<div>
+<b>Sổ Xe Tổ Chức</b>
+<small id="orgIdentity">Quản lý đội xe</small>
+</div>
+</div>
+<nav class="nav">
+<button class="active" data-view="dashboard">⌂ Tổng quan</button>
+<button data-view="transactions">▤ Chi phí</button>
+<button data-view="reports">📊 Báo cáo</button>
+<button data-view="cars">🚙 Xe của tôi</button>
+<button data-view="organization">🏢 Tổ chức</button>
+<button data-view="settings">⚙ Cài đặt</button>
+</nav>
+<div class="syncbox">
+<div class="syncstate" id="syncState">● Chưa kết nối Drive</div>
+<button class="btn primary" id="syncBtn">Đồng bộ ngay</button>
+</div>
+</aside>
+<main class="main">
+<div class="mobiletop">
+<div class="mobilebrand">
+<img src="icons/icon.svg" alt="">
+<b>Sổ Xe</b>
+</div>
+<div class="mobile-syncbox">
+<span id="mobileSyncState">● Chưa kết nối Drive</span>
+<button class="btn primary" id="mobileSyncBtn">Đồng bộ ngay</button>
+</div>
+</div>
+<section class="view active" id="dashboard">
+<header class="top">
+<div>
+<h1>Tổng quan chi phí</h1>
+<p id="periodText">Tình hình xe trong tháng này</p>
+</div>
+<div class="actions">
+<button class="btn" id="addCarTop">+ Thêm xe</button>
+<button class="btn primary" id="addExpense">+ Ghi chi phí</button>
+</div>
+</header>
+<div class="grid4 dashboard-metrics" id="metrics">
+</div>
+<article class="card vehicle-summary-card">
+<h2>Chi phí và ODO từng xe trong tháng này</h2>
+<div class="tablewrap">
+<table class="table vehicle-summary-table">
+<thead>
+<tr>
+<th>Biển số</th>
+<th>Tên xe</th>
+<th>Loại xe</th>
+<th>Chi phí tháng này</th>
+<th>ODO hiện tại</th>
+</tr>
+</thead>
+<tbody id="vehicleSummaryRows">
+</tbody>
+<tfoot>
+<tr>
+<td colspan="3"><b>Tổng cộng chi phí các xe</b></td>
+<td><b id="vehicleSummaryTotal">0 đ</b></td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+</div>
+</article>
+<div class="contentgrid">
+<article class="card">
+<h2>Chi phí 6 tháng gần nhất</h2>
+<div class="chart" id="chart">
+</div>
+</article>
+<article class="card">
+<h2>Sắp đến hạn bảo dưỡng</h2>
+<div id="reminders">
+</div>
+</article>
+</div>
+<article class="card insurance-card">
+<h2>Bảo hiểm TNDS của các xe</h2>
+<p class="section-note">Luôn hiển thị bảo hiểm hiện có và cảnh báo nổi bật trong vòng 45 ngày trước khi hết hạn.</p>
+<div id="insuranceReminders">
+</div>
+</article>
+<article class="card insurance-card">
+<h2>Đăng kiểm và phí đường bộ của các xe</h2>
+<p class="section-note">Luôn hiển thị kỳ hiện có và cảnh báo nổi bật trong vòng 45 ngày trước khi hết hạn.</p>
+<div id="vehicleDocumentReminders">
+</div>
+</article>
+<article class="card" style="margin-top:16px">
+<div class="recent-head">
+<div>
+<h2>Giao dịch gần đây</h2>
+<small>Nhấn vào một dòng để xem chi tiết</small>
+</div>
+<label class="recent-sort">Sắp xếp
+<select id="recentSort">
+<option value="date">Theo thời gian</option>
+<option value="car">Theo xe</option>
+</select>
+</label>
+</div>
+<div class="tablewrap">
+<table class="table recent-table">
+<thead>
+<tr>
+<th>Ngày</th>
+<th>Xe</th>
+<th>Loại</th>
+<th>ODO</th>
+<th>Thành tiền</th>
+</tr>
+</thead>
+<tbody id="recentRows">
+</tbody>
+</table>
+</div>
+</article>
+</section>
+<section class="view" id="transactions">
+<header class="top">
+<div>
+<h1>Sổ chi phí</h1>
+<p>Xăng, bảo dưỡng và các khoản khác</p>
+</div>
+<button class="btn primary" id="addExpense2">+ Ghi chi phí</button>
+</header>
+<article class="card">
+<div class="toolbar">
+<input id="search" placeholder="Tìm nội dung...">
+<select id="filterCar">
+</select>
+<select id="filterType">
+<option value="">Tất cả loại</option>
+<option value="fuel">Xăng</option>
+<option value="charge">Sạc xe</option>
+<option value="batteryRental">Thuê pin</option>
+<option value="maintenance">Bảo dưỡng</option>
+<option value="parts">Phụ tùng</option>
+<option value="insurance">Bảo hiểm TNDS</option>
+<option value="registration">Đăng kiểm</option>
+<option value="roadFee">Phí đường bộ</option>
+<option value="other">Khác</option>
+</select>
+</div>
+<div class="tablewrap">
+<table class="table">
+<thead>
+<tr>
+<th>Ngày</th>
+<th>Xe</th>
+<th>Loại</th>
+<th>Nội dung</th>
+<th>ODO</th>
+<th>Số lượng</th>
+<th>Thành tiền</th>
+<th>
+</th>
+</tr>
+</thead>
+<tbody id="allRows">
+</tbody>
+</table>
+</div>
+</article>
+</section>
+<section class="view" id="reports">
+<header class="top">
+<div>
+<h1>Báo cáo</h1>
+<p>Chi phí, ODO và mức tiêu hao tách riêng theo từng xe</p>
+</div>
+</header>
+<article class="card report-export-card">
+<div class="report-export-head"><div><h2>Xuất dữ liệu Excel</h2><p>Lọc giao dịch hoặc xuất các bảng tổng hợp đang hiển thị.</p></div><span class="excel-badge">XLS</span></div>
+<div class="report-export-grid">
+<div class="field"><label for="reportExportCar">Xe</label><select id="reportExportCar"><option value="">Tất cả xe</option></select></div>
+<div class="field"><label for="reportExportType">Loại chi phí</label><select id="reportExportType"><option value="">Tất cả loại</option><option value="fuel">Xăng</option><option value="charge">Sạc xe</option><option value="batteryRental">Thuê pin</option><option value="maintenance">Bảo dưỡng</option><option value="parts">Phụ tùng</option><option value="insurance">Bảo hiểm TNDS</option><option value="registration">Đăng kiểm</option><option value="roadFee">Phí đường bộ</option><option value="other">Khác</option></select></div>
+<div class="field"><label for="reportExportFrom">Từ ngày</label><input id="reportExportFrom" class="date-dmy" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"></div>
+<div class="field"><label for="reportExportTo">Đến ngày</label><input id="reportExportTo" class="date-dmy" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" maxlength="10"></div>
+</div>
+<div class="report-export-actions"><button class="btn primary" id="exportTransactionsExcel">Xuất giao dịch Excel</button><button class="btn green" id="exportVisibleReportsExcel">Xuất báo cáo hiển thị Excel</button></div>
+<small class="report-export-note">Bộ lọc áp dụng cho file giao dịch. File gồm ngày, xe, loại chi phí, nội dung, ODO, số lượng và thành tiền.</small>
+</article>
+<div class="vehicle-reports" id="vehicleReports"></div>
+</section>
+<section class="view" id="cars">
+<header class="top">
+<div>
+<h1>Xe của tôi</h1>
+<p>Quản lý ODO và lịch bảo dưỡng</p>
+</div>
+<button class="btn primary" id="addCar">+ Thêm xe</button>
+</header>
+<div class="carlist" id="carList">
+</div>
+</section>
+<section class="view" id="organization" data-i18n-skip>
+<header class="top"><div><h1 id="organizationName">Tổ chức</h1><p>Thành viên, phân công và lịch sử bàn giao xe</p></div></header>
+<div class="org-dashboard">
+<article class="card" data-admin-only><h2>Mời thành viên</h2><p>Nhập email Google đã được chia sẻ thư mục Drive, sau đó gửi file mời cho người dùng.</p><div class="formgrid"><div class="field"><label>Họ tên dự kiến</label><input id="inviteName"></div><div class="field"><label>Email Google *</label><input id="inviteEmail" type="email"></div></div><button class="btn primary" id="createOrgInvite">Tạo và tải file mời</button></article>
+<article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
+<article class="card" data-admin-only><h2>Phân công xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="assignmentCar"></select></div><div class="field"><label>Người quản lý/lái xe</label><select id="assignmentUser"></select></div></div><button class="btn primary" id="assignVehicle">Phân công</button><div class="tablewrap"><table><thead><tr><th>Xe</th><th>Người đang quản lý</th><th>Từ ngày</th></tr></thead><tbody id="orgAssignmentRows"></tbody></table></div></article>
+<article class="card" data-admin-only><h2>Bàn giao xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="handoverCar"></select></div><div class="field"><label>Bàn giao cho</label><select id="handoverTo"></select></div><div class="field"><label>Ngày bàn giao</label><input id="handoverDate" class="date-dmy" placeholder="dd/mm/yyyy"></div><div class="field"><label>ODO bàn giao</label><input id="handoverOdo" type="number" min="0"></div><div class="field full"><label>Ghi chú</label><input id="handoverNote"></div></div><button class="btn primary" id="saveHandover">Lưu bàn giao</button><div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Xe</th><th>Từ người</th><th>Đến người</th><th>ODO</th><th>Ghi chú</th></tr></thead><tbody id="orgHandoverRows"></tbody></table></div></article>
+</div>
+</section>
+<section class="view" id="settings">
+<header class="top">
+<div>
+<h1>Cài đặt & dữ liệu</h1>
+<p>Đồng bộ an toàn giữa máy tính và điện thoại</p>
+</div>
+</header>
+<a class="install-link-card" href="downloads.html">
+<span class="install-link-icon">↓</span>
+<span><b>Tải và cài ứng dụng Sổ Xe</b><small>Windows, Android và iPhone/iPad</small></span>
+<span class="install-link-arrow">›</span>
+</a>
+<article class="card">
+<div class="settings-note">
+<b>Google Drive</b>
+<br>Dữ liệu được lưu trong tệp <code>so-xe-organization-data.json</code> thuộc thư mục Drive dùng chung của tổ chức. Mỗi thành viên sử dụng tài khoản Google riêng đã được Admin cấp quyền.</div>
+<div class="settings-note">
+<b>Quyền riêng tư và điều khoản</b>
+<br><a href="privacy.html" target="_blank" rel="noopener">Chính sách quyền riêng tư</a> · <a href="terms.html" target="_blank" rel="noopener">Điều khoản sử dụng</a>
+</div>
+<div class="formgrid">
+<div class="field full">
+<label for="languageSelect">Ngôn ngữ</label>
+<select id="languageSelect"><option value="vi">Tiếng Việt</option><option value="en">English</option></select>
+<small>Thay đổi ngôn ngữ sử dụng trong ứng dụng.</small>
+</div>
+<div class="field full">
+<label>Tài khoản Google</label>
+<small>Ứng dụng đã được cấu hình sẵn. Chỉ cần nhấn nút bên dưới và chọn tài khoản Google; không phải nhập OAuth Client ID.</small>
+</div>
+<div class="field full">
+<div class="actions">
+<button class="btn green" id="connectDrive">Kết nối tài khoản Google</button>
+<button class="btn" id="disconnectDrive">Ngắt kết nối</button>
+</div>
+</div>
+<div class="field full backup-section">
+<div class="backup-heading"><div><label>Sao lưu thủ công</label><small>Tải bản dự phòng hoặc phục hồi dữ liệu khi chuyển thiết bị.</small></div><span class="backup-safe">✓ Dữ liệu được bảo vệ</span></div>
+<div class="backup-grid">
+<section class="backup-panel">
+<div class="backup-panel-title"><span class="backup-icon">↓</span><div><b>Sao lưu dữ liệu</b><small>Nên dùng bản ZIP đầy đủ để giữ cả ảnh và tệp đính kèm.</small></div></div>
+<button class="btn primary backup-main-action" id="backupBtn">Tải bản sao lưu đầy đủ (.zip)</button>
+<small id="backupStatus" class="backup-status" role="status">Bao gồm dữ liệu JSON và các tệp trong thư mục Sổ xe. Cần kết nối Google Drive.</small>
+<div class="backup-secondary"><span>Chỉ cần dữ liệu cơ bản?</span><button class="btn" id="exportBtn">Tải riêng file JSON</button></div>
+</section>
+<section class="backup-panel restore-panel">
+<div class="backup-panel-title"><span class="backup-icon restore">↥</span><div><b>Phục hồi dữ liệu</b><small>Hãy tạo một bản sao lưu hiện tại trước khi phục hồi.</small></div></div>
+<label class="btn primary backup-main-action" for="restoreBackupFile">Chọn bản sao lưu ZIP để phục hồi</label>
+<input class="fileinput" type="file" id="restoreBackupFile" accept=".zip,application/zip">
+<small id="restoreStatus" class="backup-status warning" role="status">Dữ liệu hiện tại sẽ được thay sau khi ảnh được tải lên Google Drive thành công.</small>
+<div class="backup-secondary"><span>File JSON cũ?</span><label class="btn" for="importFile">Nhập file JSON</label></div>
+<input class="fileinput" type="file" id="importFile" accept="application/json">
+</section>
+</div>
+</div>
+</div>
+</article>
+</section>
+</main>
+</div>
+<dialog class="modal" id="expenseModal">
+<form id="expenseForm">
+<div class="modalhead">
+<h2 id="expenseTitle">Ghi chi phí</h2>
+<button class="btn" type="button" data-close-dialog aria-label="Đóng">✕</button>
+</div>
+<div class="modalbody">
+<input type="hidden" id="expenseId">
+<div class="formgrid">
+<div class="field">
+<label>Xe *</label>
+<select id="expenseCar" required>
+</select>
+</div>
+<div class="field">
+<label>Người quản lý/lái xe *</label>
+<select id="expenseEnteredFor" required></select>
+<small id="expenseOnBehalfHint">Xe chưa được phân công</small>
+</div>
+<div class="field org-on-behalf"><label><input id="expenseOnBehalf" type="checkbox"> Nhập hộ</label><small>Tự động đánh dấu khi người nhập không phải người đang quản lý xe.</small></div>
+<div class="field">
+<label>Ngày *</label>
+<input id="expenseDate" class="date-dmy" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" title="Nhập ngày dạng dd/mm/yyyy" maxlength="10" required>
+</div>
+<div class="field">
+<label>Loại chi phí *</label>
+<select id="expenseType">
+<option value="fuel">Đổ xăng</option>
+<option value="charge">Sạc xe</option>
+<option value="batteryRental">Thuê pin</option>
+<option value="maintenance">Bảo dưỡng</option>
+<option value="parts">Phụ tùng</option>
+<option value="insurance">Bảo hiểm TNDS</option>
+<option value="registration">Đăng kiểm</option>
+<option value="roadFee">Phí đường bộ</option>
+<option value="other">Khác</option>
+</select>
+</div>
+<div class="field">
+<label>ODO (km) *</label>
+<input id="expenseOdo" type="number" min="0" required>
+<small>Cảnh báo nếu ODO tăng bất thường trên 1.000 km.</small>
+</div>
+<div class="field full">
+<label>Nội dung</label>
+<input id="expenseDesc" placeholder="VD: Thay nhớt động cơ">
+</div>
+<div class="field">
+<label>Tổng tiền (đ) *</label>
+<input id="expenseAmount" type="number" min="0" required>
+</div>
+<div class="field fuelOnly">
+<label>Đơn giá/lít (đ)</label>
+<input id="fuelPrice" type="number" min="0">
+</div>
+<div class="field fuelOnly">
+<label>Số lít</label>
+<input id="fuelLiters" type="number" min="0" step="0.01">
+</div>
+<div class="field chargeOnly" style="display:none">
+<label>Pin trước khi sạc (%) *</label>
+<input id="batteryFrom" type="number" min="0" max="100" step="0.1" placeholder="VD: 20">
+</div>
+<div class="field chargeOnly" style="display:none">
+<label>Pin sau khi sạc (%) *</label>
+<input id="batteryTo" type="number" min="0" max="100" step="0.1" placeholder="VD: 90">
+</div>
+<div class="field full chargeOnly maintenanceHint" style="display:none">
+<small>Nhập mức pin trước và sau khi sạc. Phần trăm sau sạc phải lớn hơn trước sạc.</small>
+</div>
+<div class="field maintenanceOnly" style="display:none">
+<label>Chu kỳ bảo dưỡng (km) *</label>
+<input id="repeatKm" type="number" min="1" step="1" placeholder="VD: 5000">
+</div>
+<div class="field maintenanceOnly" style="display:none">
+<label>Chu kỳ bảo dưỡng (tháng) *</label>
+<input id="repeatMonths" type="number" min="1" step="1" placeholder="VD: 6">
+</div>
+<div class="field full maintenanceOnly maintenanceHint" style="display:none">
+<small>Ứng dụng sẽ nhắc khi ODO đạt chu kỳ hoặc đến ngày bảo dưỡng — điều kiện nào đến trước.</small>
+</div>
+<div class="field insuranceOnly" style="display:none">
+<label id="expiryProviderLabel">Đơn vị bảo hiểm</label>
+<input id="insuranceProvider" placeholder="VD: Bảo Việt">
+</div>
+<div class="field insuranceOnly" style="display:none">
+<label id="expiryPolicyLabel">Số giấy chứng nhận</label>
+<input id="insurancePolicy" placeholder="Số hợp đồng/chứng nhận">
+</div>
+<div class="field insuranceOnly" style="display:none">
+<label>Ngày hiệu lực *</label>
+<input id="insuranceStart" class="date-dmy" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" title="Nhập ngày dạng dd/mm/yyyy" maxlength="10">
+</div>
+<div class="field insuranceOnly" style="display:none">
+<label>Ngày hết hạn *</label>
+<input id="insuranceExpiry" class="date-dmy" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" title="Nhập ngày dạng dd/mm/yyyy" maxlength="10">
+</div>
+<div class="field full insuranceOnly maintenanceHint" style="display:none">
+<small id="expiryHint">Ứng dụng sẽ cảnh báo trên Tổng quan từ 45 ngày trước ngày hết hạn.</small>
+</div>
+<div class="field full">
+<label>Ghi chú</label>
+<textarea id="expenseNote" rows="2">
+</textarea>
+</div>
+<div class="field full attachment-field">
+<label>Tệp đính kèm</label>
+<input id="expenseAttachments" type="file" multiple>
+<small>Ảnh, PDF, Word, Excel và các tệp thông dụng; tối đa 15 MB mỗi tệp. Tệp được lưu trong thư mục “Sổ xe” trên Google Drive.</small>
+<div id="selectedAttachments" class="attachment-list"></div>
+<div id="existingAttachments" class="attachment-list"></div>
+</div>
+</div>
+</div>
+<div class="modalfoot">
+<button class="btn" type="button" data-close-dialog>Hủy</button>
+<button class="btn primary" type="submit" id="saveExpense">Lưu chi phí</button>
+</div>
+</form>
+</dialog>
+<dialog class="modal detail-modal" id="expenseDetailModal">
+<form method="dialog">
+<div class="modalhead">
+<h2>Chi tiết giao dịch</h2>
+<button class="btn" type="button" data-close-dialog aria-label="Đóng">✕</button>
+</div>
+<div class="modalbody">
+<div class="detail-grid" id="expenseDetailBody"></div>
+<div id="expenseDetailAttachments" class="detail-attachments"></div>
+</div>
+<div class="modalfoot">
+<button class="btn primary" type="button" data-close-dialog>Đóng</button>
+</div>
+</form>
+</dialog>
+<dialog class="modal" id="carModal">
+<form method="dialog" id="carForm">
+<div class="modalhead">
+<h2 id="carTitle">Thêm xe</h2>
+<button class="btn" type="button" data-close-dialog aria-label="Đóng">✕</button>
+</div>
+<div class="modalbody">
+<input type="hidden" id="carId">
+<div class="formgrid">
+<div class="field">
+<label>Biển số *</label>
+<input id="carPlate" required placeholder="00A-000.00">
+</div>
+<div class="field">
+<label>Tên xe</label>
+<input id="carName" placeholder="VD: Mazda CX-5">
+</div>
+<div class="field">
+<label>Loại xe *</label>
+<select id="carPowerType" required>
+<option value="fuel">Xe xăng/dầu</option>
+<option value="electric">Xe điện</option>
+<option value="hybrid">Xe Điện-Xăng</option>
+</select>
+</div>
+<div class="field">
+<label>ODO hiện tại</label>
+<input id="carOdo" type="number" min="0" value="0">
+<small>Có thể sửa giảm sau khi đã sửa các giao dịch nhập sai ODO.</small>
+</div>
+<div class="field">
+<label>Năm sản xuất</label>
+<input id="carYear" type="number" min="1950">
+</div>
+<div class="field full attachment-field">
+<label>Giấy chủ quyền xe (ảnh hoặc PDF, tối đa 15 MB/tệp)</label>
+<input id="carAttachments" type="file" accept="image/*,application/pdf" multiple>
+<div id="selectedCarAttachments" class="attachment-list"></div>
+<div id="existingCarAttachments" class="attachment-list"></div>
+</div>
+</div>
+</div>
+<div class="modalfoot">
+<button class="btn" type="button" data-close-dialog>Hủy</button>
+<button class="btn primary" id="saveCar" value="default">Lưu xe</button>
+</div>
+</form>
+</dialog>
+<div class="toast" id="toast">
+</div>
+<dialog class="modal language-modal" id="languageModal">
+<div class="language-dialog-content" data-i18n-skip>
+<img src="icons/icon.svg" alt="">
+<h2>Chọn ngôn ngữ / Choose language</h2>
+<p>Vui lòng chọn ngôn ngữ sử dụng. / Please choose your language.<br><small>Có thể thay đổi sau trong Cài đặt. / You can change it later in Settings.</small></p>
+<div class="language-options"><button class="btn primary" data-language-choice="vi">Tiếng Việt</button><button class="btn" data-language-choice="en">English</button></div>
+</div>
+</dialog>
+<script src="i18n.js?v=6"></script>
+<script src="backup-zip.js?v=1"></script>
+<script src="jszip.min.js?v=1"></script>
+<script src="app.js?v=1">
+</script>
+<script src="backup-restore.js"></script>
+<script src="organization.js?v=1"></script>
+</body>
+</html>

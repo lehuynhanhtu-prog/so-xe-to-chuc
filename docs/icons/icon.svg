@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sổ Xe">
+  <rect width="512" height="512" rx="112" fill="#12372a"/>
+  <path d="M112 289l32-91c9-25 32-42 59-42h106c27 0 50 17 59 42l32 91" fill="none" stroke="#f0bd43" stroke-width="34" stroke-linecap="round"/>
+  <path d="M91 290c0-25 20-45 45-45h240c25 0 45 20 45 45v79c0 20-16 36-36 36H127c-20 0-36-16-36-36z" fill="#ffffff"/>
+  <circle cx="153" cy="333" r="30" fill="#12372a"/>
+  <circle cx="359" cy="333" r="30" fill="#12372a"/>
+  <path d="M205 317h102" stroke="#f0bd43" stroke-width="22" stroke-linecap="round"/>
+</svg>

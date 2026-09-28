@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>FullScreen</key>
+      <true/>
+      <key>IsRemovable</key>
+      <true/>
+      <key>Label</key>
+      <string>Sổ Xe Tổ Chức</string>
+      <key>PayloadDescription</key>
+      <string>Cài Sổ Xe Tổ Chức lên màn hình chính của iPhone hoặc iPad.</string>
+      <key>PayloadDisplayName</key>
+      <string>Sổ Xe Tổ Chức</string>
+      <key>PayloadIdentifier</key>
+      <string>vn.soxe.organization.webclip</string>
+      <key>PayloadType</key>
+      <string>com.apple.webClip.managed</string>
+      <key>PayloadUUID</key>
+      <string>BC779EE2-50AB-4E2D-861A-DB53A65A4259</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>Precomposed</key>
+      <false/>
+      <key>URL</key>
+      <string>https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/?source=ios-profile</string>
+    </dict>
+  </array>
+  <key>PayloadDescription</key>
+  <string>Hồ sơ cài đặt Web App Sổ Xe Tổ Chức. Không cài VPN, chứng chỉ hoặc quyền quản trị thiết bị.</string>
+  <key>PayloadDisplayName</key>
+  <string>Cài ứng dụng Sổ Xe Tổ Chức</string>
+  <key>PayloadIdentifier</key>
+  <string>vn.soxe.organization.install</string>
+  <key>PayloadOrganization</key>
+  <string>Sổ Xe Tổ Chức</string>
+  <key>PayloadRemovalDisallowed</key>
+  <false/>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>D6D55E5B-035E-45B9-AB05-4BFAB30F885A</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>
