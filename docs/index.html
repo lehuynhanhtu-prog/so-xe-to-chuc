@@ -23,10 +23,10 @@
 <img src="icons/icon.svg" alt=""><h1>Sổ Xe Tổ Chức</h1><p>Đăng nhập an toàn để quản lý đội xe và chi phí theo người sử dụng.</p>
 <div id="orgKnownDevice" hidden><p>Thiết bị này đã đăng nhập với tên <b id="orgKnownName"></b>.</p><label>Mật khẩu ứng dụng<input id="orgLoginPassword" type="password" autocomplete="current-password"></label><button class="btn primary" id="orgContinue">Đăng nhập</button><button class="btn" id="orgSwitchAccount">Dùng tài khoản khác</button></div>
 <div class="org-auth-grid">
-<form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Tên đăng nhập<input id="orgAdminUsername" autocomplete="username" required></label><label>Thư mục Google Drive dùng chung<input id="orgAdminFolder" type="url" value="https://drive.google.com/drive/folders/1aRweBt7ksHzvN5ouO9-e8nB58igmTjMh?usp=sharing" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><button class="btn primary">Tạo tổ chức</button></form>
+<form id="orgAdminForm" class="org-auth-panel"><h2>Tạo tổ chức · Admin</h2><label>Tên tổ chức<input id="orgAdminOrganization" required></label><label>Họ tên Admin<input id="orgAdminName" required></label><label>Tên đăng nhập<input id="orgAdminUsername" autocomplete="username" required></label><label>Mật khẩu mã hóa tổ chức (ít nhất 12 ký tự; Admin cung cấp riêng cho thành viên)<input id="orgAdminEncryption" type="password" minlength="12" autocomplete="new-password" required></label><label>Thư mục Google Drive dùng chung<input id="orgAdminFolder" type="url" value="https://drive.google.com/drive/folders/1aRweBt7ksHzvN5ouO9-e8nB58igmTjMh?usp=sharing" required></label><label>Mật khẩu ứng dụng<input id="orgAdminPassword" type="password" minlength="6" required></label><button class="btn primary">Tạo tổ chức</button></form>
 <form id="orgLoginForm" class="org-auth-panel"><h2>Đăng nhập tài khoản tổ chức</h2><label>Tên đăng nhập<input id="orgLoginUsername" autocomplete="username" required></label><label>Mật khẩu (bỏ trống nếu lần đầu)<input id="orgLoginPasswordNew" type="password" autocomplete="current-password"></label><button class="btn primary">Đăng nhập</button><small>Admin tạo tên đăng nhập; lần đầu người dùng tự đặt mật khẩu.</small></form>
 <form id="orgSetupForm" class="org-auth-panel" hidden><h2>Đặt mật khẩu lần đầu</h2><label>Mật khẩu mới<input id="orgSetupPassword" type="password" minlength="6" autocomplete="new-password" required></label><button class="btn primary">Đặt mật khẩu</button></form>
-</div><p class="org-gate-message" id="orgGateMessage"></p><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Ứng dụng chỉ xin quyền đối với tệp được ứng dụng tạo/chọn. Thư mục có sẵn cần được cấp quyền qua Google Picker hoặc máy chủ đồng bộ. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
+</div><p class="org-gate-message" id="orgGateMessage"></p><label>Mật khẩu mã hóa tổ chức (dùng khi đồng bộ)<input id="orgEncryptionPassword" type="password" autocomplete="off"></label><label>Thư mục Drive của tổ chức (thiết bị mới)<input id="orgBootstrapFolder" type="url" placeholder="https://drive.google.com/drive/folders/..."></label><button class="btn" id="orgGateSync" type="button">Kết nối / đồng bộ Google Drive</button><p><small>Ứng dụng chỉ xin quyền đối với tệp được ứng dụng tạo/chọn. Thư mục có sẵn cần được cấp quyền qua Google Picker hoặc máy chủ đồng bộ. Quyền ứng dụng chỉ giới hạn giao diện; người có quyền trực tiếp với Drive vẫn có thể xem và sửa tệp dữ liệu.</small></p>
 </div></section>
 <div class="shell">
 <aside class="side">
@@ -235,7 +235,7 @@
 <header class="top"><div><h1 id="organizationName">Tổ chức</h1><p>Thành viên, phân công và lịch sử bàn giao xe</p></div></header>
 <div class="org-dashboard">
 <article class="card" data-admin-only><h2>Tạo tài khoản</h2><div class="formgrid"><div class="field"><label>Họ tên</label><input id="newOrgName"></div><div class="field"><label>Tên đăng nhập</label><input id="newOrgUsername" autocomplete="off"></div><div class="field"><label>Vai trò</label><select id="newOrgRole"><option value="driver">Người quản lý/lái xe</option><option value="admin">Admin</option><option value="viewer">Admin · chỉ xem</option></select></div></div><button class="btn primary" id="createOrgUser">Tạo tài khoản</button><p>Người dùng đặt mật khẩu khi đăng nhập lần đầu.</p></article>
-<article class="card" data-admin-only><h2>Thư mục Drive dùng chung</h2><label>Đường dẫn thư mục<input id="orgFolderLink" type="url"></label><button class="btn" id="saveOrgFolder">Lưu thư mục</button><p>Đổi thư mục không tự chuyển dữ liệu cũ. Thiết bị cần phiên Google có quyền ghi vào thư mục này.</p></article>
+<article class="card" data-admin-only><h2>Thư mục Drive dùng chung</h2><label>Đường dẫn thư mục<input id="orgFolderLink" type="url"></label><button class="btn" id="saveOrgFolder">Lưu thư mục</button><button class="btn" id="migrateOrgData">Mã hóa dữ liệu Drive cũ</button><p>Đổi thư mục không tự chuyển dữ liệu cũ. Thiết bị cần phiên Google có quyền ghi vào thư mục này.</p></article>
 <article class="card"><h2>Thành viên</h2><div class="tablewrap"><table><thead><tr><th>Họ tên</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Trạng thái</th></tr></thead><tbody id="orgMemberRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Phân công xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="assignmentCar"></select></div><div class="field"><label>Người quản lý/lái xe</label><select id="assignmentUser"></select></div></div><button class="btn primary" id="assignVehicle">Phân công</button><div class="tablewrap"><table><thead><tr><th>Xe</th><th>Người đang quản lý</th><th>Từ ngày</th></tr></thead><tbody id="orgAssignmentRows"></tbody></table></div></article>
 <article class="card" data-admin-only><h2>Bàn giao xe</h2><div class="formgrid"><div class="field"><label>Xe</label><select id="handoverCar"></select></div><div class="field"><label>Bàn giao cho</label><select id="handoverTo"></select></div><div class="field"><label>Ngày bàn giao</label><input id="handoverDate" class="date-dmy" placeholder="dd/mm/yyyy"></div><div class="field"><label>ODO bàn giao</label><input id="handoverOdo" type="number" min="0"></div><div class="field full"><label>Ghi chú</label><input id="handoverNote"></div></div><button class="btn primary" id="saveHandover">Lưu bàn giao</button><div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Xe</th><th>Từ người</th><th>Đến người</th><th>ODO</th><th>Ghi chú</th></tr></thead><tbody id="orgHandoverRows"></tbody></table></div></article>
@@ -255,8 +255,9 @@
 </a>
 <article class="card">
 <div class="settings-note">
-<b>Google Drive</b>
+<b>Google Drive · dữ liệu mã hóa</b>
 <br>Dữ liệu được lưu trong tệp <code>so-xe-organization-data.json</code> thuộc thư mục Drive dùng chung của tổ chức. Các tài khoản trong ứng dụng dùng tên đăng nhập riêng. Để đồng bộ trực tiếp trên web, mỗi thiết bị vẫn cần một phiên Google có quyền ghi vào thư mục; không cần tạo Gmail riêng cho từng tài khoản ứng dụng.</div>
+<div class="settings-note"><label>Mật khẩu mã hóa tổ chức (nhập lại sau khi mở ứng dụng)<input id="orgEncryptionSettings" type="password" autocomplete="off"></label><button class="btn" id="setOrgEncryption">Dùng mật khẩu mã hóa</button><small>Mật khẩu này không lưu trong trình duyệt hoặc trên Drive. Admin cần cấp riêng cho người dùng; nếu mất sẽ không thể giải mã dữ liệu.</small></div>
 <div class="settings-note">
 <b>Quyền riêng tư và điều khoản</b>
 <br><a href="privacy.html" target="_blank" rel="noopener">Chính sách quyền riêng tư</a> · <a href="terms.html" target="_blank" rel="noopener">Điều khoản sử dụng</a>
@@ -497,9 +498,10 @@
 <script src="i18n.js?v=6"></script>
 <script src="backup-zip.js?v=1"></script>
 <script src="jszip.min.js?v=1"></script>
-<script src="app.js?v=4">
+<script src="organization-crypto.js?v=1"></script>
+<script src="app.js?v=5">
 </script>
-<script src="backup-restore.js?v=3"></script>
-<script src="organization.js?v=3"></script>
+<script src="backup-restore.js?v=4"></script>
+<script src="organization.js?v=4"></script>
 </body>
 </html>
