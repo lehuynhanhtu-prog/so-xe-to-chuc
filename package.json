@@ -1,0 +1,36 @@
+{
+  "name": "so-xe-to-chuc",
+  "version": "1.0.0",
+  "description": "Web app backed exclusively by encrypted shared Google Drive data",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "npm run build && node --test tests/drive-service.test.cjs",
+    "check": "node tools/check.mjs",
+    "test:ui": "node --test tests/web-ui.test.cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lehuynhanhtu-prog/so-xe-to-chuc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/issues"
+  },
+  "homepage": "https://github.com/lehuynhanhtu-prog/so-xe-to-chuc#readme",
+  "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/hashes": "2.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright": "1.62.1"
+  },
+  "private": true
+}
