@@ -38,7 +38,7 @@ test('desktop/mobile onboarding, create user and car, transactions and driver pe
     await page.getByRole('button',{name:'Xe',exact:true}).click();await page.getByRole('button',{name:'Thêm xe',exact:true}).click();
     await page.locator('[name=plate]').fill('51A-12345');await page.locator('[name=name]').fill('Test Car');await page.locator('#modalSubmit').click();
     await page.locator('#modal').waitFor({state:'hidden'});
-    await page.getByRole('button',{name:'Phân công',exact:true}).click();await page.locator('#modalSubmit').click();await page.locator('#modal').waitFor({state:'hidden'});
+    await page.getByRole('button',{name:'Phân công',exact:true}).click();await page.locator('[name=userId]').selectOption({label:'Driver One'});await page.locator('#modalSubmit').click();await page.locator('#modal').waitFor({state:'hidden'});
     await page.getByRole('button',{name:'Giao dịch',exact:true}).click();await page.getByRole('button',{name:'Nhập giao dịch',exact:true}).click();
     await page.locator('[name=amount]').fill('250000');await page.locator('[name=note]').fill('Fuel receipt');await page.locator('#modalSubmit').click();await page.locator('#modal').waitFor({state:'hidden'});
     assert(await page.locator('#content').innerText().then(s=>s.includes('250.000')));
@@ -63,6 +63,10 @@ test('desktop/mobile onboarding, create user and car, transactions and driver pe
     await page.locator('[data-edit-transaction]').click();await page.locator('[name=amount]').fill('75000');await page.locator('#modalSubmit').click();await page.locator('#modal').waitFor({state:'hidden'});
     assert(await page.locator('#content').innerText().then(s=>s.includes('75.000')));
     await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();assert.equal(await page.locator('#username').inputValue(),'');
-    assert.equal(await page.locator('#content').innerHTML(),'');assert.deepEqual(errors,[]);
+    assert.equal(await page.locator('#content').innerHTML(),'');
+    await page.locator('#accessFile').setInputFiles({name:'access.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(invitation))});
+    await page.waitForFunction(()=>document.querySelector('#accessHint').textContent.includes('mật khẩu mới'));
+    await page.locator('#password').fill(testDriverPassword);await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
+    await page.locator('#app').waitFor({state:'visible',timeout:20000});assert.deepEqual(errors,[]);
   }finally{await browser.close();}
 });

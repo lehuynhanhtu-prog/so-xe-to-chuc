@@ -21,7 +21,7 @@ function initializeDeployment_() {
 }
 function health() {
   const p = PropertiesService.getScriptProperties();
-  return {ready:!!p.getProperty('SX_KEY'), initialized:p.getProperty('SX_STATE')==='ready', deleted:p.getProperty('SX_STATE')==='deleted'};
+  return {version:'2.0.1',ready:!!p.getProperty('SX_KEY'), initialized:p.getProperty('SX_STATE')==='ready', deleted:p.getProperty('SX_STATE')==='deleted'};
 }
 function prepareBootstrap(request) {
   return locked_(function(){validateSetup_(request);if(request.folderUrl)folder_(request.folderUrl);return {accepted:true};});
@@ -56,6 +56,8 @@ function login(request) {
     let capsule=null;
     if(request.accessFile){capsule=access_(request.accessFile);if(capsule.organizationId!==db.id||capsule.username!==username)throw new Error('File không thuộc tài khoản hoặc tổ chức này.');}
     limited_('login:'+username);
+    const account=db.users.find(x=>x.username===username&&!x.deletedAt);
+    if(account?.inviteHash&&!request.accessFile)throw new Error('Hãy nhập lại file đăng nhập do Admin cấp, rồi nhập mật khẩu hiện tại.');
     const u=db.users.find(x=>x.username===username&&!x.deletedAt);
     if (!u || (u.inviteHash&&!equal_(hash_(capsule?capsule.inviteSecret:''),u.inviteHash)) || !verifyPassword_(request.password,u.password)) {
       failed_('login:'+username); throw new Error('Thông tin đăng nhập không đúng hoặc file đăng nhập đã hết hiệu lực.');
@@ -133,9 +135,9 @@ function api(request) {
         db.cars=db.cars.filter(x=>x.id!==c.id);db.transactions=db.transactions.filter(x=>x.carId!==c.id);db.assignments=db.assignments.filter(x=>x.carId!==c.id);break;
       }
       case 'assign': {
-        admin_(u);car_(db,a.carId);const target=user_(db,a.userId);if(target.role!=='driver')throw new Error('Chỉ phân công xe cho người quản lý/lái xe.');
+        admin_(u);car_(db,a.carId);const target=a.userId?user_(db,a.userId):null;if(target&&target.role!=='driver')throw new Error('Chỉ phân công xe cho người quản lý/lái xe.');
         db.assignments.filter(x=>x.carId===a.carId&&!x.endedAt).forEach(x=>x.endedAt=now_());
-        db.assignments.push({id:uuid_(),carId:a.carId,userId:target.id,startedAt:now_(),assignedBy:u.id});break;
+        if(target)db.assignments.push({id:uuid_(),carId:a.carId,userId:target.id,startedAt:now_(),assignedBy:u.id});break;
       }
       case 'saveTransaction': {
         const existing=a.id?transaction_(db,a.id):null;
@@ -160,8 +162,9 @@ function api(request) {
 }
 function locked_(fn) {const lock=LockService.getScriptLock();if(!lock.tryLock(20000))throw new Error('Dịch vụ đang bận. Hãy thử lại.');try{return fn();}finally{lock.releaseLock();}}
 function props_(){const p=PropertiesService.getScriptProperties();if(!p.getProperty('SX_KEY'))throw new Error('Chủ thư mục cần khởi tạo dịch vụ trước.');return p;}
-function load_(){const p=props_();if(p.getProperty('SX_STATE')!=='ready')throw new Error('Tổ chức chưa được tạo hoặc đã bị xóa.');const f=DriveApp.getFileById(p.getProperty('SX_FILE'));if(f.isTrashed())throw new Error('File dữ liệu đã bị xóa.');const db=open_(f.getBlob().getDataAsString());if(db.id!==p.getProperty('SX_ORG')||db.format!=='so-xe-drive-v2')throw new Error('File dữ liệu không khớp tổ chức.');return db;}
-function save_(db){db.revision++;const content=seal_(db);if(content.length>SX_MAX_BYTES_)throw new Error('Dữ liệu vượt giới hạn 15 MB của bản web này. Hãy giảm tệp đính kèm trước khi lưu.');DriveApp.getFileById(props_().getProperty('SX_FILE')).setContent(content);}
+function load_(){const p=props_();if(p.getProperty('SX_STATE')!=='ready')throw new Error('Tổ chức chưa được tạo hoặc đã bị xóa.');const cached=CacheService.getScriptCache().get('snapshot:'+p.getProperty('SX_FILE'));if(cached){const db=open_(cached);if(db.id===p.getProperty('SX_ORG'))return db;}const f=DriveApp.getFileById(p.getProperty('SX_FILE'));if(f.isTrashed())throw new Error('File dữ liệu đã bị xóa.');const ciphertext=f.getBlob().getDataAsString(),db=open_(ciphertext);if(db.id!==p.getProperty('SX_ORG')||db.format!=='so-xe-drive-v2')throw new Error('File dữ liệu không khớp tổ chức.');cacheSnapshot_(f.getId(),ciphertext);return db;}
+function save_(db){db.revision++;const content=seal_(db);if(content.length>SX_MAX_BYTES_)throw new Error('Dữ liệu vượt giới hạn 15 MB của bản web này. Hãy giảm tệp đính kèm trước khi lưu.');DriveApp.getFileById(props_().getProperty('SX_FILE')).setContent(content);cacheSnapshot_(props_().getProperty('SX_FILE'),content);}
+function cacheSnapshot_(id,content){const c=CacheService.getScriptCache();if(content.length<90000)c.put('snapshot:'+id,content,30);else c.remove('snapshot:'+id);}
 function view_(db,u){
   if(u.mustChange)return {organization:{id:db.id,name:db.name},me:{id:u.id,username:u.username,name:u.name,role:u.role,mustChange:true},revision:db.revision};
   const visible=db.transactions.filter(x=>canView_(db,u,x));
@@ -198,7 +201,7 @@ function attachments_(input,old){
   });
 }
 function inspectAccessFile(envelope){
-  const p=access_(envelope);return {username:p.username,organizationName:p.organizationName,appUrl:p.appUrl};
+  const p=access_(envelope),db=load_(),u=db.users.find(x=>x.username===p.username&&!x.deletedAt);if(p.organizationId!==db.id||!u||!equal_(hash_(p.inviteSecret),u.inviteHash))throw new Error('File đã hết hiệu lực. Hãy dùng file mới nhất do Admin cấp.');return {username:p.username,organizationName:db.name,appUrl:p.appUrl,mustChange:u.mustChange};
 }
 function access_(envelope){
   if(!envelope||JSON.stringify(envelope).length>10000||envelope.format!=='so-xe-access-encrypted'||envelope.version!==2||envelope.cipher!=='AES-256-GCM')throw new Error('File đăng nhập không hợp lệ.');

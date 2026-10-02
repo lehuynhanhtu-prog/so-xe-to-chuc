@@ -21,7 +21,7 @@ test('Drive encryption, invitation authentication, forced password change, roles
   assert(!JSON.stringify(one.invitation).includes('testShared'));
   assert.equal(c.inspectAccessFile(one.invitation).username,'driver.one');
   const altered=JSON.parse(JSON.stringify(one.invitation));altered.ciphertext='AAAA'+altered.ciphertext.slice(4);assert.throws(()=>c.inspectAccessFile(altered));
-  assert.throws(()=>c.login({username:'driver.one',password:'11223344'}),/không đúng/);
+  assert.throws(()=>c.login({username:'driver.one',password:'11223344'}),/nhập lại file/);
   assert.throws(()=>c.login({username:'driver.one',password:'11223344',accessFile:two.invitation}),/không thuộc/);
   const l1=c.login({username:'driver.one',password:'11223344',accessFile:one.invitation});
   assert.equal(l1.data.me.mustChange,true);assert.equal(l1.data.transactions,undefined);
@@ -40,6 +40,13 @@ test('Drive encryption, invitation authentication, forced password change, roles
   const carB=s.invoke(admin,'saveCar',{plate:'51A-67890',name:'Car B',odo:0,attachments:[]}).data.cars[1];
   s.invoke(admin,'assign',{carId:carA.id,userId:user1});
   s.invoke(admin,'assign',{carId:carB.id,userId:user2});
+  s.invoke(admin,'assign',{carId:carA.id,userId:user2});
+  assert.equal(s.invoke(admin,'read').data.assignments.find(x=>x.carId===carA.id&&!x.endedAt).userId,user2);
+  s.invoke(admin,'assign',{carId:carA.id,userId:''});
+  assert.equal(s.invoke(admin,'read').data.assignments.filter(x=>x.carId===carA.id&&!x.endedAt).length,0);
+  s.invoke(admin,'assign',{carId:carA.id,userId:user1});
+  assert.equal(c.login({username:'driver.one',password:firstPassword,accessFile:one.invitation}).data.me.mustChange,false);
+  assert.equal(c.inspectAccessFile(one.invitation).mustChange,false);
   const args=carId=>({carId,date:'2026-10-01',category:'fuel',amount:100000,odo:500,note:'test',attachments:[attach]});
   s.invoke(d1,'saveTransaction',args(carB.id)); // on behalf
   s.invoke(d2,'saveTransaction',args(carA.id));

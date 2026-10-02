@@ -16,11 +16,11 @@ Bản web v2 dùng Google Apps Script cho giao diện và dịch vụ. Dữ li�
 
 ## 2. Khởi tạo và cấp quyền một lần
 
-1. Trong trình soạn thảo, chọn hàm **initializeDeployment_** rồi bấm **Run / Chạy**.
+1. Thêm tạm hàm `function khoiTaoLanDau() { initializeDeployment_(); }` ở cuối Code.gs, lưu rồi chọn **khoiTaoLanDau → Run / Chạy**. Hàm riêng có dấu `_` có thể không hiện trong danh sách.
 2. Chọn **Review permissions / Xem xét quyền**, chọn đúng tài khoản chủ thư mục và cấp quyền Drive cho dự án vừa tạo.
 3. Nếu Google hiển thị **Ứng dụng chưa được xác minh**, chỉ tiếp tục khi đây chính là dự án Apps Script bạn vừa tạo và bạn đang dùng tài khoản chủ dự án: **Advanced / Nâng cao → Go to So Xe To Chuc / Đi tới So Xe To Chuc → Allow / Cho phép**. Nếu chính sách đơn vị chặn, cần quản trị viên Workspace cho phép; không yêu cầu lái xe vượt màn hình này.
 4. Trong **Execution log / Nhật ký thực thi**, sao chép **Mã thiết lập một lần**. Giữ mã này riêng cho Admin ban đầu.
-5. Không chạy lại bước khởi tạo và không xóa Script Properties. Khóa mã hóa ở Script Properties phải được giữ để đọc dữ liệu Drive về sau.
+5. Xóa hàm tạm `khoiTaoLanDau` sau khi nhận mã, lưu trước khi triển khai; không để lời gọi khởi tạo ngoài hàm. Không chạy lại bước khởi tạo và không xóa Script Properties. Khóa mã hóa ở Script Properties phải được giữ để đọc dữ liệu Drive về sau.
 
 Mã thiết lập giúp ngăn người khác chiếm quyền tạo Admin khi họ biết mật khẩu mặc định `123456`.
 
@@ -91,3 +91,7 @@ Kiểm tra trên Drive thật trước khi nhập dữ liệu thật:
 8. Thử xóa tệp, giao dịch và xe trên dữ liệu thử; xác nhận file dữ liệu hiện hành đã loại bỏ nội dung liên quan.
 
 Kiểm thử tự động trong repository mô phỏng dịch vụ Drive/Apps Script; không thay thế bước cấp quyền, kiểm tra triển khai ẩn danh và hạn mức trên Google thật.
+
+## Cập nhật bản sửa phân công và đăng nhập
+
+Thay Code.gs và Index.html bằng bản mới, lưu, chọn Quản lý bản triển khai → bút chì → Phiên bản mới → Triển khai. Không khởi tạo lại, không xóa Script Properties. Sau đổi mật khẩu, mỗi phiên mới nhập lại file được cấp và mật khẩu mới. File cấp lại vô hiệu file trước; đổi folder giữ file đăng nhập còn hiệu lực. Folder tài khoản khác cần cấp quyền chỉnh sửa cho tài khoản thực thi Apps Script. Bộ đệm chỉ giữ ciphertext tối đa 30 giây trong CacheService, Drive vẫn là nguồn lưu trữ lâu dài duy nhất. Thay đổi trực tiếp ngoài app có thể mất 30 giây để thấy.
