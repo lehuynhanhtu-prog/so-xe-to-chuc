@@ -1,0 +1,36 @@
+{
+  "name": "so-xe-to-chuc",
+  "version": "3.0.0",
+  "description": "Encrypted organization vehicle ledger using direct Google Drive API",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs && node tools/build-web.mjs",
+    "test": "npm run build && node --test tests/drive-service.test.cjs tests/direct-drive.test.mjs tests/google.test.mjs",
+    "check": "node tools/check.mjs",
+    "test:ui": "node --test tests/direct-web-ui.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lehuynhanhtu-prog/so-xe-to-chuc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/issues"
+  },
+  "homepage": "https://github.com/lehuynhanhtu-prog/so-xe-to-chuc#readme",
+  "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/hashes": "2.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright": "1.62.1"
+  },
+  "private": true
+}
