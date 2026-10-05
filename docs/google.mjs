@@ -1,4 +1,4 @@
-import {Drive} from './drive.mjs?v=70fff0269599';
+import {Drive} from './drive.mjs?v=93b4a7616eca';
 import {Gmail} from './gmail.mjs?v=d9ccf993c0eb';
 const scope='openid email profile https://www.googleapis.com/auth/drive.file';
 function script(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Không tải được dịch vụ Google. Kiểm tra mạng.'));document.head.append(s);});}
