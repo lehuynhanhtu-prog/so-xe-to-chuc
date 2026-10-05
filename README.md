@@ -1,3 +1,26 @@
+# Sổ Xe Tổ Chức — Web 4.0
+
+Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK2 lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK2, chọn tên định danh và bắt buộc đổi mật khẩu lần đầu.
+
+- Admin tự đồng bộ TK2 khi đăng nhập và mỗi 15 giây khi app đang mở.
+- Root JSON của Admin chứa xe, NSD, phân công, giao dịch, khóa và mã file NSD.
+- Tổng quan/Chi phí/Báo cáo dùng cùng danh sách chi tiết; có ODO, thông tin theo loại, người nhập và nhập hộ. Báo cáo có bộ lọc và xuất Excel.
+- Admin bổ sung cần kết nối cả hai Google; vai trò chỉ xem không ghi dữ liệu.
+- Không dùng Gmail/Picker trong mô hình mới, không lưu token hoặc mật khẩu Google. Mật khẩu app ít nhất 6 ký tự.
+- Tất cả người đăng nhập Google TK2 đều sở hữu dữ liệu Drive TK2: phân quyền trong app không chặn xóa file trực tiếp trên Drive. Mật khẩu riêng bảo vệ các khóa mã hóa; sao lưu thường xuyên.
+
+Web: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/
+Hướng dẫn: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/setup.html
+
+Có chức năng chuyển tổ chức từ mô hình mỗi NSD dùng Google riêng sang TK2, giữ file cũ. Bản cũ nằm ở `web/legacy-drive-v3.html` và `docs/legacy-drive-v3.html`. Không nhập tiếp ở bản cũ sau khi chuyển.
+
+## Phát triển
+
+`npm ci`, `npm test`, `npm run check`, `npm run test:ui`.
+Nguồn hiện tại: `web/dual-drive.mjs`, `web/dual-service.mjs`, `web/index.html`, `web/reports.mjs`. `web/service.mjs` là lõi giao dịch, phân công, lọc quyền và xử lý nhật ký. Build ra `docs/`, các module có mã phiên bản để tránh cache cũ.
+
+## Lịch sử bản 3.1 và Apps Script
+
 # Sổ Xe Tổ Chức — Web 3.0
 
 Bản web dùng Google Drive API trực tiếp, lời mời mã hóa và chia sẻ từng file cho tài khoản Google của mỗi người.
