@@ -9,7 +9,7 @@ OAuth Client ID và project number dùng chung đã điền trong `web/google-co
 
 ## Hoạt động
 
-Admin tạo tổ chức, tài khoản và lời mời bằng đúng email Google. NSD nhận file lời mời và mật khẩu mở file, đăng nhập Google, chọn file được chia sẻ qua Picker, đặt mật khẩu mã hóa riêng. Cấu hình Google công khai được kèm trong lời mời.
+Admin tạo tổ chức, tài khoản và lời mời bằng đúng email Google. Admin cấp quyền Gmail để tự gửi lời mời JSON mã hóa. NSD dùng nút nhận lời mời qua email, cấp quyền Gmail readonly, nhập mật khẩu Admin gửi qua kênh riêng, chọn file được chia sẻ qua Picker, đặt mật khẩu mã hóa riêng. Cấu hình Google công khai được kèm trong lời mời.
 
 Tổ chức và các bản dữ liệu được xem thuộc Drive Admin tạo chúng. Nhật ký và file tài khoản của NSD thuộc Drive NSD. Admin chọn nhật ký NSD qua Picker một lần. Các thay đổi NSD nằm trong nhật ký đến khi Admin mở app và đồng bộ để phát bản dữ liệu mới; app không có máy chủ chạy nền. Admin bổ sung cần chọn các nhật ký và file được xem qua Picker.
 
@@ -79,3 +79,6 @@ python tools/package.py
 Dự án Sổ Xe cá nhân ở `so-xe-android` không thay đổi.
 
 </details>
+
+### Bản 3.1 — lời mời Gmail và thư mục Drive
+Bật thêm Gmail API; cấu hình gmail.send và gmail.readonly trong Google Auth Platform → Data Access. Quyền gửi là nhạy cảm, quyền đọc là hạn chế và có thể yêu cầu xác minh Google khi phát hành rộng rãi. Admin lưu file JSON mã hóa tại “Sổ xe tổ chức”; NSD tại “NSD-Sổ xe tổ chức”. App chỉ chia sẻ từng file. Xem hướng dẫn đầy đủ tại docs/setup.html.

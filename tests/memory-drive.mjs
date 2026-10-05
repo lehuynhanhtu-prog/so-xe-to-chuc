@@ -1,7 +1,9 @@
 export class MemoryDrive{
- constructor(email,files=new Map()){this.email=email;this.files=files;this.grants=new Set();}
+ constructor(email,files=new Map()){this.email=email;this.files=files;this.grants=new Set();this.folders=new Map();this.folderRole='admin';}
  file(id,write=false){const f=this.files.get(id);if(!f||f.trashed)throw Object.assign(new Error('missing'),{status:404});if(f.owner!==this.email&&(!f.permissions.has(this.email)||!this.grants.has(id)||write&&f.permissions.get(this.email)!=='writer'))throw new Error('permission');return f;}
- async create(name,box,kind,appProperties={}){const id=crypto.randomUUID();this.files.set(id,{id,name,box:structuredClone(box),kind,appProperties,owner:this.email,permissions:new Map(),rev:1});return {id};}
+ async ensureFolder(role=this.folderRole){this.folderRole=role;if(!this.folders.has(role))this.folders.set(role,crypto.randomUUID());return this.folders.get(role);}
+ async organizeOwned(role,address,ids){const folder=await this.ensureFolder(role);for(const id of ids){const f=this.files.get(id);if(f?.owner===address)f.parent=folder;}}
+ async create(name,box,kind,appProperties={}){const id=crypto.randomUUID();this.files.set(id,{id,name,parent:await this.ensureFolder(),box:structuredClone(box),kind,appProperties,owner:this.email,permissions:new Map(),rev:1});return {id};}
  async read(id){const f=this.file(id);return {box:structuredClone(f.box),etag:String(f.rev),meta:await this.meta(id)};}
  async meta(id){const f=this.file(id);return {etag:String(f.rev),owners:[{emailAddress:f.owner}],labels:{trashed:false}};}
  async write(id,box,etag){const f=this.file(id,true);if(String(f.rev)!==etag)throw Object.assign(new Error('conflict'),{status:412});f.box=structuredClone(box);f.rev++;}
