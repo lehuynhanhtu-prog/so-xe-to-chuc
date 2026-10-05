@@ -2,7 +2,7 @@ const enc=new TextEncoder(),dec=new TextDecoder();
 export const b64=bytes=>{let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s);};
 export const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 export const randomKey=()=>b64(crypto.getRandomValues(new Uint8Array(32)));
-export function strongPassword(p){if(typeof p!=='string'||p.length<12||p.length>128)throw new Error('Mật khẩu/mã mở file cần từ 12 đến 128 ký tự.');}
+export function strongPassword(p){if(typeof p!=='string'||p.length<6||p.length>128)throw new Error('Mật khẩu/mã mở file cần từ 6 đến 128 ký tự.');}
 async function aes(raw){const b=unb64(raw);if(b.length!==32)throw new Error('Khóa mã hóa không hợp lệ.');return crypto.subtle.importKey('raw',b,'AES-GCM',false,['encrypt','decrypt']);}
 export async function seal(value,key,purpose){const iv=crypto.getRandomValues(new Uint8Array(12)),ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(purpose)},await aes(key),enc.encode(JSON.stringify(value)));return {format:'so-xe-drive-v3',cipher:'AES-256-GCM',purpose,iv:b64(iv),ciphertext:b64(new Uint8Array(ciphertext))};}
 export async function open(box,key,purpose){if(box?.format!=='so-xe-drive-v3'||box.cipher!=='AES-256-GCM'||box.purpose!==purpose)throw new Error('File không đúng loại dữ liệu Sổ Xe Tổ Chức v3.');try{return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(box.iv),additionalData:enc.encode(purpose)},await aes(key),unb64(box.ciphertext))));}catch{throw new Error('Không giải mã được: mật khẩu/khóa không đúng hoặc file đã bị thay đổi.');}}
