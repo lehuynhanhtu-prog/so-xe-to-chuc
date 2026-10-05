@@ -1,6 +1,6 @@
-# Sổ Xe Tổ Chức — Web 4.1
+# Sổ Xe Tổ Chức — Web 4.2
 
-Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK2 lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK2, chọn tên định danh và bắt buộc đổi mật khẩu lần đầu.
+Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK2 lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK2, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
 - Admin tự đồng bộ TK2 khi đăng nhập và mỗi 15 giây khi app đang mở.
 - Root JSON của Admin chứa xe, NSD, phân công, giao dịch, khóa và mã file NSD.
@@ -66,7 +66,7 @@ Bản web mới nằm trong `apps-script/`: giao diện và dịch vụ Google A
 
 Đọc [hướng dẫn triển khai đầy đủ](apps-script/DEPLOY.md), hoặc tải [gói web Drive](docs/downloads/so-xe-drive-web.zip).
 
-Luồng Admin: `admin` / `123456` + mã thiết lập chủ dịch vụ → lưu link Drive → tạo mật khẩu Admin → nhập tên tổ chức → thêm người dùng với mật khẩu ban đầu `11223344` → gửi URL web app và file thông tin đăng nhập mã hóa → nhập xe → phân công xe.
+Luồng Admin: mã thiết lập chủ dịch vụ → lưu link Drive → tạo mật khẩu Admin → nhập tên tổ chức → thêm người dùng với mật khẩu ban đầu do Admin chọn → gửi URL web app và file thông tin đăng nhập mã hóa → nhập xe → phân công xe.
 
 Mã thiết lập một lần giúp ngăn chiếm Admin bằng mật khẩu công khai. Mọi tài khoản được cấp phải đổi mật khẩu mặc định trước khi dùng. File đăng nhập được mã hóa bằng khóa chỉ dịch vụ giữ, không chứa khóa dữ liệu; Admin gửi file riêng cho người nhận.
 
@@ -108,3 +108,9 @@ Bật thêm Gmail API; cấu hình gmail.send và gmail.readonly trong Google Au
 
 ## Bản 4.1
 Chọn ADMIN/NSD trước Google; NSD gõ tên đăng nhập. Đăng xuất app giữ phiên Google trong bộ nhớ. Admin sửa họ tên/tên đăng nhập NSD mà không đổi mật khẩu hoặc lịch sử. Giao dịch theo hàng ngang. Không tạo lời mời mã hóa ở TK2; bỏ dẫn xuất mật khẩu lặp lúc đăng nhập và tạo tổ chức. Ghi dùng AES native, cache theo từng thao tác và ETag chống ghi đè; phát bản dữ liệu song song theo nhóm bốn file.
+
+## Bản 4.2
+
+Màn hình NSD sau kết nối TK2 chỉ còn biểu mẫu đăng nhập; Admin bổ sung vào từ màn hình ADMIN sau kết nối cả hai Google. Tổng quan và Xe hiển thị bảo hiểm TNDS, đăng kiểm, phí đường bộ (cảnh báo trước 45 ngày), bảo dưỡng/phụ tùng theo chu kỳ km hoặc tháng. Hạn trong 5 ngày và ODO đã đến/vượt được nhấn mạnh. Bấm cảnh báo để xem giao dịch. Tính toán chỉ dùng dữ liệu được phép xem, không phát sinh thêm yêu cầu Drive.
+
+Tổng quan kế thừa Sổ xe cá nhân: chi tháng này, năng lượng/bảo dưỡng, bảng tổng hợp xe, biểu đồ sáu tháng, nhóm nhắc bảo dưỡng/bảo hiểm/đăng kiểm-phí đường bộ và giao dịch gần đây. Xe của tôi có động cơ, năm, ODO, người quản lý, thời hạn và giấy xe. Tiền xăng giữ tổng tiền, tính số lít từ đơn giá hoặc tính đơn giá từ số lít. Admin tự nhập mật khẩu khởi tạo NSD; không điền sẵn mật khẩu công khai, tài khoản cũ giữ nguyên.

@@ -8,6 +8,6 @@ const web=readFileSync('web/index.html','utf8');
 if(web.includes('google.script.run'))throw new Error('Web v3 must not call Apps Script.');
 if(!web.includes('SO_XE_GOOGLE_CONFIG'))throw new Error('Google config missing.');
 const {spawnSync}=await import('node:child_process');
-for(const path of ['web/crypto.mjs','web/drive.mjs','web/gmail.mjs','web/google.mjs','web/service.mjs','web/dual-drive.mjs','web/dual-service.mjs','web/reports.mjs']){const r=spawnSync(process.execPath,['--check',path],{stdio:'inherit'});if(r.status)process.exit(r.status);}
+for(const path of ['web/crypto.mjs','web/drive.mjs','web/gmail.mjs','web/google.mjs','web/service.mjs','web/dual-drive.mjs','web/dual-service.mjs','web/reports.mjs','web/reminders.mjs','web/ledger-view.mjs']){const r=spawnSync(process.execPath,['--check',path],{stdio:'inherit'});if(r.status)process.exit(r.status);}
 const {writeFileSync,unlinkSync}=await import('node:fs');const temporary='web/.check-ui.mjs';writeFileSync(temporary,web.match(/<script type="module">([\s\S]*?)<\/script>/)[1]);try{const r=spawnSync(process.execPath,['--check',temporary],{stdio:'inherit'});if(r.status)process.exit(r.status);}finally{unlinkSync(temporary);}
 console.log('Direct Drive v3 modules and UI parse successfully.');
