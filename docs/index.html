@@ -6,10 +6,10 @@
 <div class="shell">
 <section id="gate" class="gate"><div class="brand"><div class="logo">▤</div><div><strong>Sổ Xe Tổ Chức</strong><br><small>Quản lý xe và chi phí dùng chung</small></div></div><div id="gateContent"></div><div id="gateError" class="error" hidden role="alert"></div></section>
 <main id="app" hidden><header class="row spread"><div><small id="identity"></small><h1 id="orgName"></h1></div><div class="row"><button class="secondary" id="reload">Đồng bộ</button><button class="secondary" id="googleReconnect">Kết nối Google</button><button class="secondary" id="passwordButton">Đổi mật khẩu</button><button class="secondary" id="logout">Đăng xuất</button></div></header><div id="status" role="status"></div><nav id="nav"></nav><section id="content"></section></main>
-<footer>Phiên bản 3.0 · Drive API trực tiếp · <a href="setup.html">Hướng dẫn</a></footer></div>
-<dialog id="modal"><form id="modalForm"><h2 id="modalTitle"></h2><div id="modalBody"></div><div id="modalError" class="error" hidden role="alert"></div><div class="actions"><button id="modalSubmit" type="submit">Lưu</button><button class="secondary" type="button" id="closeModal">Đóng</button></div></form></dialog><script src="google-config.js"></script><script type="module">
-import {GoogleConnection} from './google.mjs';
-import {Service} from './service.mjs';
+<footer>Phiên bản 3.0.1 · Mã bản c678c4c2cf00 · Drive API trực tiếp · <a href="setup.html">Hướng dẫn</a></footer></div>
+<dialog id="modal"><form id="modalForm"><h2 id="modalTitle"></h2><div id="modalBody"></div><div id="modalError" class="error" hidden role="alert"></div><div class="actions"><button id="modalSubmit" type="submit">Lưu</button><button class="secondary" type="button" id="closeModal">Đóng</button></div></form></dialog><script src="google-config.js?v=5d69aba05176"></script><script type="module">
+import {GoogleConnection} from './google.mjs?v=f791d00fa539';
+import {Service} from './service.mjs?v=a6dd778234cd';
 let connection,service,poll,operationId, state=null,tab='overview',modalHandler=null,files=[];
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n).toLocaleString('vi-VN')+' ₫',roles={admin:'Admin',viewer:'Admin · chỉ xem',driver:'Người quản lý/lái xe'},categories={fuel:'Nhiên liệu',maintenance:'Bảo dưỡng',insurance:'Bảo hiểm',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Chi phí khác'};

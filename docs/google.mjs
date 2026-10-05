@@ -1,4 +1,4 @@
-import {Drive} from './drive.mjs';
+import {Drive} from './drive.mjs?v=054443758e82';
 const scope='openid email profile https://www.googleapis.com/auth/drive.file';
 function script(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Không tải được dịch vụ Google. Kiểm tra mạng.'));document.head.append(s);});}
 export class GoogleConnection{
