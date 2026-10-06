@@ -1,4 +1,4 @@
-import {randomKey,seal,open,lock,unlock,strongPassword} from './crypto.mjs?v=4b2db4b1446c';
+import {randomKey,seal,open,lock,unlock,strongPassword} from './crypto.mjs?v=bb578fc7e8a4';
 const id=()=>crypto.randomUUID(),now=()=>new Date().toISOString(),copy=x=>structuredClone(x),fail=m=>{throw new Error(m);};
 const txt=(s,max=120,empty=false)=>{if(typeof s!=='string'||s.length>max||(!empty&&!s.trim()))fail('Thông tin nhập thiếu hoặc quá dài.');return s.trim();};
 const num=(n,max)=>{if(typeof n!=='number'||!Number.isFinite(n)||n<0||n>max)fail('Giá trị số không hợp lệ.');return n;};

@@ -1,18 +1,18 @@
-# Sổ Xe Tổ Chức — Web 4.2
+# Sổ Xe Tổ Chức — Web 4.3
 
-Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK2 lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK2, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
+Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
-- Admin tự đồng bộ TK2 khi đăng nhập và mỗi 15 giây khi app đang mở.
+- Admin tự đồng bộ TK Google lưu dữ liệu NSD khi đăng nhập và mỗi 15 giây khi app đang mở.
 - Root JSON của Admin chứa xe, NSD, phân công, giao dịch, khóa và mã file NSD.
 - Tổng quan/Chi phí/Báo cáo dùng cùng danh sách chi tiết; có ODO, thông tin theo loại, người nhập và nhập hộ. Báo cáo có bộ lọc và xuất Excel.
 - Admin bổ sung cần kết nối cả hai Google; vai trò chỉ xem không ghi dữ liệu.
 - Không dùng Gmail/Picker trong mô hình mới, không lưu token hoặc mật khẩu Google. Mật khẩu app ít nhất 6 ký tự.
-- Tất cả người đăng nhập Google TK2 đều sở hữu dữ liệu Drive TK2: phân quyền trong app không chặn xóa file trực tiếp trên Drive. Mật khẩu riêng bảo vệ các khóa mã hóa; sao lưu thường xuyên.
+- Tất cả người đăng nhập Google TK Google lưu dữ liệu NSD đều sở hữu dữ liệu Drive TK Google lưu dữ liệu NSD: phân quyền trong app không chặn xóa file trực tiếp trên Drive. Mật khẩu riêng bảo vệ các khóa mã hóa; sao lưu thường xuyên.
 
 Web: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/
 Hướng dẫn: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/setup.html
 
-Có chức năng chuyển tổ chức từ mô hình mỗi NSD dùng Google riêng sang TK2, giữ file cũ. Bản cũ nằm ở `web/legacy-drive-v3.html` và `docs/legacy-drive-v3.html`. Không nhập tiếp ở bản cũ sau khi chuyển.
+Có chức năng chuyển tổ chức từ mô hình mỗi NSD dùng Google riêng sang TK Google lưu dữ liệu NSD, giữ file cũ. Bản cũ nằm ở `web/legacy-drive-v3.html` và `docs/legacy-drive-v3.html`. Không nhập tiếp ở bản cũ sau khi chuyển.
 
 ## Phát triển
 
@@ -107,10 +107,14 @@ Dự án Sổ Xe cá nhân ở `so-xe-android` không thay đổi.
 Bật thêm Gmail API; cấu hình gmail.send và gmail.readonly trong Google Auth Platform → Data Access. Quyền gửi là nhạy cảm, quyền đọc là hạn chế và có thể yêu cầu xác minh Google khi phát hành rộng rãi. Admin lưu file JSON mã hóa tại “Sổ xe tổ chức”; NSD tại “NSD-Sổ xe tổ chức”. App chỉ chia sẻ từng file. Xem hướng dẫn đầy đủ tại docs/setup.html.
 
 ## Bản 4.1
-Chọn ADMIN/NSD trước Google; NSD gõ tên đăng nhập. Đăng xuất app giữ phiên Google trong bộ nhớ. Admin sửa họ tên/tên đăng nhập NSD mà không đổi mật khẩu hoặc lịch sử. Giao dịch theo hàng ngang. Không tạo lời mời mã hóa ở TK2; bỏ dẫn xuất mật khẩu lặp lúc đăng nhập và tạo tổ chức. Ghi dùng AES native, cache theo từng thao tác và ETag chống ghi đè; phát bản dữ liệu song song theo nhóm bốn file.
+Chọn ADMIN/NSD trước Google; NSD gõ tên đăng nhập. Đăng xuất app giữ phiên Google trong bộ nhớ. Admin sửa họ tên/tên đăng nhập NSD mà không đổi mật khẩu hoặc lịch sử. Giao dịch theo hàng ngang. Không tạo lời mời mã hóa ở TK Google lưu dữ liệu NSD; bỏ dẫn xuất mật khẩu lặp lúc đăng nhập và tạo tổ chức. Ghi dùng AES native, cache theo từng thao tác và ETag chống ghi đè; phát bản dữ liệu song song theo nhóm bốn file.
 
 ## Bản 4.2
 
-Màn hình NSD sau kết nối TK2 chỉ còn biểu mẫu đăng nhập; Admin bổ sung vào từ màn hình ADMIN sau kết nối cả hai Google. Tổng quan và Xe hiển thị bảo hiểm TNDS, đăng kiểm, phí đường bộ (cảnh báo trước 45 ngày), bảo dưỡng/phụ tùng theo chu kỳ km hoặc tháng. Hạn trong 5 ngày và ODO đã đến/vượt được nhấn mạnh. Bấm cảnh báo để xem giao dịch. Tính toán chỉ dùng dữ liệu được phép xem, không phát sinh thêm yêu cầu Drive.
+Màn hình NSD sau kết nối TK Google lưu dữ liệu NSD chỉ còn biểu mẫu đăng nhập; Admin bổ sung vào từ màn hình ADMIN sau kết nối cả hai Google. Tổng quan và Xe hiển thị bảo hiểm TNDS, đăng kiểm, phí đường bộ (cảnh báo trước 45 ngày), bảo dưỡng/phụ tùng theo chu kỳ km hoặc tháng. Hạn trong 5 ngày và ODO đã đến/vượt được nhấn mạnh. Bấm cảnh báo để xem giao dịch. Tính toán chỉ dùng dữ liệu được phép xem, không phát sinh thêm yêu cầu Drive.
 
 Tổng quan kế thừa Sổ xe cá nhân: chi tháng này, năng lượng/bảo dưỡng, bảng tổng hợp xe, biểu đồ sáu tháng, nhóm nhắc bảo dưỡng/bảo hiểm/đăng kiểm-phí đường bộ và giao dịch gần đây. Xe của tôi có động cơ, năm, ODO, người quản lý, thời hạn và giấy xe. Tiền xăng giữ tổng tiền, tính số lít từ đơn giá hoặc tính đơn giá từ số lít. Admin tự nhập mật khẩu khởi tạo NSD; không điền sẵn mật khẩu công khai, tài khoản cũ giữ nguyên.
+
+## Bản 4.3
+
+Ẩn cấu hình Google ở màn hình đăng nhập. Admin đã có tổ chức chỉ thấy nút Đăng nhập; chưa có tổ chức đi thẳng sang khởi tạo. Kho `two-google-v2` bắt đầu dữ liệu mới, không tự đọc kho 4.2. File JSON dùng AES native với khóa phiên tái sử dụng; file tài khoản mới dẫn xuất khóa 100.000 vòng, không dẫn xuất mật khẩu mỗi lần lưu giao dịch. Ngày nhập/hiển thị theo dd/mm/yyyy, dữ liệu nội bộ vẫn dùng ISO để lọc/sắp xếp đúng. Admin có thể đặt lại mật khẩu NSD trong Sửa; phiên cũ bị thu hồi và NSD phải đổi mật khẩu lần tiếp theo. Mật khẩu khởi tạo công khai theo yêu cầu là `000000`, bắt buộc đổi trước khi dùng.

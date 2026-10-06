@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {displayDate,parseDate} from '../web/dates.mjs';
+test('dd/mm/yyyy dates roundtrip independently of browser locale and reject impossible dates',()=>{assert.equal(displayDate('2026-10-06'),'06/10/2026');assert.equal(parseDate('06/10/2026'),'2026-10-06');assert.equal(parseDate('29/02/2024'),'2024-02-29');assert.equal(parseDate(''),'');for(const s of ['29/02/2025','31/04/2026','2026-10-06','6/10/2026','00/10/2026'])assert.throws(()=>parseDate(s));});

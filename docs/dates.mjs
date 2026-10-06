@@ -1,0 +1,2 @@
+export function displayDate(iso){return /^\d{4}-\d{2}-\d{2}$/.test(iso||'')?iso.split('-').reverse().join('/'):'';}
+export function parseDate(text){if(!text)return '';if(!/^\d{2}\/\d{2}\/\d{4}$/.test(text))throw new Error('Nhập ngày theo dạng dd/mm/yyyy.');const iso=text.split('/').reverse().join('-'),d=new Date(iso+'T00:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==iso)throw new Error('Ngày không hợp lệ.');return iso;}

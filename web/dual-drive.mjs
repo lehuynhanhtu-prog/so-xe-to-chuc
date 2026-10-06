@@ -1,8 +1,8 @@
-export const MODEL='two-google-v1';
+export const MODEL='two-google-v2';
 const fail=m=>{throw new Error(m);};
 // Tokens stay on the two GoogleConnection instances, never in a file or localStorage.
 export class DualDrive{
- constructor(primary,secondary,primaryEmail,secondaryEmail){if(!secondary)fail('Cần kết nối TK2.');if(primary&&primaryEmail.toLowerCase()===secondaryEmail.toLowerCase())fail('TK2 phải khác tài khoản lưu dữ liệu Admin.');this.primary=primary;this.secondary=secondary;this.primaryEmail=primaryEmail?.toLowerCase();this.secondaryEmail=secondaryEmail.toLowerCase();this.sources=new Map();this.profileTarget=primary?'admin':'member';}
+ constructor(primary,secondary,primaryEmail,secondaryEmail){if(!secondary)fail('Cần kết nối TK Google lưu dữ liệu NSD.');if(primary&&primaryEmail.toLowerCase()===secondaryEmail.toLowerCase())fail('TK Google lưu dữ liệu NSD phải khác tài khoản lưu dữ liệu Admin.');this.primary=primary;this.secondary=secondary;this.primaryEmail=primaryEmail?.toLowerCase();this.secondaryEmail=secondaryEmail.toLowerCase();this.sources=new Map();this.profileTarget=primary?'admin':'member';}
  async files(source){const drive=source==='admin'?this.primary:this.secondary;if(!drive)return [];const files=await drive.modelFiles(MODEL);for(const f of files)this.sources.set(f.id,source);return files;}
  async profiles(){const files=await this.files(this.primary?'admin':'member');return files.filter(f=>f.appProperties?.kind==='account');}
  async memberProfiles(){return (await this.files('member')).filter(f=>f.appProperties?.kind==='account');}
@@ -17,5 +17,5 @@ export class DualDrive{
  // All these files belong to the connected storage accounts: no email sharing required.
  async share(){} async revoke(){}
  async prepare(){if(this.primary){this.primary.folderRole='admin';await this.primary.ensureFolder('admin');}this.secondary.folderRole='member';await this.secondary.ensureFolder('member');}
- validate(account){if(account.model!==MODEL)fail('Đây là dữ liệu cũ. Dùng chức năng chuyển đổi hoặc mở bản cũ.');if(account.secondaryEmail!==this.secondaryEmail)fail('Bạn kết nối sai TK2. TK2 đã đăng ký: '+account.secondaryEmail);if(account.role==='admin'&&(!this.primary||account.ownerEmail!==this.primaryEmail))fail('Cần kết nối đúng Google lưu dữ liệu Admin: '+account.ownerEmail);}
+ validate(account){if(account.model!==MODEL)fail('Đây là dữ liệu cũ. Dùng chức năng chuyển đổi hoặc mở bản cũ.');if(account.secondaryEmail!==this.secondaryEmail)fail('Bạn kết nối sai TK Google lưu dữ liệu NSD. TK Google lưu dữ liệu NSD đã đăng ký: '+account.secondaryEmail);if(account.role==='admin'&&(!this.primary||account.ownerEmail!==this.primaryEmail))fail('Cần kết nối đúng Google lưu dữ liệu Admin: '+account.ownerEmail);}
 }
