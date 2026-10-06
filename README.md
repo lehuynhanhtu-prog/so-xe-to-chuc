@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Web 4.5
+# Sổ Xe Tổ Chức — Đa nền tảng 4.6
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
@@ -139,3 +139,18 @@ Tải lại cùng tab giữ kết nối Google còn hiệu lực, mở thẳng f
 Giữ nguyên kho dữ liệu 4.3/4.4; không cần khởi tạo lại.
 
 Gợi ý email Google và loại đăng nhập được giữ trên thiết bị để mở lại app chỉ thấy form user/mật khẩu. Token chỉ ở phiên tab, không lưu lâu dài; mật khẩu app, tên user NSD và khóa giải mã không lưu theo thiết bị. Ngắt kết nối Google xóa cả gợi ý và token. Google có thể yêu cầu xác nhận quyền khi Đăng nhập xin lại token đã hết hạn.
+
+## Bản đa nền tảng 4.6.0
+
+[Tải ứng dụng](https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/downloads.html).
+
+- Android: APK `vn.soxe.organization`, Android 7+, mở Web bằng trình duyệt hệ thống. Google OAuth chạy trong trình duyệt, không nhúng vào WebView. Không cần OAuth Android riêng.
+- Windows Portable: EXE/BAT mở cùng Web HTTPS; không chạy máy chủ localhost, không yêu cầu thêm origin localhost.
+- iOS: hồ sơ Web Clip hoặc Safari → Thêm vào Màn hình chính, tương tự Sổ Xe cá nhân. Không phải IPA native.
+- Web: bản trực tuyến và gói ZIP cho tự host. Cần HTTPS và cấu hình OAuth origin nếu đổi nơi host.
+
+Tất cả dùng cùng dữ liệu Drive và chức năng 4.5. Cần mạng để đăng nhập và đồng bộ. Gợi ý Google lưu theo trình duyệt; không lưu tên đăng nhập/mật khẩu app. Bản Web mới tự áp dụng khi mở ứng dụng.
+
+Build Android unsigned: Gradle 8.9, JDK 17, SDK 35, `cd android && gradle :app:assembleRelease :app:lintRelease`. APK phát hành được ký riêng ngoài repo; không đưa khóa riêng vào git. Giữ khóa ký để cập nhật cài đè; không thay bằng debug key. CI cung cấp APK unsigned và apksigner.jar để ký. Workflow Windows xuất ZIP, iOS, Web và APK đã ký nếu có vào release `platform-v4.6.0`.
+
+Gói Web: `npm run package:web`. Kiểm tra: `npm test`, `npm run check`, `npm run test:ui`.

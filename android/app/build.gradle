@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'vn.soxe.organization'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'vn.soxe.organization'
+        minSdk 24
+        targetSdk 35
+        versionCode 460
+        versionName '4.6.0'
+    }
+    buildTypes { release { minifyEnabled false } }
+}

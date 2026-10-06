@@ -1,6 +1,6 @@
 {
   "name": "so-xe-to-chuc",
-  "version": "4.5.0",
+  "version": "4.6.0",
   "description": "Encrypted organization vehicle ledger using direct Google Drive API",
   "directories": {
     "doc": "docs",
@@ -10,7 +10,8 @@
     "build": "node tools/build.mjs && node tools/build-web.mjs",
     "test": "npm run build && node --test tests/drive-service.test.cjs tests/direct-drive.test.mjs tests/google.test.mjs tests/mail-storage.test.mjs tests/dual-drive.test.mjs tests/reports.test.mjs tests/reminders.test.mjs tests/ledger-view.test.mjs tests/dates.test.mjs tests/handovers.test.mjs",
     "check": "node tools/check.mjs",
-    "test:ui": "node --test tests/direct-web-ui.test.mjs tests/dual-web-ui.test.mjs"
+    "test:ui": "node --test tests/direct-web-ui.test.mjs tests/dual-web-ui.test.mjs",
+    "package:web": "npm run build && python3 tools/package-platform-web.py"
   },
   "repository": {
     "type": "git",

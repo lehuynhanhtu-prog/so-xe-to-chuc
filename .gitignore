@@ -1,2 +1,11 @@
 node_modules/
 .clasp.json
+
+android/.gradle/
+android/**/build/
+*.jks
+*.keystore
+*.pem
+android-dist/
+windows-portable/dist/
+windows-portable/*.exe

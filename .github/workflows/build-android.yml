@@ -1,0 +1,37 @@
+name: Build So Xe Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/build-android.yml']
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"'
+      - name: Build unsigned release for private signing
+        working-directory: android
+        run: gradle --no-daemon :app:assembleRelease :app:lintRelease
+      - name: Prepare signing tools
+        run: |
+          mkdir -p android-dist
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" android-dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: So-Xe-To-Chuc-Android-4.6.0-unsigned
+          path: android-dist/
+          retention-days: 30
+          if-no-files-found: error
