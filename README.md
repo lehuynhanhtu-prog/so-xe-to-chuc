@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Web 4.3
+# Sổ Xe Tổ Chức — Web 4.4
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
@@ -118,3 +118,7 @@ Tổng quan kế thừa Sổ xe cá nhân: chi tháng này, năng lượng/bảo
 ## Bản 4.3
 
 Ẩn cấu hình Google ở màn hình đăng nhập. Admin đã có tổ chức chỉ thấy nút Đăng nhập; chưa có tổ chức đi thẳng sang khởi tạo. Kho `two-google-v2` bắt đầu dữ liệu mới, không tự đọc kho 4.2. File JSON dùng AES native với khóa phiên tái sử dụng; file tài khoản mới dẫn xuất khóa 100.000 vòng, không dẫn xuất mật khẩu mỗi lần lưu giao dịch. Ngày nhập/hiển thị theo dd/mm/yyyy, dữ liệu nội bộ vẫn dùng ISO để lọc/sắp xếp đúng. Admin có thể đặt lại mật khẩu NSD trong Sửa; phiên cũ bị thu hồi và NSD phải đổi mật khẩu lần tiếp theo. Mật khẩu khởi tạo công khai theo yêu cầu là `000000`, bắt buộc đổi trước khi dùng.
+
+## Bản 4.4
+
+NSD chỉ sửa giao dịch do chính mình nhập (kể cả nhập hộ); Admin sửa tất cả, Admin chỉ xem không sửa. Nhập chi phí mặc định chọn xe đang quản lý đầu tiên; bật Nhập hộ để chọn xe khác. Cảnh báo Tổng quan/Xe kèm người quản lý/lái xe hiện tại. Mọi ô ngày có lịch chọn ngày, tháng, năm và vẫn hiển thị dd/mm/yyyy. Lưu tiếp tục dùng AES native với khóa phiên, không dẫn xuất mật khẩu khi lưu; không ghi lại bản dữ liệu NSD có nội dung không thay đổi, kể cả sau lần đăng nhập Admin mới. Giữ nguyên kho dữ liệu 4.3.

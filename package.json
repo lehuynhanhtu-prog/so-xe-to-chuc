@@ -1,6 +1,6 @@
 {
   "name": "so-xe-to-chuc",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "Encrypted organization vehicle ledger using direct Google Drive API",
   "directories": {
     "doc": "docs",
