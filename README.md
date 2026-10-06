@@ -154,3 +154,11 @@ Tất cả dùng cùng dữ liệu Drive và chức năng 4.5. Cần mạng đ�
 Build Android unsigned: Gradle 8.9, JDK 17, SDK 35, `cd android && gradle :app:assembleRelease :app:lintRelease`. APK phát hành được ký riêng ngoài repo; không đưa khóa riêng vào git. Giữ khóa ký để cập nhật cài đè; không thay bằng debug key. CI cung cấp APK unsigned và apksigner.jar để ký. Workflow Windows xuất ZIP, iOS, Web và APK đã ký nếu có vào release `platform-v4.6.0`.
 
 Gói Web: `npm run package:web`. Kiểm tra: `npm test`, `npm run check`, `npm run test:ui`.
+
+Ký APK tải từ artifact Android với khóa riêng đã sao lưu:
+
+```sh
+python3 tools/sign-android.py --apk app-release-unsigned.apk --apksigner-jar apksigner.jar --keystore /private/so-xe-to-chuc-release.jks --password-file /private/password.txt --output docs/downloads/So-Xe-To-Chuc-Android-4.6.0.apk
+```
+
+Không đặt khóa hoặc mật khẩu trong repo. Trước khi phát hành, kiểm tra package/version bằng aapt và chữ ký bằng apksigner; giữ nguyên khóa cho lần cập nhật sau. APK đã ký được workflow Windows đính kèm vào release chung.
