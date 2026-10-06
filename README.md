@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Web 4.4
+# Sổ Xe Tổ Chức — Web 4.4.1
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
@@ -6,7 +6,7 @@ Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài kho
 - Root JSON của Admin chứa xe, NSD, phân công, giao dịch, khóa và mã file NSD.
 - Tổng quan/Chi phí/Báo cáo dùng cùng danh sách chi tiết; có ODO, thông tin theo loại, người nhập và nhập hộ. Báo cáo có bộ lọc và xuất Excel.
 - Admin bổ sung cần kết nối cả hai Google; vai trò chỉ xem không ghi dữ liệu.
-- Không dùng Gmail/Picker trong mô hình mới, không lưu token hoặc mật khẩu Google. Mật khẩu app ít nhất 6 ký tự.
+- Không dùng Gmail/Picker trong mô hình mới, không lưu mật khẩu Google. Kết nối Google được giữ tạm trong tab đến khi token hết hạn; không lưu token trong localStorage. Mật khẩu app ít nhất 6 ký tự.
 - Tất cả người đăng nhập Google TK Google lưu dữ liệu NSD đều sở hữu dữ liệu Drive TK Google lưu dữ liệu NSD: phân quyền trong app không chặn xóa file trực tiếp trên Drive. Mật khẩu riêng bảo vệ các khóa mã hóa; sao lưu thường xuyên.
 
 Web: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/
@@ -122,3 +122,7 @@ Tổng quan kế thừa Sổ xe cá nhân: chi tháng này, năng lượng/bảo
 ## Bản 4.4
 
 NSD chỉ sửa giao dịch do chính mình nhập (kể cả nhập hộ); Admin sửa tất cả, Admin chỉ xem không sửa. Nhập chi phí mặc định chọn xe đang quản lý đầu tiên; bật Nhập hộ để chọn xe khác. Cảnh báo Tổng quan/Xe kèm người quản lý/lái xe hiện tại. Mọi ô ngày có lịch chọn ngày, tháng, năm và vẫn hiển thị dd/mm/yyyy. Lưu tiếp tục dùng AES native với khóa phiên, không dẫn xuất mật khẩu khi lưu; không ghi lại bản dữ liệu NSD có nội dung không thay đổi, kể cả sau lần đăng nhập Admin mới. Giữ nguyên kho dữ liệu 4.3.
+
+## Bản 4.4.1
+
+Tải lại cùng tab giữ kết nối Google còn hiệu lực, mở thẳng form đăng nhập ADMIN/NSD đã chọn. Không giữ mật khẩu app, tên đăng nhập NSD hay khóa giải mã. Google Admin và Google dữ liệu NSD được lưu tách biệt trong sessionStorage theo app/client/loại tài khoản; token hết hạn được bỏ, chỉ giữ email gợi ý để xin lại quyền trên đúng tài khoản. Đăng xuất app giữ kết nối Google; ngắt kết nối Google xóa phiên của cả hai tài khoản.
