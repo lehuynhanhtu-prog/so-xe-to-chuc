@@ -1,0 +1,2 @@
+export function normalizeUsername(value){return String(value??'').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/gu,'').trim().replace(/\s+/gu,'_').toLocaleLowerCase('vi');}
+export function validateUsername(value){const name=normalizeUsername(value);if([...name].length<3||[...name].length>40||! /^[\p{L}\p{N}_.-]+$/u.test(name))throw new Error('Tên đăng nhập cần 3–40 ký tự: chữ (có thể có dấu), số, dấu chấm, gạch dưới hoặc gạch ngang.');return name;}

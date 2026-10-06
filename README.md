@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Web 4.4.1
+# Sổ Xe Tổ Chức — Web 4.5
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
@@ -126,3 +126,16 @@ NSD chỉ sửa giao dịch do chính mình nhập (kể cả nhập hộ); Admi
 ## Bản 4.4.1
 
 Tải lại cùng tab giữ kết nối Google còn hiệu lực, mở thẳng form đăng nhập ADMIN/NSD đã chọn. Không giữ mật khẩu app, tên đăng nhập NSD hay khóa giải mã. Google Admin và Google dữ liệu NSD được lưu tách biệt trong sessionStorage theo app/client/loại tài khoản; token hết hạn được bỏ, chỉ giữ email gợi ý để xin lại quyền trên đúng tài khoản. Đăng xuất app giữ kết nối Google; ngắt kết nối Google xóa phiên của cả hai tài khoản.
+
+## Bản 4.5
+
+- Bàn giao xe giữa hai người quản lý/lái xe: người giao/nhận có thể nhập bàn giao mình tham gia, Admin nhập mọi bàn giao. Lưu ngày giờ, ODO, ghi chú và người nhập; chỉ người nhập hoặc Admin sửa/xóa. Bàn giao chuyển người quản lý; nhật ký NSD được Admin đồng bộ như chi phí.
+- Lịch sử phân công cũ được giữ lại và dùng tính thời gian. Sửa/xóa bàn giao tính lại các giai đoạn; nếu làm sai chuỗi bàn giao sau đó, thao tác bị từ chối, giữ dữ liệu cũ.
+- Báo cáo có thời gian quản lý từng/tất cả NSD, lọc xe và ngày, giai đoạn đang quản lý, tổng thời gian theo từng xe, xuất Excel. Metadata phân công được cung cấp cho báo cáo; giao dịch chi phí vẫn lọc theo quyền cũ.
+- Khi đã kết nối Google trước đó, chỉ nhập tên user và mật khẩu; phiên Google hết hạn được xin lại trên tài khoản đã kết nối khi bấm Đăng nhập; không chọn tài khoản app trong danh sách. Tên đăng nhập xác định vai trò. Nhiều tổ chức cùng tên user được phân biệt bằng mật khẩu; nếu trùng cả hai, cần dùng mật khẩu riêng cho từng tổ chức.
+- Tổng quan có danh sách giao dịch gọn; nhấp để xem chi tiết, sửa/xóa theo quyền. Bàn giao cũng xuất hiện trong giao dịch gần đây.
+- Tạo/sửa/đăng nhập dùng chung cách chuẩn hóa tên: chữ có dấu được chấp nhận, khoảng trắng thành gạch dưới, bỏ ký tự vô hình khi sao chép. Form tạo hiển thị tên sẽ lưu; Admin bổ sung dùng cùng quy tắc NSD. Mật khẩu NSD mới vẫn 000000 và bắt buộc đổi lần đầu.
+
+Giữ nguyên kho dữ liệu 4.3/4.4; không cần khởi tạo lại.
+
+Gợi ý email Google và loại đăng nhập được giữ trên thiết bị để mở lại app chỉ thấy form user/mật khẩu. Token chỉ ở phiên tab, không lưu lâu dài; mật khẩu app, tên user NSD và khóa giải mã không lưu theo thiết bị. Ngắt kết nối Google xóa cả gợi ý và token. Google có thể yêu cầu xác nhận quyền khi Đăng nhập xin lại token đã hết hạn.
