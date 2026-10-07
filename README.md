@@ -178,3 +178,5 @@ Admin mở **Tổ chức → Sao lưu & Phục hồi** để tải ZIP đầy đ
 Chọn ZIP (hoặc JSON mã hóa cũ), nhập mật khẩu bản sao, kiểm tra số xe/giao dịch/tệp rồi xác nhận bằng tên tổ chức và mật khẩu Admin hiện tại. Phục hồi vào đúng tổ chức và hai Google đã đăng ký. ZIP đầy đủ đưa tài khoản/mật khẩu về thời điểm sao lưu; JSON cũ giữ thông tin đăng nhập hiện tại. File tài khoản và nhật ký cần còn trên Drive hoặc trong thùng rác. Tệp đính kèm được tải lại từ bản sao kể cả khi file gốc đã xóa vĩnh viễn.
 
 Tệp mới lưu riêng trong **NSD-Sổ xe tổ chức**, JSON giữ thông tin tham chiếu. Có nút **Xem**, **Tải** và **Xóa** khi sửa bản ghi. Khi lưu việc bỏ tệp, xóa giao dịch hoặc xóa xe, app chuyển các tệp liên quan vào thùng rác Drive. Bản ghi cũ có tệp nằm trong JSON vẫn đọc và sao lưu được. Quyền sửa/xóa giữ nguyên: Admin hoặc người nhập giao dịch.
+
+Tên tệp đính kèm tự động theo `_Biển số_Loại_YYYYMMDD.ext`, ví dụ `_51A-12345_Đổ xăng_20261007.jpg`. Tên trùng thêm `_2`, `_3` trước phần mở rộng. Giấy chủ quyền dùng loại `Giấy chủ quyền` và ngày tải tệp; ngày này giữ nguyên khi sửa thông tin xe. Tên trên Drive, trong dữ liệu, khi tải xuống và khi phục hồi được đồng bộ.

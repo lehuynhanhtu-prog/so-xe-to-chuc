@@ -73,3 +73,29 @@ test('legacy encrypted JSON restores inline files and retains current account pa
  const fresh=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));const r=await fresh.login(s.profileId,password);assert.equal(r.data.cars[0].name,'Legacy');assert.equal(atob(r.data.cars[0].attachments[0].base64),'legacy file');
  const member=new DualService(new DualDrive(null,f.b,'',f.b.email));assert.deepEqual(await member.loginNamed('driver_new','current-pass'),{mustChange:true});await member.api('changePassword',{currentPassword:'current-pass',password:'changed-pass'});assert.equal((await member.api('read')).data.me.username,'driver_new');
 });
+
+test('Admin and NSD attachments share canonical names, duplicate numbering and stable edit IDs',async()=>{
+ const f=await fixture(),member=await add(f),s=f.s,car=(await s.api('saveCar',{plate:'NAME-01',name:'Named',odo:0})).data.cars[0];await s.api('assign',{carId:car.id,userId:member.u.id});
+ const raw={name:'camera.JPG',type:'image/jpeg',base64:btoa('original bytes')};let first=(await member.m.api('saveTransaction',{...tx(car.id),attachments:[raw,{...raw,name:'different.jpg'}],operationId:crypto.randomUUID()})).data.transactions[0];
+ assert.deepEqual(first.attachments.map(a=>a.name),['_NAME-01_Đổ xăng_20261005.jpg','_NAME-01_Đổ xăng_20261005_2.jpg']);for(const a of first.attachments){assert.equal(a.name,f.files.get(a.driveFileId).name);assert.equal(atob((await member.m.api('attachment',{transactionId:first.id,id:a.id})).file.base64),'original bytes');}
+ await s.api('read');let state=(await s.api('saveTransaction',{...tx(car.id),attachments:[raw]})).data;const second=state.transactions.find(t=>t.id!==first.id);assert.equal(second.attachments[0].name,'_NAME-01_Đổ xăng_20261005_3.jpg');
+ const ids=first.attachments.map(a=>a.driveFileId);first=(await member.m.api('saveTransaction',{...first,description:'same naming context'})).data.transactions.find(t=>t.id===first.id);assert.deepEqual(first.attachments.map(a=>a.driveFileId),ids);assert.equal(first.attachments[1].name,'_NAME-01_Đổ xăng_20261005_2.jpg');
+ first=(await member.m.api('saveTransaction',{...first,date:'2026-10-06',category:'maintenance'})).data.transactions.find(t=>t.id===first.id);assert.deepEqual(first.attachments.map(a=>a.name),['_NAME-01_Bảo dưỡng_20261006.jpg','_NAME-01_Bảo dưỡng_20261006_2.jpg']);assert.deepEqual(first.attachments.map(a=>a.driveFileId),ids);
+ await s.api('read');const exported=await s.api('export',{password:'naming-backup'});await s.api('restoreBackup',{backup:exported.backup,password:'naming-backup',adminPassword:password,confirmation:'Dual Org'});
+ const fresh=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email)),result=await fresh.login(s.profileId,password);const restored=result.data.transactions.find(t=>t.id===first.id);assert.deepEqual(restored.attachments.map(a=>a.name),first.attachments.map(a=>a.name));for(const a of restored.attachments)assert.equal(a.name,f.files.get(a.driveFileId).name);
+});
+
+test('a filename collision appearing during upload is resolved without overwriting bytes',async()=>{
+ const f=await fixture(),s=f.s,original=f.b.createBinary.bind(f.b);let race=true;f.b.createBinary=async(...args)=>{const r=await original(...args);if(race){race=false;await original(args[0],btoa('concurrent bytes'),args[2],{...args[3],attachmentId:crypto.randomUUID()});}return r;};
+ const c=(await s.api('saveCar',{plate:'RACE',name:'Race',odo:0,attachments:[{name:'owner.pdf',type:'application/pdf',base64:btoa('owner bytes')}]})).data.cars[0];assert.match(c.attachments[0].name,/^_RACE_Giấy chủ quyền_\d{8}_2\.pdf$/);const all=[...f.files.values()].filter(f=>f.kind==='attachment');assert.equal(new Set(all.map(f=>f.name)).size,2);assert.ok(all.some(f=>atob(f.base64)==='concurrent bytes'));assert.ok(all.some(f=>atob(f.base64)==='owner bytes'));
+});
+
+test('invalid edits undo filename changes and repeated uploads retain a single file',async()=>{
+ const f=await fixture(),s=f.s,car=(await s.api('saveCar',{plate:'RETRY',name:'Retry',odo:0})).data.cars[0],operationId=crypto.randomUUID(),args={...tx(car.id),attachments:[{name:'bill.pdf',type:'application/pdf',base64:btoa('bill')}],operationId};
+ let r=await s.api('saveTransaction',args);const t=r.data.transactions[0],a=t.attachments[0];await s.api('saveTransaction',args);assert.equal([...f.files.values()].filter(f=>f.kind==='attachment'&&!f.trashed).length,1);
+ await assert.rejects(s.api('saveTransaction',{...t,date:'2026-10-06',version:0}),/đã thay đổi/);assert.equal(f.files.get(a.driveFileId).name,a.name);assert.equal((await s.api('read')).data.transactions[0].attachments[0].name,a.name);
+});
+
+test('batch numbering remains unique while Drive listing has not indexed new uploads',async()=>{
+ const f=await fixture(),s=f.s,list=f.b.modelFiles.bind(f.b);f.b.modelFiles=async model=>(await list(model)).filter(f=>f.kind!=='attachment');const raw={name:'same.pdf',type:'application/pdf',base64:btoa('file')};const c=(await s.api('saveCar',{plate:'INDEX',name:'Index',odo:0,attachments:[raw,raw,raw]})).data.cars[0];assert.equal(new Set(c.attachments.map(a=>a.name)).size,3);assert.match(c.attachments[1].name,/_2\.pdf$/);assert.match(c.attachments[2].name,/_3\.pdf$/);
+});
