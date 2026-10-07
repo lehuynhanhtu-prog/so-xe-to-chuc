@@ -99,3 +99,19 @@ test('invalid edits undo filename changes and repeated uploads retain a single f
 test('batch numbering remains unique while Drive listing has not indexed new uploads',async()=>{
  const f=await fixture(),s=f.s,list=f.b.modelFiles.bind(f.b);f.b.modelFiles=async model=>(await list(model)).filter(f=>f.kind!=='attachment');const raw={name:'same.pdf',type:'application/pdf',base64:btoa('file')};const c=(await s.api('saveCar',{plate:'INDEX',name:'Index',odo:0,attachments:[raw,raw,raw]})).data.cars[0];assert.equal(new Set(c.attachments.map(a=>a.name)).size,3);assert.match(c.attachments[1].name,/_2\.pdf$/);assert.match(c.attachments[2].name,/_3\.pdf$/);
 });
+
+test('named NSD login reads profile once, lists only accounts and does not rewrite sharing metadata',async()=>{
+ const f=await fixture(),{profile}=await add(f);let profileReads=0,journalReads=0,writes=0;
+ const read=f.b.read.bind(f.b),write=f.b.write.bind(f.b);
+ f.b.modelFiles=async()=>{throw new Error('Login must not scan transactions or attachments');};
+ f.b.read=async id=>{if(id===profile.id)profileReads++;if(f.files.get(id)?.kind==='journal')journalReads++;return read(id);};
+ f.b.write=async(...args)=>{writes++;return write(...args);};
+ const member=new DualService(new DualDrive(null,f.b,'',f.b.email));const result=await member.loginNamed('driver',password);
+ assert.equal(result.data.me.username,'driver');assert.equal(profileReads,1);assert.equal(journalReads,1);assert.equal(writes,0);assert.equal(member.resolvedProfiles.size,0);
+});
+test('resolved login rechecks file revision and rejects a password changed before completion',async()=>{
+ const f=await fixture(),{profile}=await add(f),member=new DualService(new DualDrive(null,f.b,'',f.b.email));
+ await member.resolveNamed('driver',password);const r=await f.b.read(profile.id),account=await unlock(r.box,password,'account');
+ await f.b.write(profile.id,await lock(account,'replacement-secret','account',100000),r.etag);
+ await assert.rejects(member.login(profile.id,password));assert.ok(!member.account);assert.equal(member.resolvedProfiles.size,0);
+});

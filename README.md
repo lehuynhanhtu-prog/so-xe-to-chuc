@@ -180,3 +180,9 @@ Chọn ZIP (hoặc JSON mã hóa cũ), nhập mật khẩu bản sao, kiểm tra
 Tệp mới lưu riêng trong **NSD-Sổ xe tổ chức**, JSON giữ thông tin tham chiếu. Có nút **Xem**, **Tải** và **Xóa** khi sửa bản ghi. Khi lưu việc bỏ tệp, xóa giao dịch hoặc xóa xe, app chuyển các tệp liên quan vào thùng rác Drive. Bản ghi cũ có tệp nằm trong JSON vẫn đọc và sao lưu được. Quyền sửa/xóa giữ nguyên: Admin hoặc người nhập giao dịch.
 
 Tên tệp đính kèm tự động theo `_Biển số_Loại_YYYYMMDD.ext`, ví dụ `_51A-12345_Đổ xăng_20261007.jpg`. Tên trùng thêm `_2`, `_3` trước phần mở rộng. Giấy chủ quyền dùng loại `Giấy chủ quyền` và ngày tải tệp; ngày này giữ nguyên khi sửa thông tin xe. Tên trên Drive, trong dữ liệu, khi tải xuống và khi phục hồi được đồng bộ.
+
+### Sửa đăng nhập và giảm lượt đọc Drive
+
+Admin chỉ nhập tên và mật khẩu một lần. Nếu cần cấp lại quyền Google hoặc kết nối Google Admin trên máy NSD, app tiếp tục lần đăng nhập đang dở sau khi kết nối, bỏ bảng tài khoản NSD khi kết nối đó còn hiệu lực. Thông tin đăng nhập đang dở chỉ giữ trong bộ nhớ và xóa khi hủy/đăng xuất; không ghi mật khẩu vào bộ nhớ trình duyệt.
+
+NSD mở ngay form đăng nhập khi đã có gợi ý Google, chỉ liệt kê file tài khoản thay vì toàn bộ file giao dịch/đính kèm. File tài khoản được đọc và giải mã một lần; kiểm tra lại ETag trước khi dùng kết quả. Dữ liệu được xem và nhật ký đọc song song; bỏ lượt đọc nhật ký và ghi danh sách chia sẻ dư thừa trong mô hình hai Google. Kiểm tra thu hồi, vai trò mã hóa và lần đặt lại mật khẩu vẫn được giữ.
