@@ -9,7 +9,7 @@
 <footer>Phiên bản 3.1 (bản cũ) · Drive API trực tiếp · <a href="setup.html">Hướng dẫn</a></footer></div>
 <dialog id="modal"><form id="modalForm"><h2 id="modalTitle"></h2><div id="modalBody"></div><div id="modalError" class="error" hidden role="alert"></div><div class="actions"><button id="modalSubmit" type="submit">Lưu</button><button class="secondary" type="button" id="closeModal">Đóng</button></div></form></dialog><script src="google-config.js?v=5d69aba05176"></script><script type="module">
 import {GoogleConnection} from './google.mjs?v=bf4d27c063ef';
-import {Service} from './service.mjs?v=9218214c8909';
+import {Service} from './service.mjs?v=87813f259320';
 let connection,service,poll,operationId, state=null,tab='overview',modalHandler=null,files=[],mailInvites=[];
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n).toLocaleString('vi-VN')+' ₫',roles={admin:'Admin',viewer:'Admin · chỉ xem',driver:'Người quản lý/lái xe'},categories={fuel:'Nhiên liệu',maintenance:'Bảo dưỡng',insurance:'Bảo hiểm',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Chi phí khác'};

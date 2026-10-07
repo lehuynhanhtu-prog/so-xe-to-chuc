@@ -186,3 +186,9 @@ Tên tệp đính kèm tự động theo `_Biển số_Loại_YYYYMMDD.ext`, ví
 Admin chỉ nhập tên và mật khẩu một lần. Nếu cần cấp lại quyền Google hoặc kết nối Google Admin trên máy NSD, app tiếp tục lần đăng nhập đang dở sau khi kết nối, bỏ bảng tài khoản NSD khi kết nối đó còn hiệu lực. Thông tin đăng nhập đang dở chỉ giữ trong bộ nhớ và xóa khi hủy/đăng xuất; không ghi mật khẩu vào bộ nhớ trình duyệt.
 
 NSD mở ngay form đăng nhập khi đã có gợi ý Google, chỉ liệt kê file tài khoản thay vì toàn bộ file giao dịch/đính kèm. File tài khoản được đọc và giải mã một lần; kiểm tra lại ETag trước khi dùng kết quả. Dữ liệu được xem và nhật ký đọc song song; bỏ lượt đọc nhật ký và ghi danh sách chia sẻ dư thừa trong mô hình hai Google. Kiểm tra thu hồi, vai trò mã hóa và lần đặt lại mật khẩu vẫn được giữ.
+
+### Quyền giao dịch và báo cáo
+
+Admin chính và Admin bổ sung có toàn quyền quản lý dữ liệu; xóa tổ chức phải xác nhận tên và mật khẩu của Admin đang đăng nhập. Admin chỉ xem xem được toàn bộ dữ liệu/báo cáo và xuất báo cáo, không thêm/sửa/xóa dữ liệu hoặc phục hồi.
+
+NSD thấy giao dịch do mình nhập (kể cả nhập hộ xe khác) và giao dịch của xe đang quản lý. Chỉ sửa/xóa giao dịch do mình nhập; giao dịch người khác nhập hộ xe mình chỉ xem. Báo cáo chi phí và Excel dùng cùng phạm vi này. Báo cáo thời gian quản lý và Excel chỉ có giai đoạn quản lý của chính NSD, kể cả các giai đoạn đã kết thúc; không có lựa chọn tất cả NSD. API trả về NSD chỉ chứa các giai đoạn của mình; lịch phân công đầy đủ được xử lý nội bộ để kiểm tra bàn giao.
