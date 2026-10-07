@@ -166,3 +166,7 @@ Không đặt khóa hoặc mật khẩu trong repo. Trước khi phát hành, ki
 Đăng nhập Admin trên máy đã nhớ Google của NSD: nhập `admin` hoặc tên Admin bổ sung. Khi chưa có gợi ý Google Admin trên thiết bị, ứng dụng chuyển sang kết nối Google Admin, rồi xác nhận Google lưu dữ liệu NSD (hoặc chọn Google khác). Sau đó nhập lại tên và mật khẩu app; mật khẩu không được giữ qua bước kết nối. Những lần sau chỉ hiện form tên đăng nhập/mật khẩu.
 
 Đăng nhập Admin bổ sung / Admin chỉ xem: ứng dụng xác định vai trò từ file tài khoản đã giải mã bằng mật khẩu, không dựa vào trường vai trò phụ của file Drive. Admin bổ sung kết nối đúng Google Admin của tổ chức và Google lưu dữ liệu NSD; khi Google Admin đang nhớ thuộc tổ chức khác, bước kết nối yêu cầu chọn đúng tài khoản. Admin chỉ xem đăng nhập bằng Google lưu dữ liệu NSD, độc lập với kết nối Google Admin đang nhớ, và giữ quyền chỉ xem.
+
+Bản sửa đăng nhập trên máy NSD: đăng xuất mở ngay form đăng nhập, không chờ truy vấn Drive. Phản hồi lấy danh sách tài khoản cũ không được thay thế màn hình kết nối mới; khi chuyển sang Admin, phiên app cũ và vòng đồng bộ được đóng. Số tiền nhập hiển thị dấu phân cách hàng nghìn (1.234.567 đồng), đơn giá xăng hỗ trợ phần thập phân theo định dạng Việt Nam; dữ liệu lưu vẫn là số.
+
+Khi phiên Google Admin hết hạn, màn hình kết nối được giữ lại để cấp lại quyền bằng nút kết nối. Thư viện Google được chuẩn bị trước khi bật nút, giúp thao tác mở cửa sổ Google diễn ra từ lần bấm của người dùng. Google đã nhớ vẫn được dùng làm gợi ý kết nối.
