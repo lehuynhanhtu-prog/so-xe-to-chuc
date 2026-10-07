@@ -170,3 +170,11 @@ Không đặt khóa hoặc mật khẩu trong repo. Trước khi phát hành, ki
 Bản sửa đăng nhập trên máy NSD: đăng xuất mở ngay form đăng nhập, không chờ truy vấn Drive. Phản hồi lấy danh sách tài khoản cũ không được thay thế màn hình kết nối mới; khi chuyển sang Admin, phiên app cũ và vòng đồng bộ được đóng. Số tiền nhập hiển thị dấu phân cách hàng nghìn (1.234.567 đồng), đơn giá xăng hỗ trợ phần thập phân theo định dạng Việt Nam; dữ liệu lưu vẫn là số.
 
 Khi phiên Google Admin hết hạn, màn hình kết nối được giữ lại để cấp lại quyền bằng nút kết nối. Thư viện Google được chuẩn bị trước khi bật nút, giúp thao tác mở cửa sổ Google diễn ra từ lần bấm của người dùng. Google đã nhớ vẫn được dùng làm gợi ý kết nối.
+
+## Sao lưu, phục hồi và tệp đính kèm
+
+Admin mở **Tổ chức → Sao lưu & Phục hồi** để tải ZIP đầy đủ có mật khẩu bảo vệ. Gói chứa dữ liệu xe, NSD, phân công, bàn giao, giao dịch, tài khoản và cả giấy chủ quyền/tệp đính kèm.
+
+Chọn ZIP (hoặc JSON mã hóa cũ), nhập mật khẩu bản sao, kiểm tra số xe/giao dịch/tệp rồi xác nhận bằng tên tổ chức và mật khẩu Admin hiện tại. Phục hồi vào đúng tổ chức và hai Google đã đăng ký. ZIP đầy đủ đưa tài khoản/mật khẩu về thời điểm sao lưu; JSON cũ giữ thông tin đăng nhập hiện tại. File tài khoản và nhật ký cần còn trên Drive hoặc trong thùng rác. Tệp đính kèm được tải lại từ bản sao kể cả khi file gốc đã xóa vĩnh viễn.
+
+Tệp mới lưu riêng trong **NSD-Sổ xe tổ chức**, JSON giữ thông tin tham chiếu. Có nút **Xem**, **Tải** và **Xóa** khi sửa bản ghi. Khi lưu việc bỏ tệp, xóa giao dịch hoặc xóa xe, app chuyển các tệp liên quan vào thùng rác Drive. Bản ghi cũ có tệp nằm trong JSON vẫn đọc và sao lưu được. Quyền sửa/xóa giữ nguyên: Admin hoặc người nhập giao dịch.

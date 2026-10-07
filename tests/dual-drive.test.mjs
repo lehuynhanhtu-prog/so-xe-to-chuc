@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {MemoryDrive} from './memory-drive.mjs';import {DualDrive,MODEL} from '../web/dual-drive.mjs';import {DualService} from '../web/dual-service.mjs';import {unlock} from '../web/crypto.mjs';
+import {MemoryDrive} from './memory-drive.mjs';import {DualDrive,MODEL} from '../web/dual-drive.mjs';import {DualService} from '../web/dual-service.mjs';import {unlock,lock} from '../web/crypto.mjs';
 const password='test-secret-'+crypto.randomUUID(),initial='first-'+crypto.randomUUID();
 async function fixture(){const files=new Map(),a=new MemoryDrive('admin@example.test',files),b=new MemoryDrive('tk2@example.test',files),s=new DualService(new DualDrive(a,b,a.email,b.email));await s.createOrganization({organizationName:'Dual Org',adminName:'Admin',password});return {files,a,b,s};}
 async function add(f,role='driver',username='driver'){const r=await f.s.api('createUser',{username,name:username,role,initialPassword:initial,operationId:crypto.randomUUID()});const u=r.data.users.find(u=>u.username===username),profile=[...f.files.values()].find(x=>x.appProperties.userId===u.id&&x.kind==='account'),m=new DualService(new DualDrive(null,f.b,'',f.b.email));assert.deepEqual(await m.login(profile.id,initial),{mustChange:true});await assert.rejects(m.api('read'),/Đổi mật khẩu/);await m.api('changePassword',{currentPassword:initial,password});return {u,m,profile};}
@@ -23,3 +23,53 @@ test('NSD handovers synchronize through journals, change car visibility, enforce
 test('additional Admin creation, editing and named login use consistent normalized identifiers',async()=>{const f=await fixture(),r=await f.s.api('createUser',{name:'Admin Second',username:' Admin 2\u200B ',role:'admin',initialPassword:initial});const u=r.data.users.find(u=>u.username==='admin_2');assert.ok(u);const second=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));assert.deepEqual(await second.loginNamed('Admin 2',initial),{mustChange:true});await second.api('changePassword',{currentPassword:initial,password});assert.equal((await second.api('read')).data.me.role,'admin');await f.s.api('editUser',{id:u.id,name:'Admin Second',username:'Quản Lý',version:0});const reopened=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));await reopened.loginNamed('QUẢN LÝ',password);assert.equal(reopened.account.userId,u.id);await assert.rejects(reopened.api('createUser',{username:'Quản_Lý',name:'Duplicate',role:'admin',initialPassword:initial}),/sử dụng/);});
 
 test('encrypted role governs additional Admin and viewer login with missing or stale profile role metadata',async()=>{const f=await fixture();for(const role of ['admin','viewer']){const username=role==='admin'?'extra_admin':'read_admin',r=await f.s.api('createUser',{username,name:username,role,initialPassword:'000000'}),u=r.data.users.find(x=>x.username===username),root=await f.s.root(),profile=f.files.get(root.value.users.find(x=>x.id===u.id).profileId);delete profile.appProperties.role;const lookup=new DualService(new DualDrive(null,f.b,'',f.b.email));const found=await lookup.resolveNamed(username,'000000');assert.equal(found.account.role,role);await assert.rejects(lookup.resolveNamed(username,'wrong-password'));const fresh=new DualService(new DualDrive(role==='admin'?f.a:null,f.b,role==='admin'?f.a.email:'',f.b.email));assert.deepEqual(await fresh.loginNamed(username,'000000'),{mustChange:true});await fresh.api('changePassword',{currentPassword:'000000',password});profile.appProperties.role='driver';const reopened=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));await reopened.loginNamed(username,password);assert.equal((await reopened.api('read')).data.me.role,role);if(role==='viewer')await assert.rejects(reopened.api('saveCar',{plate:'FORBIDDEN',name:'Forbidden',odo:0}),/Không có quyền/);}});
+
+test('external files keep JSON small, enforce record permissions, and deletion removes the Drive file',async()=>{
+ const f=await fixture(),one=await add(f,'driver','one'),two=await add(f,'driver','two');
+ const car=(await f.s.api('saveCar',{plate:'DOC-1',name:'Documents',odo:0,attachments:[{name:'owner.pdf',type:'application/pdf',base64:btoa('%PDF test') }]})).data.cars[0];
+ const document=car.attachments[0];assert.ok(document.driveFileId);assert.equal(document.base64,undefined);assert.equal(f.files.get(document.driveFileId).parent,f.b.folders.get('member'));
+ await f.s.api('assign',{carId:car.id,userId:one.u.id});const r=await one.m.api('saveTransaction',{...tx(car.id),attachments:[{name:'receipt.png',type:'image/png',base64:btoa('PNG original bytes')}]});
+ const t=r.data.transactions[0],file=t.attachments[0];assert.equal(file.base64,undefined);assert.equal(atob((await one.m.api('attachment',{transactionId:t.id,id:file.id})).file.base64),'PNG original bytes');
+ await f.s.api('read');await assert.rejects(two.m.api('attachment',{transactionId:t.id,id:file.id}));await assert.rejects(two.m.api('deleteTransaction',{id:t.id,version:t.version}));
+ await one.m.api('saveTransaction',{...t,attachments:[]});assert.equal(f.files.get(file.driveFileId).trashed,true);await f.s.api('read');
+ const c=(await f.s.api('read')).data.cars[0];await f.s.api('deleteCar',{id:c.id,version:c.version,confirmation:c.plate});assert.equal(f.files.get(document.driveFileId).trashed,true);
+});
+
+test('full backup restores deleted attachments, account metadata and passwords; wrong input never writes',async()=>{
+ const f=await fixture(),member=await add(f),s=f.s;
+ let car=(await s.api('saveCar',{plate:'RESTORE-01',name:'Original',odo:0,attachments:[{name:'owner.pdf',type:'application/pdf',base64:btoa('%PDF owner bytes') }]})).data.cars[0];await s.api('assign',{carId:car.id,userId:member.u.id});
+ await member.m.api('saveTransaction',{...tx(car.id),attachments:[{name:'bill.jpg',type:'image/jpeg',base64:btoa('bill bytes')}]});
+ const exported=await s.api('export',{password:'backup-secret'}),args={backup:exported.backup,password:'backup-secret',confirmation:'Dual Org',adminPassword:password};assert.equal(exported.summary.attachments,2);
+ const snap=await unlock(JSON.parse(exported.backup),'backup-secret','backup');assert.equal(snap.files.filter(f=>f.binary!==undefined).length,2);
+ const state=(await s.api('read')).data,t=state.transactions[0];await s.api('deleteCar',{id:car.id,version:car.version,confirmation:car.plate});assert.ok(f.files.get(t.attachments[0].driveFileId).trashed);f.files.delete(t.attachments[0].driveFileId);
+ await s.api('editUser',{id:member.u.id,name:'Changed',username:'changed',newPassword:'reset-new'});
+ const serialized=()=>JSON.stringify([...f.files].map(([id,x])=>[id,x.box,x.base64,x.trashed,x.name,x.rev]));let before=serialized();
+ await assert.rejects(s.api('restoreBackup',{...args,password:'wrong-password'}));assert.equal(serialized(),before);
+ await assert.rejects(s.api('restoreBackup',{...args,confirmation:'wrong'}));assert.equal(serialized(),before);
+ await assert.rejects(s.api('restoreBackup',{...args,adminPassword:'wrong-password'}));assert.equal(serialized(),before);
+ const result=await s.api('restoreBackup',args);assert.equal(result.restored,true);
+ const fresh=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));const restored=await fresh.login(s.profileId,password);assert.equal(restored.data.cars[0].name,'Original');assert.equal(restored.data.transactions[0].description,tx(car.id).description);assert.ok(restored.data.transactions[0].version>t.version);
+ const file=await fresh.api('attachment',{transactionId:t.id,id:t.attachments[0].id});assert.equal(atob(file.file.base64),'bill bytes');assert.equal(!!f.files.get(file.file.driveFileId).trashed,false);
+ const m=new DualService(new DualDrive(null,f.b,'',f.b.email));await m.loginNamed('driver',password);await assert.rejects(m.loginNamed('changed','reset-new'));
+});
+
+test('restore rolls back earlier writes if a later file conflicts, and preflights missing files',async()=>{
+ const f=await fixture(),member=await add(f),s=f.s;await s.api('saveCar',{plate:'ROLLBACK',name:'Snapshot',odo:0});
+ const exported=await s.api('export',{password:'backup-secret'}),args={backup:exported.backup,password:'backup-secret',confirmation:'Dual Org',adminPassword:password};
+ const root=await s.root(),c=root.value.cars[0];await s.api('saveCar',{...c,name:'Current'});const current=(await s.root()).value;
+ const snapshot=await unlock(JSON.parse(exported.backup),'backup-secret','backup'),target=snapshot.files.find(f=>f.id!==s.account.rootId&&f.source==='member');
+ const original=f.b.write.bind(f.b);let once=true;f.b.write=async(...a)=>{if(a[0]===target.id&&once){once=false;throw Object.assign(new Error('simulated conflict'),{status:412});}return original(...a);};
+ await assert.rejects(s.api('restoreBackup',args),/conflict/);f.b.write=original;assert.deepEqual((await s.root()).value,current);
+ const profile=await unlock(f.files.get(member.profile.id).box,password,'account');assert.equal(profile.username,'driver');
+ const missing=snapshot.files.find(f=>f.id===member.profile.id);f.files.delete(missing.id);const before=JSON.stringify((await s.root()).value);await assert.rejects(s.api('restoreBackup',args),/missing/);assert.equal(JSON.stringify((await s.root()).value),before);
+});
+
+test('legacy encrypted JSON restores inline files and retains current account passwords',async()=>{
+ const f=await fixture(),m=await add(f),s=f.s;const car=(await s.api('saveCar',{plate:'LEGACY',name:'Legacy',odo:0})).data.cars[0];
+ const root=await s.root();root.value.cars[0].attachments=[{id:crypto.randomUUID(),name:'legacy.txt',type:'text/plain',base64:btoa('legacy file'),size:11}];await s.encryptedWrite(s.account.rootId,root.value,s.account.rootKey,'organization:'+root.value.id,root.etag);
+ const backup=JSON.stringify(await lock({db:root.value,account:s.account},'legacy-backup','backup',100000));
+ await s.api('editUser',{id:m.u.id,name:'Driver',username:'driver_new',newPassword:'current-pass'});await s.api('saveCar',{...car,name:'Changed',attachments:[]});
+ await s.api('restoreBackup',{backup,password:'legacy-backup',confirmation:'Dual Org',adminPassword:password});
+ const fresh=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));const r=await fresh.login(s.profileId,password);assert.equal(r.data.cars[0].name,'Legacy');assert.equal(atob(r.data.cars[0].attachments[0].base64),'legacy file');
+ const member=new DualService(new DualDrive(null,f.b,'',f.b.email));assert.deepEqual(await member.loginNamed('driver_new','current-pass'),{mustChange:true});await member.api('changePassword',{currentPassword:'current-pass',password:'changed-pass'});assert.equal((await member.api('read')).data.me.username,'driver_new');
+});

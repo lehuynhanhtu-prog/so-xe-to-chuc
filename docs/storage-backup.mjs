@@ -1,0 +1,58 @@
+import {lock,unlock,open,seal,b64,unb64} from './crypto.mjs?v=bb578fc7e8a4';
+const fail=m=>{throw new Error(m);},clone=x=>structuredClone(x),MAX=200*1024*1024;
+function summary(db,createdAt,files=[]){return {organizationName:db.name,createdAt,cars:db.cars.length,transactions:db.transactions.length,users:db.users.filter(u=>!u.deletedAt).length,attachments:[...db.cars,...db.transactions].reduce((n,r)=>n+(r.attachments||[]).length,0),complete:files.length>0};}
+function ids(service,db){return [...new Set([service.account.rootId,service.profileId,...db.users.filter(u=>!u.deletedAt).flatMap(u=>[u.profileId,u.journalId,u.viewId])].filter(Boolean))];}
+export async function exportBackup(s,args){
+ const result=await s.performOnce('read',{});if(result.warnings?.length)fail('Đồng bộ chưa hoàn tất. Xử lý lỗi trước khi sao lưu: '+result.warnings.join(' · '));
+ const root=await s.root(),db=root.value,files=[];
+ const profiles=[...await s.drive.files('admin'),...await s.drive.files('member')].filter(f=>f.appProperties.kind==='account'&&f.appProperties.orgId===db.id).map(f=>f.id);
+ for(const id of new Set([...ids(s,db),...profiles])){const r=id===s.account.rootId?root:await s.drive.read(id),source=await s.drive.source(id);s.checkOwner(r.meta);const info=await s.drive.driver(source).fileInfo(id);files.push({id,source,box:r.box,name:info.name,appProperties:info.appProperties});}
+ for(const u of db.users.filter(u=>!u.deletedAt&&u.journalId)){const entry=files.find(f=>f.id===u.journalId),journal=await open(entry.box,u.memberKey,'journal:'+db.id+':'+u.id),seen=new Set((db.receipts[u.id]||[]).map(r=>r.id));if(u.role==='driver'&&journal.events.some(e=>!seen.has(e.id)))fail('NSD vừa lưu giao dịch mới. Hãy bấm sao lưu lại để lấy đầy đủ dữ liệu.');}
+ const external=[...new Set([...db.cars,...db.transactions].flatMap(r=>r.attachments||[]).map(f=>f.driveFileId).filter(Boolean))];
+ for(const id of external){const info=await s.drive.attachmentInfo(id),bytes=await s.drive.readBinary(id);files.push({id,source:await s.drive.source(id),binary:b64(bytes),name:info.name,attachmentId:info.appProperties.attachmentId,type:info.mimeType||'application/octet-stream'});}
+ const latest=await s.drive.meta(s.account.rootId);if(latest.etag!==root.etag)fail('Dữ liệu vừa thay đổi. Hãy sao lưu lại.');
+ const backup={format:'soxe-organization-backup',version:1,createdAt:new Date().toISOString(),db,account:s.account,profileId:s.profileId,files};
+ if(JSON.stringify(backup).length>MAX)fail('Bản sao lưu vượt 200 MB.');
+ return {backup:JSON.stringify(await lock(backup,args.password,'backup',100000)),summary:summary(db,backup.createdAt,files)};
+}
+async function decode(s,args){
+ if(typeof args.backup!=='string'||args.backup.length>MAX*2)fail('Bản sao lưu không hợp lệ hoặc quá lớn.');
+ let box;try{box=JSON.parse(args.backup);}catch{fail('Không đọc được JSON trong bản sao lưu.');}
+ const backup=await unlock(box,args.password,'backup'),db=backup.db;
+ if(!db||db.format!=='soxe-org-v3'||!['users','cars','transactions','assignments'].every(k=>Array.isArray(db[k]))||!db.receipts||db.deletedAt)fail('Bản sao lưu không đúng dữ liệu tổ chức.');
+ if(db.id!==s.account.orgId||backup.account?.rootId!==s.account.rootId||db.ownerEmail!==s.account.ownerEmail||db.storage?.secondaryEmail!==s.account.secondaryEmail)fail('Bản sao lưu thuộc tổ chức hoặc tài khoản Google khác. Hãy mở đúng tổ chức để phục hồi.');
+ if(!db.users.some(u=>u.id===s.account.userId&&u.role==='admin'&&!u.deletedAt))fail('Admin đang đăng nhập không thuộc bản sao lưu này.');
+ if(backup.format&&backup.format!=='soxe-organization-backup'||backup.version&&backup.version!==1)fail('Phiên bản sao lưu chưa được hỗ trợ.');
+ if(backup.files){if(!Array.isArray(backup.files)||backup.files.length>20000)fail('Danh sách tệp sao lưu không hợp lệ.');const seen=new Set();for(const f of backup.files){if(!f||typeof f.id!=='string'||seen.has(f.id)||!['admin','member'].includes(f.source)||(!f.box&&typeof f.binary!=='string'))fail('Danh sách tệp sao lưu không hợp lệ.');seen.add(f.id);}for(const id of ids(s,db).filter(id=>id!==s.profileId))if(!seen.has(id))fail('Bản sao lưu thiếu file tài khoản hoặc dữ liệu NSD.');for(const a of [...db.cars,...db.transactions].flatMap(r=>r.attachments||[]))if(a.driveFileId&&!backup.files.some(f=>f.id===a.driveFileId&&typeof f.binary==='string'))fail('Bản sao lưu thiếu tệp đính kèm '+a.name);const root=backup.files.find(f=>f.id===s.account.rootId);if(JSON.stringify(await open(root.box,s.account.rootKey,'organization:'+db.id))!==JSON.stringify(db))fail('Dữ liệu và file tổ chức trong bản sao lưu không khớp.');}
+ return backup;
+}
+export async function inspectBackup(s,args){const b=await decode(s,args);return {summary:summary(b.db,b.createdAt||b.db.updatedAt,b.files)};}
+export async function restoreBackup(s,args){
+ const b=await decode(s,args),current=await s.root();if(args.confirmation!==current.value.name)fail('Nhập đúng tên tổ chức hiện tại để xác nhận phục hồi.');if(args.expectedRevision!==undefined&&current.value.revision!==args.expectedRevision)fail('Dữ liệu đã thay đổi sau khi xem bản sao lưu. Hãy kiểm tra lại trước khi phục hồi.');
+ const credential=await unlock((await s.drive.read(s.profileId)).box,args.adminPassword,'account');if(credential.userId!==s.account.userId||credential.orgId!==s.account.orgId)fail('Mật khẩu Admin không đúng.');
+ let files=b.files?clone(b.files):[];
+ if(!files.length){for(const id of ids(s,b.db)){const r=await s.drive.read(id);files.push({id,source:await s.drive.source(id),box:r.box});}const root=files.find(f=>f.id===s.account.rootId);root.box=await seal(b.db,s.account.rootKey,'organization:'+b.db.id);}
+ const restored=clone(b.db);restored.revision=Math.max(current.value.revision,restored.revision)+1;restored.updatedAt=new Date().toISOString();restored.audit??=[];restored.audit.push({id:crypto.randomUUID(),actor:s.account.userId,action:'restoreBackup',at:restored.updatedAt});
+ if(!b.files){for(const u of restored.users){const live=current.value.users.find(x=>x.id===u.id);if(live){for(const key of ['username','memberKey','inviteToken','passwordEpoch','profileId','journalId','viewId','viewOwnerEmail','active'])if(key in live)u[key]=clone(live[key]);}if(u.journalId){const entry=files.find(f=>f.id===u.journalId),journal=await open(entry.box,u.memberKey,'journal:'+restored.id+':'+u.id),seen=new Set((restored.receipts[u.id]||[]).map(r=>r.id));restored.receipts[u.id]??=[];for(const e of journal.events)if(!seen.has(e.id))restored.receipts[u.id].push({id:e.id,status:'accepted',message:'Đã thay dữ liệu từ bản sao lưu.',at:restored.updatedAt});}}}
+ // A stale editor must not overwrite a transaction restored from an older backup.
+ for(const key of ['cars','transactions','handovers'])for(const r of restored[key]||[])r.version=Math.max(r.version||0,current.value[key]?.find(x=>x.id===r.id)?.version||0)+1;
+ const plans=[];
+ // Validate every destination and retain its preimage before changing any file.
+ for(const f of files.filter(f=>f.binary===undefined)){const drive=s.drive.driver(f.source),info=await drive.fileInfo(f.id),meta=await drive.meta(f.id),owner=f.source==='admin'?s.drive.primaryEmail:s.drive.secondaryEmail;if(info.appProperties?.model!=='two-google-v2'||info.appProperties.orgId&&info.appProperties.orgId!==restored.id||!meta.owners?.some(o=>o.emailAddress?.toLowerCase()===owner))fail('File phục hồi không thuộc đúng tổ chức/Google.');if(f.id===s.account.rootId&&meta.etag!==current.etag)fail('Dữ liệu vừa thay đổi. Kiểm tra lại trước khi phục hồi.');const before=(await drive.read(f.id)).box;plans.push({f,drive,meta,before,info});}
+ const uploaded=[],map=new Map();const relink=value=>{if(!value||typeof value!=='object')return;for(const [k,v] of Object.entries(value)){if(k==='driveFileId'&&map.has(v))value[k]=map.get(v);else relink(v);}};
+ const applied=[];let rootSaved=false;
+ try{
+  // Restore attachments to new Drive files, even if originals were permanently deleted.
+  for(const f of files.filter(f=>f.binary!==undefined)){const attachment=[...restored.cars,...restored.transactions].flatMap(r=>r.attachments||[]).find(a=>a.driveFileId===f.id);if(!attachment)fail('Tệp không có bản ghi tham chiếu.');const fresh=await s.drive.createAttachment({name:attachment.name,type:attachment.type,base64:f.binary},attachment.id);uploaded.push(fresh.id);map.set(f.id,fresh.id);}
+  relink(restored);
+  for(const plan of plans){const f=plan.f;if(f.id===s.account.rootId)f.box=await seal(restored,s.account.rootKey,'organization:'+restored.id);else {const u=restored.users.find(u=>u.viewId===f.id||u.journalId===f.id);if(u){const purpose=(u.viewId===f.id?'view:':'journal:')+restored.id+':'+u.id,value=await open(f.box,u.memberKey,purpose);relink(value);f.box=await seal(value,u.memberKey,purpose);}}}
+  plans.sort((a,b)=>Number(a.f.id===s.account.rootId)-Number(b.f.id===s.account.rootId));
+  for(const plan of plans){const {f,drive,meta}=plan;let etag=meta.etag;applied.push(plan);if(meta.labels?.trashed){etag=(await drive.setTrashed(f.id,false,etag)).etag;plan.afterEtag=etag;}if(f.appProperties){etag=(await drive.writeMetadata(f.id,f.name,f.appProperties,etag)).etag;plan.afterEtag=etag;}const result=await drive.write(f.id,f.box,etag);plan.afterEtag=result.etag;if(f.id===s.account.rootId)rootSaved=true;s.drive.sources.set(f.id,f.source);}
+ }catch(e){const rootPlan=applied.find(p=>p.f.id===s.account.rootId);if(rootPlan&&!rootSaved){try{const latest=await rootPlan.drive.read(rootPlan.f.id);if(JSON.stringify(latest.box)===JSON.stringify(rootPlan.f.box))rootSaved=true;}catch{e.message+=' · Chưa xác định được kết quả lưu file tổ chức. Kiểm tra kết nối rồi phục hồi lại.';s.readCache.clear();throw e;}}if(!rootSaved){const failures=[];for(const p of applied.reverse()){try{const latest=await p.drive.read(p.f.id);if(JSON.stringify(latest.box)===JSON.stringify(p.f.box))p.afterEtag=latest.etag;if(!p.afterEtag)continue;const r=await p.drive.write(p.f.id,p.before,p.afterEtag);const metadata=await p.drive.writeMetadata(p.f.id,p.info.name,p.info.appProperties,r.etag);if(p.meta.labels?.trashed)await p.drive.setTrashed(p.f.id,true,metadata.etag);}catch(err){failures.push(p.f.id);}}if(!failures.length)for(const id of uploaded)try{await s.drive.trash(id);}catch{failures.push(id);}if(failures.length)e.message+=' · Chưa hoàn tác được '+failures.length+' file. Không tiếp tục nhập liệu; thử phục hồi lại.';}else e.message='Dữ liệu đã được phục hồi. Đăng xuất rồi đăng nhập bằng mật khẩu trong bản sao lưu để hoàn tất đồng bộ. '+e.message;s.readCache.clear();throw e;}
+ for(const id of new Set([...current.value.cars,...current.value.transactions].flatMap(r=>r.attachments||[]).map(f=>f.driveFileId).filter(Boolean)))try{await s.drive.trash(id);}catch(e){if(e.status!==404)s.warnings.push('Chưa dọn được tệp đính kèm cũ: '+e.message);}
+ // Remove accounts created after the snapshot, otherwise duplicate usernames could remain.
+ const retained=new Set(files.map(f=>f.id));for(const id of ids(s,current.value))if(!retained.has(id)&&id!==s.profileId)try{await s.drive.trash(id);}catch(e){s.warnings.push('Chưa dọn được tài khoản tạo sau bản sao lưu: '+e.message);}
+ s.readCache.clear();s.publishHashes.clear();s.operationReads?.clear();
+ await s.publish(restored);
+ return {restored:true,summary:summary(restored,b.createdAt,files),warnings:s.warnings};
+}
