@@ -6,8 +6,8 @@ android {
         applicationId 'vn.soxe.organization'
         minSdk 24
         targetSdk 35
-        versionCode 460
-        versionName '4.6.0'
+        versionCode 470
+        versionName '4.7.0'
     }
     buildTypes { release { minifyEnabled false } }
 }

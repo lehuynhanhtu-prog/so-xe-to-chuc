@@ -27,11 +27,11 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.6.0.zip
-          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.6.0.mobileconfig
-          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.6.0.zip dist/
-          if (Test-Path docs/downloads/So-Xe-To-Chuc-Android-4.6.0.apk) {
-            Copy-Item docs/downloads/So-Xe-To-Chuc-Android-4.6.0.apk dist/
+          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.7.0.zip
+          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.7.0.mobileconfig
+          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.7.0.zip dist/
+          if (Test-Path docs/downloads/So-Xe-To-Chuc-Android-4.7.0.apk) {
+            Copy-Item docs/downloads/So-Xe-To-Chuc-Android-4.7.0.apk dist/
           }
           Get-ChildItem dist -File | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
@@ -41,16 +41,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = 'platform-v4.6.0'
+          $tag = 'platform-v4.7.0'
           $assets = (Get-ChildItem dist -File).FullName
           if (gh release view $tag 2>$null) {
             gh release upload $tag @assets --clobber
           } else {
-            gh release create $tag @assets --target $env:GITHUB_SHA --title 'Sổ Xe Tổ Chức 4.6.0 — Android, Windows, iOS, Web' --notes 'Cùng chức năng và dữ liệu Drive. Windows Portable và APK Android mở Web trong trình duyệt hệ thống; iOS cài biểu tượng Web App bằng hồ sơ hoặc Safari. Cần Internet để đăng nhập và đồng bộ. Không yêu cầu cấu hình OAuth localhost.'
+            gh release create $tag @assets --target $env:GITHUB_SHA --title 'Sổ Xe Tổ Chức 4.7.0 — Android, Windows, iOS, Web' --notes 'Cùng chức năng và dữ liệu Drive. Windows Portable và APK Android mở Web trong trình duyệt hệ thống; iOS cài biểu tượng Web App bằng hồ sơ hoặc Safari. Cần Internet để đăng nhập và đồng bộ. Không yêu cầu cấu hình OAuth localhost.'
           }
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed' }
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Platforms-4.6.0
+          name: So-Xe-To-Chuc-Platforms-4.7.0
           path: dist/
           if-no-files-found: error

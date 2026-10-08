@@ -192,3 +192,11 @@ NSD mở ngay form đăng nhập khi đã có gợi ý Google, chỉ liệt kê 
 Admin chính và Admin bổ sung có toàn quyền quản lý dữ liệu; xóa tổ chức phải xác nhận tên và mật khẩu của Admin đang đăng nhập. Admin chỉ xem xem được toàn bộ dữ liệu/báo cáo và xuất báo cáo, không thêm/sửa/xóa dữ liệu hoặc phục hồi.
 
 NSD thấy giao dịch do mình nhập (kể cả nhập hộ xe khác) và giao dịch của xe đang quản lý. Chỉ sửa/xóa giao dịch do mình nhập; giao dịch người khác nhập hộ xe mình chỉ xem. Báo cáo chi phí và Excel dùng cùng phạm vi này. Báo cáo thời gian quản lý và Excel chỉ có giai đoạn quản lý của chính NSD, kể cả các giai đoạn đã kết thúc; không có lựa chọn tất cả NSD. API trả về NSD chỉ chứa các giai đoạn của mình; lịch phân công đầy đủ được xử lý nội bộ để kiểm tra bàn giao.
+
+### 4.7 — Điện thoại và đăng nhập sinh trắc học
+
+Điện thoại dùng thanh điều hướng dưới, menu Tài khoản, form nhập gọn và danh sách chi phí dạng thẻ. Mọi ô mật khẩu có Hiện/Ẩn, mặc định ẩn.
+
+Đăng nhập bằng mật khẩu trước, mở Tài khoản → Vân tay, xác thực mật khẩu hiện tại và bật bằng hộp thoại hệ thống. WebAuthn PRF + HKDF/AES-GCM bảo vệ thông tin đăng nhập lưu cục bộ; không lưu mật khẩu/khóa mở dạng rõ. Đăng nhập sinh trắc học vẫn xác thực mật khẩu hiện tại qua Drive và giữ nguyên phân quyền. Thiết bị/trình duyệt cần hỗ trợ authenticator nền tảng + PRF. Hệ thống có thể cho dùng vân tay, khuôn mặt hoặc khóa màn hình tùy thiết bị; app không thu thập ảnh vân tay. Mật khẩu luôn dùng được thay thế. Sau đổi/đặt lại mật khẩu, bật lại vân tay. Tắt trong Tài khoản → Vân tay sẽ xóa bản mã cục bộ, không xóa passkey trong trình quản lý mật khẩu của hệ điều hành. Google vẫn có thể yêu cầu cấp lại quyền khi phiên hết hạn.
+
+Android 4.7 mở Custom Tab của trình duyệt hệ thống để OAuth Google và sinh trắc học hoạt động cùng phiên trình duyệt. Windows Portable và iOS Web App dùng chung bản Web.

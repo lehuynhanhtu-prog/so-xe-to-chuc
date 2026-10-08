@@ -42,7 +42,7 @@
 			<key>Label</key>
 			<string>Sổ Xe Tổ Chức</string>
 			<key>PayloadDescription</key>
-			<string>Cài Sổ Xe Tổ Chức lên màn hình chính của iPhone hoặc iPad.</string>
+			<string>Sổ Xe Tổ Chức 4.7 — giao diện điện thoại, hiện/ẩn mật khẩu và sinh trắc học trên thiết bị hỗ trợ.</string>
 			<key>PayloadDisplayName</key>
 			<string>Sổ Xe Tổ Chức</string>
 			<key>PayloadIdentifier</key>
@@ -60,7 +60,7 @@
 		</dict>
 	</array>
 	<key>PayloadDescription</key>
-	<string>Hồ sơ cài đặt Web App Sổ Xe Tổ Chức. Không cài VPN, chứng chỉ hoặc quyền quản trị thiết bị.</string>
+	<string>Hồ sơ cài đặt Web App Sổ Xe Tổ Chức 4.7. Không cài VPN, chứng chỉ hoặc quyền quản trị thiết bị.</string>
 	<key>PayloadDisplayName</key>
 	<string>Cài ứng dụng Sổ Xe Tổ Chức</string>
 	<key>PayloadIdentifier</key>

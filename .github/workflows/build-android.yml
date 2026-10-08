@@ -31,7 +31,7 @@ jobs:
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" android-dist/
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Android-4.6.0-unsigned
+          name: So-Xe-To-Chuc-Android-4.7.0-unsigned
           path: android-dist/
           retention-days: 30
           if-no-files-found: error

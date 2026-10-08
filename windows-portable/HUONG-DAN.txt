@@ -1,4 +1,4 @@
-SỔ XE TỔ CHỨC — WINDOWS PORTABLE 4.6.0
+SỔ XE TỔ CHỨC — WINDOWS PORTABLE 4.7.0
 
 1. Giải nén ZIP, chạy SoXeLauncher.exe hoặc Chay-So-Xe.bat.
 2. Ứng dụng mở trong trình duyệt mặc định. Cần Internet để đăng nhập và lưu Drive.
