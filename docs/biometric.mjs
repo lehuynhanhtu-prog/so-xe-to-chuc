@@ -4,10 +4,10 @@ const encode=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 const fail=m=>{throw new Error(m);};
 export class BiometricLogin{
- constructor({storage=globalThis.localStorage,credentials=globalThis.navigator?.credentials,platform=globalThis.PublicKeyCredential,origin=globalThis.location?.origin,path=globalThis.location?.pathname}={}){this.storage=storage;this.credentials=credentials;this.platform=platform;this.origin=origin;this.path=path;this.rpId=new URL(origin).hostname;this.key='soxe-biometric-v1:'+origin+path;}
+ constructor({storage,credentials=globalThis.navigator?.credentials,platform=globalThis.PublicKeyCredential,origin=globalThis.location?.origin,path=globalThis.location?.pathname}={}){try{this.storage=storage??globalThis.localStorage;}catch{this.storage=null;}this.credentials=credentials;this.platform=platform;this.origin=origin;this.path=path;this.rpId=new URL(origin).hostname;this.key='soxe-biometric-v1:'+origin+path;}
  saved(){try{const v=JSON.parse(this.storage.getItem(this.key));return v?.version===1&&['credentialId','salt','iv','ciphertext'].every(k=>typeof v[k]==='string'&&v[k].length>0)?v:null;}catch{return null;}}
- forget(){this.storage.removeItem(this.key);}
- async available(){try{return !!this.credentials&&!!this.platform&&await this.platform.isUserVerifyingPlatformAuthenticatorAvailable();}catch{return false;}}
+ forget(){try{this.storage?.removeItem(this.key);}catch{}}
+ async available(){try{if(!this.storage||typeof this.storage.setItem!=='function')return false;this.storage.getItem(this.key);return !!this.credentials&&!!this.platform&&await this.platform.isUserVerifyingPlatformAuthenticatorAvailable();}catch{return false;}}
  context(v){return this.origin+this.path+'|soxe-biometric-v1|'+v.credentialId+'|'+v.salt;}
  async aes(secret,v){const master=await crypto.subtle.importKey('raw',secret,'HKDF',false,['deriveKey']);return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:decode(v.salt),info:encoder.encode(this.origin+this.path+'|soxe-biometric-v1')},master,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
  clientData(credential,challenge,type){const data=JSON.parse(decoder.decode(credential.response.clientDataJSON));if(data.type!==type||data.origin!==this.origin||data.challenge!==encode(challenge)||data.crossOrigin)fail('Xác nhận sinh trắc học không đúng ứng dụng.');}
