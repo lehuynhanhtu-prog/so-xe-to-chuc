@@ -36,7 +36,14 @@ final class LedgerEngine {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return true; }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 if ("appassets.androidplatform.net".equals(request.getUrl().getHost())
-                        && "https".equals(request.getUrl().getScheme())) return loader.shouldInterceptRequest(request.getUrl());
+                        && "https".equals(request.getUrl().getScheme())) {
+                    String path=request.getUrl().getPath();
+                    if(path!=null&&path.startsWith("/assets/")&&path.endsWith(".mjs")&&!path.contains("..")){
+                        try{return new WebResourceResponse("text/javascript","UTF-8",context.getAssets().open(path.substring(8)));}
+                        catch(java.io.IOException ignored){return new WebResourceResponse("text/plain","UTF-8",404,"Missing",new HashMap<>(),new ByteArrayInputStream(new byte[0]));}
+                    }
+                    return loader.shouldInterceptRequest(request.getUrl());
+                }
                 if ("www.googleapis.com".equals(request.getUrl().getHost())
                         && "https".equals(request.getUrl().getScheme())) return null;
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));

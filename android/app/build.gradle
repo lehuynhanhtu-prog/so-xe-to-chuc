@@ -21,10 +21,14 @@ dependencies {
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'com.google.android.gms:play-services-auth:22.0.0'
 }
-// Package the same audited Drive/permission/crypto core as Web, without its UI.
-def coreAssets = tasks.register('packageLedgerCore', Copy) {
-    from('../../web') { include '*.mjs' }
-    into(layout.buildDirectory.dir('generated/ledgerAssets/core'))
+// Build a local runtime, with no Web UI, from the same audited ledger core.
+def coreAssets = tasks.register('packageLedgerCore', Exec) {
+    workingDir rootDir.parentFile
+    commandLine 'node', 'tools/build-native-core.mjs'
+    inputs.files(fileTree('../../web') { include '*.mjs' })
+    inputs.file('src/main/assets/native-engine.mjs')
+    inputs.file('../../tools/build-native-core.mjs')
+    outputs.file(layout.buildDirectory.file('generated/ledgerAssets/native-runtime.js'))
 }
 android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir('generated/ledgerAssets'))
 tasks.named('preBuild').configure { dependsOn(coreAssets) }

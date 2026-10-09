@@ -2,7 +2,7 @@
 
 Giao diện dùng Android Views: đăng nhập, hiện mật khẩu, Tổng quan, Xe, chi phí, phân công, NSD, bàn giao, báo cáo, tệp đính kèm, sao lưu và phục hồi. Không mở trang Web hoặc trình duyệt để sử dụng ứng dụng.
 
-Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK và chạy trong một WebView không gắn vào giao diện. Đây là bộ xử lý JavaScript cục bộ, không phải màn hình Web. OAuth dùng Google Play services; lịch, chọn tệp và xác thực sinh trắc học dùng Android. Cần kết nối Internet để đọc/lưu Drive. Cần Android 7 trở lên, Google Play services và Android System WebView được cập nhật.
+Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK và chạy trong một WebView không gắn vào giao diện. Đây là bộ xử lý JavaScript cục bộ, không phải màn hình Web. OAuth dùng Google Play services; lịch, chọn tệp và xác thực sinh trắc học dùng Android. Cần kết nối Internet để đọc/lưu Drive. Cần Android 7 trở lên, Google Play services và Android System WebView được cập nhật (Chromium 74 trở lên).
 
 ## Cấu hình Google một lần
 
@@ -30,7 +30,7 @@ Nếu chưa thấy dữ liệu tạo từ Web, kiểm tra app đang dùng đúng
 - Sao lưu đầy đủ dữ liệu và tệp; phục hồi yêu cầu xem trước, tên tổ chức và mật khẩu Admin.
 - Bản native xuất giao dịch CSV; các mẫu Excel chi tiết hiện vẫn ở bản Web.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
-- Bộ xử lý Web Crypto yêu cầu System WebView hiện đại (hỗ trợ ES modules, structuredClone và crypto.randomUUID).
+- Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Mã hóa vẫn dùng Web Crypto AES-GCM/PBKDF2.
 - Chưa có xác minh đăng nhập Google và vân tay trên thiết bị thật của chủ dự án; cần cấu hình OAuth Android ở trên và kiểm tra với tài khoản của bạn.
 
 ## Kiểm tra và build

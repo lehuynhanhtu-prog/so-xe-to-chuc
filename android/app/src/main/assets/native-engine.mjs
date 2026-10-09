@@ -4,6 +4,19 @@ import {DualService} from './core/dual-service.mjs';
 import {vehicleReminders} from './core/reminders.mjs';
 import {monthlySummary} from './core/reports.mjs';
 import {managementPeriods,durationText} from './core/handovers.mjs';
+// Older supported System WebViews retain the same JSON-ledger semantics.
+globalThis.structuredClone ??= function clone(value){
+ if(value===null||typeof value!=='object')return value;
+ if(Array.isArray(value))return value.map(clone);
+ if(value instanceof Uint8Array)return value.slice();
+ return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,clone(v)]));
+};
+crypto.randomUUID ??= function(){
+ const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+ const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+ return [hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+};
+String.prototype.replaceAll ??= function(search,replacement){return this.split(search).join(replacement);};
 export const categories={fuel:'Tiền xăng',charge:'Sạc xe',battery_rental:'Thuê pin',maintenance:'Bảo dưỡng',parts:'Phụ tùng',insurance:'Bảo hiểm TNDS',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Khác'};
 let service,primary,secondary,identity='';
 export function enrich(result){if(result?.data){const state=result.data;return {...result,reminders:vehicleReminders(state,new Date().toLocaleDateString('sv-SE')),monthly:monthlySummary(state,{},categories),periods:managementPeriods(state).map(p=>({...p,duration:durationText(p.milliseconds)}))};}return result;}
