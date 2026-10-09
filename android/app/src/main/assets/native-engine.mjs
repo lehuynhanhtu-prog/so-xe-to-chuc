@@ -29,7 +29,11 @@ export async function dispatch(action,args){
  }
  if(action==='logout'){service=null;identity='';return {loggedOut:true};}
  if(!service)throw new Error('Kết nối tài khoản Google trước.');
- if(action==='login')return enrich(await service.loginNamed(args.username,args.password));
+ if(action==='login'){
+  const selected=await service.resolveNamed(args.username,args.password);
+  if(selected.account.role==='admin'&&!primary)return {needsPrimary:true,ownerEmail:selected.account.ownerEmail};
+  return enrich(await service.login(selected.profileId,args.password));
+ }
  if(action==='createOrganization')return enrich(await service.createOrganization(args));
  return enrich(await service.api(action,args));
 }

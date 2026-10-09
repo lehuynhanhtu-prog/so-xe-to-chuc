@@ -23,3 +23,21 @@ globalThis.fetch=async()=>new Response(JSON.stringify({files:[]}),{headers:{'Con
 await assert.rejects(native.dispatch('login',{username:'missing',password:'000000'}),/Tên đăng nhập/);
 await native.dispatch('logout',{});
 console.log('Native engine: shared module bundle, role-scoped reports, large amounts, account pinning and login errors passed.');
+// An additional Admin typed on a previously NSD-only device must connect primary,
+// rather than failing silently or accepting a partial storage configuration.
+const {lock,randomKey}=await import('../web/crypto.mjs');
+const adminAccount={model:'two-google-v2',orgId:crypto.randomUUID(),userId:crypto.randomUUID(),username:'admin2',email:'admin2@users.invalid',role:'admin',ownerEmail:'admin@gmail.com',secondaryEmail:'storage@gmail.com',rootId:'root',rootKey:randomKey(),mustChange:true};
+const encrypted=await lock(adminAccount,'000000','account',100000);
+globalThis.fetch=async(url,options={})=>{
+ let body;
+ if(url.includes('/drive/v2/files/profile'))body={etag:'1',owners:[{emailAddress:'storage@gmail.com'}],labels:{trashed:false}};
+ else if(url.includes('/drive/v3/files/profile?alt=media'))body=encrypted;
+ else body={files:options.headers.Authorization==='Bearer s'?[{id:'profile',appProperties:{model:'two-google-v2',username:'admin2',orgId:adminAccount.orgId}}]:[]};
+ return new Response(JSON.stringify(body),{headers:{'Content-Type':'application/json'}});
+};
+await native.dispatch('configure',{secondaryEmail:'storage@gmail.com',secondaryToken:'s'});
+assert.deepEqual(await native.dispatch('login',{username:'admin2',password:'000000'}),{needsPrimary:true,ownerEmail:'admin@gmail.com'});
+await native.dispatch('configure',{primaryEmail:'admin@gmail.com',secondaryEmail:'storage@gmail.com',primaryToken:'p',secondaryToken:'s'});
+assert.deepEqual(await native.dispatch('login',{username:'admin2',password:'000000'}),{mustChange:true});
+await native.dispatch('logout',{});
+console.log('Native additional Admin connection handoff passed.');

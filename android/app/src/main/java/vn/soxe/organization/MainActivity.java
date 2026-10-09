@@ -139,9 +139,11 @@ public class MainActivity extends FragmentActivity {
     private void doLogin(String username,String password){
         if(username.trim().isEmpty()||password.isEmpty()){message("Nhập tên đăng nhập và mật khẩu.");return;}
         loginName=username.trim();loginPassword=password;
+        if(loginName.equalsIgnoreCase("admin")&&!adminMode){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();}
         withGoogle(()->engine.call("login",obj("username",loginName,"password",loginPassword),(result,error)->{
             progress(false);
             if(error!=null){loginPassword="";message(error);return;}
+            if(result.optBoolean("needsPrimary")){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();doLogin(loginName,loginPassword);return;}
             if(result.optBoolean("mustChange")){changePassword(true);return;}
             if(result.optBoolean("deletionPending")){message("Tổ chức đang chờ xóa. Hoàn tất thao tác trên bản Web bằng Admin sở hữu.");return;}
             accept(result);render();
@@ -340,9 +342,9 @@ public class MainActivity extends FragmentActivity {
     }
     private void reports(){
         double total=0;for(JSONObject t:sortedTransactions())total+=t.optDouble("amount");text(body,"Chi phí trong phạm vi được xem: "+money(total)+" ₫",19,true);
-        JSONArray months=presentation.optJSONArray("monthly");if(months!=null)for(int i=0;i<months.length();i++){JSONObject m=months.optJSONObject(i);card(m.optString("plate")+" · "+m.optString("month"),"Tổng: "+money(m.optDouble("total"))+" ₫\nSố lít: "+money(m.optDouble("liters"))+(m.isNull("rate")?"":" · "+money(m.optDouble("rate"))+" L/100km"),null);}
+        JSONArray months=presentation.optJSONArray("monthly");if(months!=null)for(int i=0;i<months.length();i++){JSONObject m=months.optJSONObject(i);card(m.optString("plate")+" · "+month(m.optString("month")),"Tổng: "+money(m.optDouble("total"))+" ₫\nSố lít: "+money(m.optDouble("liters"))+(m.isNull("rate")?"":" · "+money(m.optDouble("rate"))+" L/100km"),null);}
         text(body,"Thời gian quản lý xe",18,true);JSONArray periods=presentation.optJSONArray("periods");
-        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);card(person(p.optString("userId"))+" · "+car(p.optString("carId")),date(p.optString("from"))+" → "+(p.optBoolean("ongoing")?"Đang quản lý":date(p.optString("to")))+"\n"+p.optString("duration"),null);}
+        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(p.optBoolean("ongoing")?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null);}
         button(body,"Xuất giao dịch CSV",this::exportCsv);
     }
     private void users(){
@@ -361,7 +363,7 @@ public class MainActivity extends FragmentActivity {
     private void handovers(){
         shell("Bàn giao xe");if(!"viewer".equals(me("role")))button(body,"+ Nhập bàn giao",()->editHandover(obj()));
         for(int i=0;i<list("handovers").length();i++){JSONObject h=list("handovers").optJSONObject(i);card(car(h.optString("carId"))+" · "+date(h.optString("date")),person(h.optString("fromUserId"))+" → "+person(h.optString("toUserId"))+"\nNgười nhập: "+person(h.optString("enteredBy")),()->{
-            shell("Chi tiết bàn giao");text(body,person(h.optString("fromUserId"))+" → "+person(h.optString("toUserId"))+"\n"+date(h.optString("at"))+" "+localTime(h.optString("at"))+"\nODO "+money(h.optDouble("odo"))+"\n"+h.optString("note"),17,false);
+            shell("Chi tiết bàn giao");text(body,person(h.optString("fromUserId"))+" → "+person(h.optString("toUserId"))+"\n"+localTime(h.optString("at"))+"\nODO "+money(h.optDouble("odo"))+"\n"+h.optString("note"),17,false);
             if(editable(h)){button(body,"Sửa",()->editHandover(h));button(body,"Xóa",()->confirmDelete("deleteHandover",h));}button(body,"Quay lại",this::handovers);
         });}button(body,"Quay lại",this::render);
     }
@@ -377,7 +379,8 @@ public class MainActivity extends FragmentActivity {
         }catch(Exception e){message("Ngày giờ không hợp lệ.");}});button(body,"Hủy",this::handovers);
     }
     private static SimpleDateFormat isoFormat(){SimpleDateFormat f=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",Locale.ROOT);f.setTimeZone(TimeZone.getTimeZone("UTC"));return f;}
-    private static String localTime(String iso){try{return new SimpleDateFormat("HH:mm",Locale.ROOT).format(isoFormat().parse(iso));}catch(Exception e){return "";}}
+    private static String month(String value){return value.length()==7?value.substring(5,7)+"/"+value.substring(0,4):value;}
+    private static String localTime(String iso){try{return new SimpleDateFormat("dd/MM/yyyy HH:mm",Locale.ROOT).format(isoFormat().parse(iso));}catch(Exception e){return "";}}
     private static String today(){return new SimpleDateFormat("yyyy-MM-dd",Locale.ROOT).format(new Date());}
     @Override public void onBackPressed(){
         if(busy)return;
@@ -488,7 +491,7 @@ public class MainActivity extends FragmentActivity {
             if(key.equals("username"))edit.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
             edit.setText(initial);edit.setMinHeight(dp(48));group.addView(edit);views.put(key,edit);return edit;
         }
-        void number(String key,String label,double value){input(key,label,value==0?"":String.valueOf(value).replaceAll("\\.0$",""),true);}
+        void number(String key,String label,double value){if(!Double.isFinite(value))value=0;input(key,label,value==0?"":String.valueOf(value).replaceAll("\\.0$",""),true);}
         void password(String key,String label,String initial){
             secrets.add(key);EditText e=input(key,label,initial,false);e.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
             CheckBox show=new CheckBox(MainActivity.this);show.setText("Hiện mật khẩu");body.addView(show);

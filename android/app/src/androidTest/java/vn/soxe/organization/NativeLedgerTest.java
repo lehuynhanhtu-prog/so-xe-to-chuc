@@ -30,6 +30,7 @@ public class NativeLedgerTest {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
             onView(withText("NSD / Admin chỉ xem")).perform(click());
             onView(withText("Đăng nhập NSD")).check(matches(isDisplayed()));
+            activity.onActivity(a->screenshot(a,"native-login.png"));
             onView(withText("Hiện mật khẩu")).check(matches(isDisplayed()));
             onView(withText("Hiện mật khẩu")).perform(click());
             onView(withText("Đăng nhập")).check(matches(isDisplayed()));
@@ -47,6 +48,17 @@ public class NativeLedgerTest {
         assertTrue("Bundled module engine did not start",latch.await(30,TimeUnit.SECONDS));
         assertNull(error[0]);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->engine[0].destroy());
+    }
+    private static void screenshot(MainActivity a,String name) {
+        try {
+            {
+                android.view.View view=a.getWindow().getDecorView();
+                android.graphics.Bitmap image=android.graphics.Bitmap.createBitmap(view.getWidth(),view.getHeight(),android.graphics.Bitmap.Config.ARGB_8888);
+                view.draw(new android.graphics.Canvas(image));
+                try(java.io.FileOutputStream out=new java.io.FileOutputStream(new java.io.File(a.getExternalFilesDir(null),name))){image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}
+                catch(Exception e){throw new AssertionError(e);}finally{image.recycle();}
+            }
+        }catch(Exception e){throw new AssertionError(e);}
     }
     private static void fixture(MainActivity a,String role,String author) {
         try {
@@ -67,9 +79,12 @@ public class NativeLedgerTest {
     @Test public void adminCanEditAndLargeMoneyInputIsNotTruncated() {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)){
             activity.onActivity(a->fixture(a,"admin","driver2"));
+            onView(withText("Tổ chức kiểm thử")).check(matches(isDisplayed()));
+            activity.onActivity(a->screenshot(a,"native-overview.png"));
             onView(withText(org.hamcrest.Matchers.containsString("· 123.456.789"))).perform(click());
             onView(withText("Sửa giao dịch")).perform(scrollTo(),click());
-            onView(withText("123.456.789")).perform(scrollTo(),replaceText("987654321"),closeSoftKeyboard());
+            onView(withText("123.456.789")).perform(scrollTo(),replaceText("987654321"));
+            androidx.test.espresso.Espresso.closeSoftKeyboard();
             onView(withText("987.654.321")).check(matches(isDisplayed()));
         }
     }

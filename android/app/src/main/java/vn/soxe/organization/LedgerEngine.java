@@ -17,6 +17,8 @@ import java.util.Map;
 final class LedgerEngine {
     interface Callback { void accept(JSONObject result, String error); }
     private final WebView runtime;
+    private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean destroyed;
     private final Map<Integer, Callback> callbacks = new HashMap<>();
     private int sequence;
     private boolean ready;
@@ -50,9 +52,10 @@ final class LedgerEngine {
             }
         });
         runtime.addJavascriptInterface(new Object() {
-            @JavascriptInterface public void ready() { runtime.post(() -> { ready = true; LedgerEngine.this.onReady.run(); }); }
+            @JavascriptInterface public void ready() { main.post(() -> { if(destroyed)return; ready = true; LedgerEngine.this.onReady.run(); }); }
             @JavascriptInterface public void reply(int id, String json) {
-                runtime.post(() -> {
+                main.post(() -> {
+                    if(destroyed)return;
                     Callback callback = callbacks.remove(id);
                     if (callback == null) return;
                     try {
@@ -69,10 +72,10 @@ final class LedgerEngine {
         int id = ++sequence;
         callbacks.put(id, callback);
         runtime.evaluateJavascript("nativeCall(" + id + "," + JSONObject.quote(action) + "," + args + ")", null);
-        runtime.postDelayed(() -> {
+        main.postDelayed(() -> {
             Callback pending = callbacks.remove(id);
             if (pending != null) pending.accept(null, "Thao tác chưa hoàn tất. Kiểm tra mạng và đồng bộ để xác nhận trước khi nhập lại.");
         }, 180000);
     }
-    void destroy() { callbacks.clear(); onReady = () -> {}; runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
+    void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {}; runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
 }
