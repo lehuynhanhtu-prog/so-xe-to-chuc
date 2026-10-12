@@ -28,7 +28,7 @@ Nếu chưa thấy dữ liệu tạo từ Web, kiểm tra app đang dùng đúng
 - Admin toàn quyền; viewer chỉ xem; NSD sửa/xóa bản ghi do mình nhập. Báo cáo thời gian NSD chỉ chứa kỳ quản lý của chính mình.
 - Đồng bộ tự động mỗi phút khi ứng dụng ở foreground; không xóa nội dung form đang nhập.
 - Sao lưu đầy đủ dữ liệu và tệp; phục hồi yêu cầu xem trước, tên tổ chức và mật khẩu Admin.
-- Bản native xuất giao dịch CSV; các mẫu Excel chi tiết hiện vẫn ở bản Web.
+- Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
 - Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Mã hóa vẫn dùng Web Crypto AES-GCM/PBKDF2.
 - Chưa có xác minh đăng nhập Google và vân tay trên thiết bị thật của chủ dự án; cần cấu hình OAuth Android ở trên và kiểm tra với tài khoản của bạn.

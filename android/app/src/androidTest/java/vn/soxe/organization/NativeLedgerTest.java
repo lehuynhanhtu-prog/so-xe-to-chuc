@@ -49,13 +49,20 @@ public class NativeLedgerTest {
         assertNull(error[0]);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->engine[0].destroy());
     }
+    @androidx.annotation.RequiresApi(29)
     private static void screenshot(MainActivity a,String name) {
         try {
             {
                 android.view.View view=a.getWindow().getDecorView();
                 android.graphics.Bitmap image=android.graphics.Bitmap.createBitmap(view.getWidth(),view.getHeight(),android.graphics.Bitmap.Config.ARGB_8888);
                 view.draw(new android.graphics.Canvas(image));
-                try(java.io.FileOutputStream out=new java.io.FileOutputStream(new java.io.File(a.getExternalFilesDir(null),name))){image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}
+                android.content.ContentValues values=new android.content.ContentValues();
+                values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,name);
+                values.put(android.provider.MediaStore.Images.Media.MIME_TYPE,"image/png");
+                values.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,"Pictures/SoXeNative");
+                android.net.Uri uri=a.getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
+                if(uri==null)throw new IllegalStateException("No screenshot URI");
+                try(java.io.OutputStream out=a.getContentResolver().openOutputStream(uri)){image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}
                 catch(Exception e){throw new AssertionError(e);}finally{image.recycle();}
             }
         }catch(Exception e){throw new AssertionError(e);}

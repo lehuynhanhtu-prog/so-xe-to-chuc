@@ -2,7 +2,8 @@ import {Drive} from './core/drive.mjs';
 import {DualDrive} from './core/dual-drive.mjs';
 import {DualService} from './core/dual-service.mjs';
 import {vehicleReminders} from './core/reminders.mjs';
-import {monthlySummary} from './core/reports.mjs';
+import {monthlySummary,transactionsExcel,reportsExcel,excelDocument} from './core/reports.mjs';
+import {displayDate} from './core/dates.mjs';
 import {managementPeriods,durationText} from './core/handovers.mjs';
 // Older supported System WebViews retain the same JSON-ledger semantics.
 globalThis.structuredClone ??= function clone(value){
@@ -20,6 +21,14 @@ String.prototype.replaceAll ??= function(search,replacement){return this.split(s
 export const categories={fuel:'Tiền xăng',charge:'Sạc xe',battery_rental:'Thuê pin',maintenance:'Bảo dưỡng',parts:'Phụ tùng',insurance:'Bảo hiểm TNDS',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Khác'};
 let service,primary,secondary,identity='';
 export function enrich(result){if(result?.data){const state=result.data;return {...result,reminders:vehicleReminders(state,new Date().toLocaleDateString('sv-SE')),monthly:monthlySummary(state,{},categories),periods:managementPeriods(state).map(p=>({...p,duration:durationText(p.milliseconds)}))};}return result;}
+export function exportExcel(state,kind,filters={}){
+ if(filters.from&&filters.to&&filters.from>filters.to)throw new Error('Ngày bắt đầu phải trước ngày kết thúc.');
+ if(kind==='transactions')return transactionsExcel(state,filters,categories);
+ if(kind==='monthly')return reportsExcel(state,filters,categories);
+ if(kind!=='management')throw new Error('Loại báo cáo không hợp lệ.');
+ const who=id=>state.users.find(u=>u.id===id)?.name||'—',car=id=>state.carChoices.find(c=>c.id===id)?.plate||'—';
+ return excelDocument('Thời gian quản lý',['Người quản lý/lái xe','Biển số','Từ ngày','Đến ngày','Thời gian','Trạng thái'],managementPeriods(state,filters).map(p=>[who(p.userId),car(p.carId),displayDate(p.from.slice(0,10))+' '+p.from.slice(11,16)+' UTC',displayDate(p.to.slice(0,10))+' '+p.to.slice(11,16)+' UTC',durationText(p.milliseconds),p.ongoing?'Đang quản lý':'Đã kết thúc']));
+}
 export async function dispatch(action,args){
  if(action==='configure'){
   const key=JSON.stringify([args.primaryEmail||'',args.secondaryEmail]);
@@ -34,6 +43,7 @@ export async function dispatch(action,args){
   if(selected.account.role==='admin'&&!primary)return {needsPrimary:true,ownerEmail:selected.account.ownerEmail};
   return enrich(await service.login(selected.profileId,args.password));
  }
+ if(action==='exportExcel'){const result=await service.api('read',{});return {document:exportExcel(result.data,args.kind,args.filters||{})};}
  if(action==='createOrganization')return enrich(await service.createOrganization(args));
  return enrich(await service.api(action,args));
 }

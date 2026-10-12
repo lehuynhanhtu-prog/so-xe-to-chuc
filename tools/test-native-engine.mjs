@@ -10,6 +10,12 @@ const data={me:{id:'self',role:'driver'},cars:[{id:'car',plate:'51A',odo:1000}],
 {id:'visible',carId:'car',enteredBy:'someone',date:'2026-10-02',updatedAt:'2026-10-02',amount:200000,odo:1100,category:'fuel',liters:5},
 {id:'forbidden',carId:'other',enteredBy:'someone',date:'2026-10-01',updatedAt:'2026-10-01',amount:99999,odo:100,category:'fuel',liters:1}
 ],assignments:[{id:'a',userId:'self',carId:'car',startedAt:'2026-10-01T00:00:00.000Z'},{id:'b',userId:'someone',carId:'other',startedAt:'2026-10-01T00:00:00.000Z'}]};
+const exportState={...data,users:[{id:'self',name:'SELF'},{id:'someone',name:'OTHER_PERSON'}]};
+const xml=native.exportExcel(exportState,'transactions',{});
+assert.ok(xml.includes('123456789'));assert.ok(xml.includes('ODO (km)'));assert.ok(!xml.includes('99999'));
+assert.ok(!native.exportExcel(exportState,'management',{}).includes('OTHER_PERSON'));
+assert.ok(!native.exportExcel(exportState,'transactions',{from:'2026-10-02'}).includes('123456789'));
+assert.throws(()=>native.exportExcel(exportState,'monthly',{from:'2026-10-02',to:'2026-10-01'}),/Ngày bắt đầu/);
 const enriched=native.enrich({data});
 assert.equal(enriched.monthly.length,1);
 assert.equal(enriched.monthly[0].total,123656789);

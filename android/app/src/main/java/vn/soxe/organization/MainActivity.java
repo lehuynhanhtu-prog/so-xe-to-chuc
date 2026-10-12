@@ -346,6 +346,7 @@ public class MainActivity extends FragmentActivity {
         text(body,"Thời gian quản lý xe",18,true);JSONArray periods=presentation.optJSONArray("periods");
         if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(p.optBoolean("ongoing")?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null);}
         button(body,"Xuất giao dịch CSV",this::exportCsv);
+        button(body,"Xuất Excel",this::excelExport);
     }
     private void users(){
         if(!admin())return;shell("Người sử dụng");button(body,"+ Tạo NSD",()->editUser(obj()));
@@ -441,6 +442,20 @@ public class MainActivity extends FragmentActivity {
             Uri uri=FileProvider.getUriForFile(this,getPackageName()+".files",target);
             handler.post(()->{try{startActivity(new Intent(Intent.ACTION_VIEW).setDataAndType(uri,file.optString("type","application/octet-stream")).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION));}catch(Exception e){message("Thiết bị chưa có ứng dụng mở loại tệp này.");}});
         }catch(Exception e){handler.post(()->message("Không mở được tệp đính kèm."));}});
+    }
+    private void excelExport(){
+        shell("Xuất Excel");Form f=new Form();
+        f.options("kind","Báo cáo",new String[]{"transactions","monthly","management"},new String[]{"Giao dịch chi tiết","Chi phí theo tháng","Thời gian quản lý xe"},"transactions");
+        f.select("carId","Xe (— là tất cả)",list("carChoices"),"plate",filterCar,true);
+        String[] keys=new String[CATEGORY_KEYS.length+1],labels=new String[keys.length];keys[0]="";labels[0]="Tất cả";System.arraycopy(CATEGORY_KEYS,0,keys,1,CATEGORY_KEYS.length);System.arraycopy(CATEGORY_NAMES,0,labels,1,CATEGORY_NAMES.length);
+        f.options("category","Loại chi phí",keys,labels,filterCategory);
+        if(!"driver".equals(me("role")))f.select("userId","Người quản lý (báo cáo thời gian)",drivers(),"name","",true);
+        f.date("from","Từ ngày",filterFrom,true);f.date("to","Đến ngày",filterTo,true);
+        text(body,"Xuất trong phạm vi được xem. Loại chi phí áp dụng cho báo cáo chi phí; người quản lý áp dụng cho báo cáo thời gian.",14,false);
+        button(body,"Lưu Excel",()->{
+            JSONObject filters=obj("carId",f.string("carId"),"category",f.string("category"),"from",f.string("from"),"to",f.string("to"),"userId","driver".equals(me("role"))?me("id"):f.string("userId"));
+            operation("exportExcel",obj("kind",f.string("kind"),"filters",filters),r->saveDocument("Bao-cao-"+today()+".xls","application/vnd.ms-excel",r.optString("document").getBytes(java.nio.charset.StandardCharsets.UTF_8)),true);
+        });button(body,"Hủy",this::render);
     }
     private void exportCsv(){
         StringBuilder csv=new StringBuilder("\uFEFFNgày,Biển số,Loại chi phí,Nội dung,Số tiền,ODO,Người nhập,Nhập hộ\r\n");
