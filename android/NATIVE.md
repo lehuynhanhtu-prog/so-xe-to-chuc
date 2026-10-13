@@ -23,7 +23,7 @@ APK 4.8.0 được ký bằng keystore phát hành mới. Vì vậy OAuth Androi
 
 Nếu Android báo không kết nối được Google, kiểm tra lại package name/SHA-1 trong OAuth Android Client và Test users. Nếu hiện thông báo liên quan tới tài khoản, gửi nguyên văn lỗi (che địa chỉ email) để khoanh vùng tiếp.
 
-Sau khi đăng nhập bằng mật khẩu, mở **Tài khoản → Bật đăng nhập bằng vân tay**. Vân tay mở thông tin đăng nhập được mã hóa bằng khóa Android Keystore yêu cầu xác thực từng lần; app vẫn kiểm tra mật khẩu và quyền trên Drive. Nếu Admin đặt lại mật khẩu hoặc đổi vân tay, đăng nhập bằng mật khẩu và bật lại.
+Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng nhập bằng vân tay**. Vân tay mở thông tin đăng nhập được mã hóa bằng khóa Android Keystore yêu cầu xác thực từng lần; app vẫn kiểm tra mật khẩu và quyền trên Drive. Nếu Admin đặt lại mật khẩu hoặc đổi vân tay, đăng nhập bằng mật khẩu và bật lại.
 
 ## Tính tương thích và giới hạn
 
