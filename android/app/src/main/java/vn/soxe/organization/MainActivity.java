@@ -1,6 +1,7 @@
 package vn.soxe.organization;
 
 import android.accounts.Account;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -390,6 +391,7 @@ public class MainActivity extends FragmentActivity {
     private static String month(String value){return value.length()==7?value.substring(5,7)+"/"+value.substring(0,4):value;}
     private static String localTime(String iso){try{return new SimpleDateFormat("dd/MM/yyyy HH:mm",Locale.ROOT).format(isoFormat().parse(iso));}catch(Exception e){return "";}}
     private static String today(){return new SimpleDateFormat("yyyy-MM-dd",Locale.ROOT).format(new Date());}
+    @SuppressLint("MissingSuperCall")
     @Override public void onBackPressed(){
         if(busy)return;
         if(state!=null&&!homeScreen){render();return;}
