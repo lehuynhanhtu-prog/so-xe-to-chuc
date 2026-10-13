@@ -6,7 +6,7 @@ Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK
 
 ## Cấu hình Google một lần
 
-APK 4.8.0 được ký bằng keystore phát hành mới. Vì vậy OAuth Android Client cũ (có SHA-1 của khóa cũ) không xác thực được APK này; cần đăng ký thêm client đúng SHA-1 dưới đây. Nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
+APK 4.8.0 được ký bằng keystore phát hành hiện dùng. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
 
 1. Mở Google Cloud Console, chọn dự án số **862228353042** đang dùng với Sổ Xe cá nhân và Sổ Xe tổ chức.
 2. Mở **Google Auth Platform → Clients** (hoặc **APIs & Services → Credentials**).
@@ -40,4 +40,4 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 
 GitHub Actions chạy Gradle assembleRelease, lintRelease và kiểm thử Android emulator API 29 cho giao diện native, khởi động bộ xử lý cục bộ và phân quyền giao diện. Các kiểm thử nghiệp vụ Drive dùng chung nằm ở tests/dual-drive.test.mjs, tests/handovers.test.mjs và tests/backup-web-ui.test.mjs.
 
-APK 4.8.0 dùng khóa ký mới, nên **không thể cập nhật đè trực tiếp APK 4.7.0**; cần sao lưu dữ liệu rồi gỡ bản cũ trước khi cài 4.8.0. Giữ keystore phát hành mới để dùng cho các bản Android sau. Khóa riêng và mật khẩu ký không được đưa vào repository.
+APK 4.8.0 dùng khóa phát hành hiện dùng, nên có thể cập nhật đè các APK trước đó được ký bằng cùng khóa. Nếu bản đang cài dùng khóa khác hoặc không rõ nguồn, hãy sao lưu dữ liệu rồi gỡ bản đó trước khi cài. Giữ keystore phát hành an toàn để dùng cho các bản Android sau. Khóa riêng và mật khẩu ký không được đưa vào repository.
