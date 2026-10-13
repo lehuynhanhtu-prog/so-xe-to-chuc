@@ -6,21 +6,24 @@ Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK
 
 ## Cấu hình Google một lần
 
+APK 4.8.0 được ký bằng keystore phát hành mới. Vì vậy OAuth Android Client cũ (có SHA-1 của khóa cũ) không xác thực được APK này; cần đăng ký thêm client đúng SHA-1 dưới đây. Nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
+
 1. Mở Google Cloud Console, chọn dự án số **862228353042** đang dùng với Sổ Xe cá nhân và Sổ Xe tổ chức.
 2. Mở **Google Auth Platform → Clients** (hoặc **APIs & Services → Credentials**).
 3. Chọn **Create client / Create credentials → OAuth client ID**, loại **Android**.
-4. Tên: **Sổ Xe Tổ Chức Android**.
+4. Tên: **Sổ Xe Tổ Chức Android 4.8.0**.
 5. Package name: **vn.soxe.organization**.
-6. SHA-1 của APK được ký để phát hành:
+6. SHA-1 chính xác của chứng thư ký APK 4.8.0:
 
-   **23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7**
+   **9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E**
 
-7. Bấm **Create**. Không cần dán Client ID/Client Secret vào app. Giữ nguyên Web Client đang dùng.
-8. Kiểm tra **Google Drive API** đã bật. Nếu dự án ở Testing, thêm cả hai tài khoản lưu dữ liệu vào **Audience → Test users**.
-9. Cài APK, chọn ADMIN hoặc NSD. ADMIN kết nối Google lưu dữ liệu Admin và TK Google lưu dữ liệu NSD; NSD/Admin chỉ xem chỉ kết nối TK Google lưu dữ liệu NSD. Dùng tên đăng nhập/mật khẩu hiện có. Kết nối đã cấp quyền được tái sử dụng; chỉ hỏi lại khi quyền hết hiệu lực hoặc Google yêu cầu.
-10. Sau khi đăng nhập bằng mật khẩu, mở **Tài khoản → Bật đăng nhập bằng vân tay**. Vân tay mở thông tin đăng nhập được mã hóa bằng khóa Android Keystore yêu cầu xác thực từng lần; app vẫn kiểm tra mật khẩu và quyền trên Drive. Nếu Admin đặt lại mật khẩu hoặc đổi vân tay, đăng nhập bằng mật khẩu và bật lại.
+7. Bấm **Create**. Không cần dán Client ID/Client Secret vào app; giữ nguyên Web Client đang dùng. Chờ vài phút để cấu hình OAuth được áp dụng.
+8. Kiểm tra **Google Drive API** đã bật. Nếu ứng dụng đang ở trạng thái Testing, thêm cả hai tài khoản Google lưu dữ liệu vào **Audience → Test users**.
+9. Trên thiết bị, chọn **ADMIN** và kết nối hai tài khoản lưu dữ liệu khác nhau: Google lưu dữ liệu Admin và Google lưu dữ liệu NSD. Khi đăng nhập vai trò **NSD** hoặc **Admin chỉ xem**, chỉ kết nối tài khoản Google lưu dữ liệu NSD. Sau khi cấp quyền thành công, dùng tên đăng nhập/mật khẩu ứng dụng hiện có. Không tạo tổ chức mới để thay cho việc kết nối dữ liệu cũ.
 
-Nếu chưa thấy dữ liệu tạo từ Web, kiểm tra app đang dùng đúng dự án Cloud, đúng hai tài khoản và mô hình dữ liệu hai Google hiện tại. Không tạo tổ chức mới để thay cho việc kết nối dữ liệu cũ.
+Nếu Android báo không kết nối được Google, kiểm tra lại package name/SHA-1 trong OAuth Android Client và Test users. Nếu hiện thông báo liên quan tới tài khoản, gửi nguyên văn lỗi (che địa chỉ email) để khoanh vùng tiếp.
+
+Sau khi đăng nhập bằng mật khẩu, mở **Tài khoản → Bật đăng nhập bằng vân tay**. Vân tay mở thông tin đăng nhập được mã hóa bằng khóa Android Keystore yêu cầu xác thực từng lần; app vẫn kiểm tra mật khẩu và quyền trên Drive. Nếu Admin đặt lại mật khẩu hoặc đổi vân tay, đăng nhập bằng mật khẩu và bật lại.
 
 ## Tính tương thích và giới hạn
 
@@ -31,10 +34,10 @@ Nếu chưa thấy dữ liệu tạo từ Web, kiểm tra app đang dùng đúng
 - Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
 - Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Mã hóa vẫn dùng Web Crypto AES-GCM/PBKDF2.
-- Chưa có xác minh đăng nhập Google và vân tay trên thiết bị thật của chủ dự án; cần cấu hình OAuth Android ở trên và kiểm tra với tài khoản của bạn.
+- Đăng nhập OAuth Android và vân tay cần cấu hình/kiểm tra trên thiết bị thật.
 
 ## Kiểm tra và build
 
 GitHub Actions chạy Gradle assembleRelease, lintRelease và kiểm thử Android emulator API 29 cho giao diện native, khởi động bộ xử lý cục bộ và phân quyền giao diện. Các kiểm thử nghiệp vụ Drive dùng chung nằm ở tests/dual-drive.test.mjs, tests/handovers.test.mjs và tests/backup-web-ui.test.mjs.
 
-APK phát hành được ký bằng khóa hiện có, cùng package để cập nhật từ bản Android launcher 4.7.0 mà không phải gỡ app. Khóa ký không nằm trong repository.
+APK 4.8.0 dùng khóa ký mới, nên **không thể cập nhật đè trực tiếp APK 4.7.0**; cần sao lưu dữ liệu rồi gỡ bản cũ trước khi cài 4.8.0. Giữ keystore phát hành mới để dùng cho các bản Android sau. Khóa riêng và mật khẩu ký không được đưa vào repository.
