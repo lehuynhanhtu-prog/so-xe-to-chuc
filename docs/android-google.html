@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kết nối Google cho APK Android 4.8.0 · Sổ Xe Tổ Chức</title>
+<style>body{font:17px/1.65 system-ui;max-width:820px;margin:32px auto;padding:20px;color:#142b43;background:#f4f7fb}a{color:#176a65}main{background:white;padding:28px;border-radius:16px}code{overflow-wrap:anywhere}aside{padding:16px;background:#fff4df;border-radius:12px}h1{font-size:30px}</style>
+</head><body><main>
+<p><a href="downloads.html">← Quay lại trang tải</a></p>
+<h1>Kết nối Google cho APK Android 4.8.0</h1>
+<aside>APK 4.8.0 được ký bằng keystore mới. OAuth Android Client cũ có SHA-1 của khóa khác nên Google không cấp quyền Drive cho APK này. Cần đăng ký Android OAuth Client dùng đúng SHA-1 mới.</aside>
+<h2>Cập nhật OAuth Client</h2>
+<ol>
+<li>Mở <a href="https://console.cloud.google.com/">Google Cloud Console</a> và chọn dự án đang dùng với Sổ Xe Tổ Chức (project number <strong>862228353042</strong>).</li>
+<li>Vào <strong>Google Auth Platform → Clients</strong>, chọn <strong>Create client → Android</strong>. Tùy giao diện có thể nằm ở <strong>APIs &amp; Services → Credentials → Create credentials → OAuth client ID</strong>.</li>
+<li>Nhập package name <code>vn.soxe.organization</code>.</li>
+<li>Nhập SHA-1 chứng thư của APK 4.8.0: <code>9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E</code>.</li>
+<li>Tạo client; không cần dán Client ID hoặc Client Secret vào ứng dụng. Giữ nguyên Web Client hiện có. Chờ vài phút rồi thử kết nối lại.</li>
+<li>Kiểm tra Google Drive API đang bật. Nếu consent screen đang ở chế độ Testing, thêm cả hai tài khoản lưu dữ liệu vào danh sách Test users.</li>
+</ol>
+<h2>Chọn đúng tài khoản trong ứng dụng</h2>
+<ul>
+<li>Ở chế độ <strong>ADMIN</strong>, kết nối hai tài khoản Google lưu dữ liệu riêng biệt: Google lưu dữ liệu Admin và Google lưu dữ liệu NSD. Hai tài khoản phải khác nhau.</li>
+<li>Ở chế độ <strong>NSD</strong> hoặc <strong>Admin chỉ xem</strong>, chỉ kết nối Google lưu dữ liệu NSD do Admin cung cấp.</li>
+<li>Sau khi cấp quyền Drive thành công, đăng nhập bằng tên người dùng và mật khẩu ứng dụng hiện có. Không nhập Gmail NSD làm tên đăng nhập và không tạo tổ chức mới để xử lý lỗi kết nối.</li>
+</ul>
+<h2>Nếu vẫn lỗi</h2>
+<p>Đảm bảo thiết bị có Google Play services, Internet và Android System WebView được cập nhật. Gửi cho quản trị viên nguyên văn thông báo lỗi và bước xuất hiện lỗi; che địa chỉ email, không gửi mật khẩu hoặc mã xác minh.</p>
+<p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/tag/platform-v4.8.0">Mở Release 4.8.0</a> · <a href="downloads.html">Trang tải</a></p>
+</main></body></html>
