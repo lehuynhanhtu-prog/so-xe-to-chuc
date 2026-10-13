@@ -43,7 +43,7 @@ import java.util.function.Consumer;
 /** Native Views; the local JS runtime supplies only the shared ledger core. */
 public class MainActivity extends FragmentActivity {
     private static final int PICK_ACCOUNT=101, AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
-    private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153);
+    private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
     private SharedPreferences prefs;
@@ -105,10 +105,13 @@ public class MainActivity extends FragmentActivity {
         body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,0,0,dp(20));scroll.addView(body);
     }
     private LinearLayout card(String heading,String detail,Runnable action){
+        return card(heading,detail,action,BLUE,Color.WHITE);
+    }
+    private LinearLayout card(String heading,String detail,Runnable action,int accent,int background){
         LinearLayout l=column(body);l.setPadding(dp(12),dp(8),dp(12),dp(8));
-        GradientDrawable bg=new GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.rgb(220,229,238));l.setBackground(bg);
+        GradientDrawable bg=new GradientDrawable();bg.setColor(background);bg.setCornerRadius(dp(14));bg.setStroke(dp(2),accent);l.setBackground(bg);l.setElevation(dp(2));
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,dp(5),0,dp(5));l.setLayoutParams(p);
-        text(l,heading,17,true);text(l,detail,14,false);
+        TextView title=text(l,heading,17,true);title.setTextColor(accent);text(l,detail,14,false);
         if(action!=null){l.setOnClickListener(v->{if(!busy)action.run();});l.setFocusable(true);l.setContentDescription(heading+". "+detail+". Nhấn để xem.");}
         return l;
     }
@@ -224,10 +227,13 @@ public class MainActivity extends FragmentActivity {
     private static final String[] CATEGORY_KEYS={"fuel","charge","battery_rental","maintenance","parts","insurance","inspection","road_fee","other"};
     private static final String[] CATEGORY_NAMES={"Tiền xăng","Sạc xe","Thuê pin","Bảo dưỡng","Phụ tùng","Bảo hiểm TNDS","Đăng kiểm","Phí đường bộ","Khác"};
     private static String category(String key){for(int i=0;i<CATEGORY_KEYS.length;i++)if(CATEGORY_KEYS[i].equals(key))return CATEGORY_NAMES[i];return key;}
+    private static int categoryAccent(String key){switch(key){case "insurance":return TEAL;case "inspection":return ORANGE;case "road_fee":return PURPLE;case "maintenance":case "parts":return GREEN;default:return BLUE;}}
+    private static int reminderBackground(String level){if("expired".equals(level)||"due".equals(level))return Color.rgb(255,240,239);if("warning".equals(level))return Color.rgb(255,248,233);return Color.WHITE;}
     private void render(){
         if(state==null){login();return;}
         shell(state.optJSONObject("organization").optString("name"));
-        LinearLayout top=new LinearLayout(this);body.addView(top);button(top,"Đồng bộ",()->operation("read",obj(),r->render(),true));button(top,"Tài khoản",this::account);
+        LinearLayout top=new LinearLayout(this);body.addView(top);Button sync=button(top,"Đồng bộ",()->operation("read",obj(),r->render(),true));Button settings=button(top,"Cài đặt",this::account);Button exit=button(top,"Thoát",this::confirmExit);
+        for(Button b:new Button[]{sync,settings,exit})b.setLayoutParams(new LinearLayout.LayoutParams(0,dp(52),1));exit.setTextColor(RED);
         text(body,page+" · "+me("name"),19,true);
         switch(page){case "Xe":cars();break;case "Chi phí":transactions();break;case "Báo cáo":reports();break;default:overview();}
         LinearLayout nav=new LinearLayout(this);nav.setGravity(Gravity.CENTER);root.addView(nav);
@@ -237,12 +243,13 @@ public class MainActivity extends FragmentActivity {
     }
     private void overview(){
         double total=0;for(int i=0;i<list("transactions").length();i++)total+=list("transactions").optJSONObject(i).optDouble("amount");
-        card(list("cars").length()+" xe · "+list("transactions").length()+" giao dịch","Tổng chi phí: "+money(total)+" ₫",null);
+        card("Tổng quan đội xe",list("cars").length()+" xe · "+list("transactions").length()+" giao dịch\nTổng chi phí: "+money(total)+" ₫",null,BLUE,Color.rgb(242,248,253));
         text(body,"Cảnh báo đến hạn",18,true);JSONArray reminders=presentation.optJSONArray("reminders");int count=0;
         if(reminders!=null)for(int i=0;i<reminders.length();i++){
             JSONObject r=reminders.optJSONObject(i);if("valid".equals(r.optString("level")))continue;
             JSONObject t=r.optJSONObject("transaction"),c=r.optJSONObject("car");count++;
-            card(c.optString("plate")+" · "+category(t.optString("category")),"Quản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId"))+"\nĐến hạn: "+date(r.optString("dueDate"))+(r.isNull("leftKm")?"":" · Còn "+money(r.optDouble("leftKm"))+" km"),()->viewTransaction(t));
+            String level=r.optString("level"),statusText="warning".equals(level)?"SẮP ĐẾN HẠN":"due".equals(level)?"ĐẾN HẠN":"ĐÃ QUÁ HẠN";
+            card(category(t.optString("category"))+" · "+c.optString("plate"),statusText+"\nQuản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId"))+"\nĐến hạn: "+date(r.optString("dueDate"))+(r.isNull("leftKm")?"":" · Còn "+money(r.optDouble("leftKm"))+" km"),()->viewTransaction(t),categoryAccent(t.optString("category")),reminderBackground(level));
         }
         if(count==0)text(body,"Chưa có mục sắp đến hạn.",14,false);
         text(body,"Giao dịch gần đây",18,true);List<JSONObject> recent=sortedTransactions();for(int i=0;i<Math.min(8,recent.size());i++)transactionCard(recent.get(i));
@@ -387,8 +394,9 @@ public class MainActivity extends FragmentActivity {
         if(busy)return;
         if(state!=null&&!homeScreen){render();return;}
         if(state!=null&&!page.equals("Tổng quan")){page="Tổng quan";render();return;}
-        super.onBackPressed();
+        confirmExit();
     }
+    private void confirmExit(){new AlertDialog.Builder(this).setTitle("Thoát Sổ Xe Tổ Chức").setMessage("Bạn có muốn thoát khỏi chương trình không?").setNegativeButton("Ở lại",null).setPositiveButton("Thoát",(d,w)->finishAndRemoveTask()).show();}
     private void createOrganization(){
         shell("Tạo tổ chức mới");Form f=new Form();f.input("organizationName","Tên tổ chức","",false);f.input("adminName","Tên Admin","Admin",false);f.password("password","Mật khẩu Admin (từ 6 ký tự)","");
         button(body,"Kết nối Google và tạo tổ chức",()->{loginName="admin";loginPassword=f.string("password");operation("createOrganization",f.values(obj()),r->render(),true);});button(body,"Hủy",this::login);
@@ -400,12 +408,12 @@ public class MainActivity extends FragmentActivity {
         });if(!first)button(body,"Hủy",this::account);
     }
     private void account(){
-        shell("Tài khoản");text(body,me("name")+" · "+me("username")+"\nVai trò: "+me("role"),17,true);button(body,"Đổi mật khẩu",()->changePassword(false));
+        shell("Cài đặt");text(body,me("name")+" · "+me("username")+"\nVai trò: "+me("role"),17,true);button(body,"Đổi mật khẩu",()->changePassword(false));
         if(vault.available()&&!loginPassword.isEmpty())button(body,"Bật đăng nhập bằng vân tay",()->vault.authenticate(obj("username",loginName,"password",loginPassword,"adminMode",adminMode,"primaryEmail",accountName("primary"),"secondaryEmail",accountName("secondary")),(r,error)->{if(error!=null)message(error);else message("Đã bật đăng nhập vân tay trên thiết bị này.");}));
         if(vault.exists())button(body,"Tắt đăng nhập vân tay",()->{vault.clear();account();});
         if(admin()){button(body,"Người sử dụng",this::users);button(body,"Sao lưu và phục hồi",this::backup);button(body,"Sửa tên tổ chức",this::renameOrganization);button(body,"Xóa tổ chức",this::deleteOrganization);}
         button(body,"Kết nối Google",this::connections);
-        button(body,"Đăng xuất",()->{state=presentation=null;loginPassword=loginName="";filterCar=filterCategory=filterFrom=filterTo="";engine.call("logout",obj(),(r,e)->login());});button(body,"Quay lại",this::render);
+        button(body,"Đăng xuất",()->{state=presentation=null;loginPassword=loginName="";filterCar=filterCategory=filterFrom=filterTo="";engine.call("logout",obj(),(r,e)->login());});button(body,"Thoát chương trình",this::confirmExit);button(body,"Quay lại",this::render);
     }
     private void renameOrganization(){
         shell("Sửa tổ chức");Form f=new Form();f.input("name","Tên tổ chức",state.optJSONObject("organization").optString("name"),false);
