@@ -117,7 +117,8 @@ public class MainActivity extends FragmentActivity {
         return l;
     }
     private void message(String value){if(!isFinishing())new AlertDialog.Builder(this).setTitle("Sổ Xe Tổ Chức").setMessage(value).setPositiveButton("Đóng",null).show();}
-    private void progress(boolean value){busy=value;if(status!=null)status.setText(value?"Đang xử lý, vui lòng chờ…":"Sẵn sàng");}
+    private void progress(boolean value){progress(value,"Đang xử lý, vui lòng chờ…");}
+    private void progress(boolean value,String message){busy=value;if(status!=null)status.setText(value?message:"Sẵn sàng");}
     private String accountName(String slot){return prefs.getString(slot,"");}
     private void login(){
         state=null;presentation=null;
@@ -206,13 +207,20 @@ public class MainActivity extends FragmentActivity {
         });
         if(adminMode)authorize("primary",secondary);else secondary.run();
     }
+    private String processingText(String action){
+        if("export".equals(action))return "Đang sao lưu giao dịch và tệp đính kèm…";
+        if("inspectBackup".equals(action))return "Đang kiểm tra bản sao lưu…";
+        if("restoreBackup".equals(action))return "Đang phục hồi dữ liệu và tệp đính kèm…";
+        if("attachment".equals(action))return "Đang tải tệp đính kèm…";
+        return "Đang xử lý, vui lòng chờ…";
+    }
     private void operation(String action,JSONObject args,Consumer<JSONObject> next,boolean interactive){
         if(busy)return;
-        withGoogle(()->engine.call(action,args,(result,error)->{
+        withGoogle(()->{progress(true,processingText(action));engine.call(action,args,(result,error)->{
             progress(false);if(error!=null){if(interactive)message(error);else if(status!=null)status.setText("Chưa đồng bộ: "+error);return;}
             accept(result);next.accept(result);
             if(interactive&&result.optJSONArray("warnings")!=null&&result.optJSONArray("warnings").length()>0)message(result.optJSONArray("warnings").toString());
-        }));
+        });});
     }
     private void accept(JSONObject result){if(result!=null&&result.optJSONObject("data")!=null){state=result.optJSONObject("data");presentation=result;}}
     private boolean admin(){return state!=null&&"admin".equals(me("role"));}
@@ -272,9 +280,14 @@ public class MainActivity extends FragmentActivity {
         if(admin()){button(body,"+ Thêm xe",()->editCar(obj()));button(body,"Người sử dụng",this::users);}
         button(body,"Bàn giao xe",this::handovers);
         if(list("cars").length()==0)text(body,"Chưa có xe trong phạm vi được xem.",15,false);
-        for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);String assigned=find("carChoices",c.optString("id")).optString("assignedUserId"),detail="Quản lý/Lái xe: "+person(assigned)+"\nODO "+money(c.optDouble("odo"))+" km";if(!admin()&&!assigned.equals(me("id")))detail+="\nĐã bàn giao · chỉ xem thông tin xe và giao dịch do bạn nhập.";
-            card(c.optString("plate")+" · "+c.optString("name"),detail,()->viewCar(c));
+        for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);String assigned=find("carChoices",c.optString("id")).optString("assignedUserId"),detail="Quản lý/Lái xe: "+person(assigned)+"\nODO "+money(c.optDouble("odo"))+" km";boolean managed=admin()||assigned.equals(me("id"));JSONObject event=latestManagementEvent(c.optString("id"),managed?"toUserId":"fromUserId");if(!admin()&&managed){detail+="\nĐANG QUẢN LÝ";if(event!=null&&"handover".equals(event.optString("kind")))detail+=" · Nhận bàn giao "+localTime(event.optString("at"))+" từ "+person(event.optString("fromUserId"));}else if(!admin()){detail+="\nĐÃ BÀN GIAO"+(event==null?" · chỉ xem thông tin xe và giao dịch do bạn nhập.":" · "+localTime(event.optString("at"))+" · Người nhận gần nhất: "+person(event.optString("toUserId")));}
+            card(c.optString("plate")+" · "+c.optString("name"),detail,()->viewCar(c),managed?BLUE:Color.rgb(115,130,145),managed?Color.WHITE:Color.rgb(245,247,249));
         }
+    }
+    private JSONObject latestManagementEvent(String carId,String personKey){
+        JSONArray events=state==null?null:state.optJSONArray("carManagementEvents");JSONObject latest=null;if(events==null)return null;
+        for(int i=0;i<events.length();i++){JSONObject event=events.optJSONObject(i);if(event==null||!carId.equals(event.optString("carId"))||!me("id").equals(event.optString(personKey)))continue;if(latest==null||event.optString("at").compareTo(latest.optString("at"))>0)latest=event;}
+        return latest;
     }
     private void viewCar(JSONObject c){
         shell(c.optString("plate"));text(body,c.optString("name")+"\nNăm: "+c.optString("year")+"\nODO: "+money(c.optDouble("odo")),17,false);
@@ -352,7 +365,7 @@ public class MainActivity extends FragmentActivity {
         double total=0;for(JSONObject t:sortedTransactions())total+=t.optDouble("amount");text(body,"Chi phí trong phạm vi được xem: "+money(total)+" ₫",19,true);
         JSONArray months=presentation.optJSONArray("monthly");if(months!=null)for(int i=0;i<months.length();i++){JSONObject m=months.optJSONObject(i);card(m.optString("plate")+" · "+month(m.optString("month")),"Tổng: "+money(m.optDouble("total"))+" ₫\nSố lít: "+money(m.optDouble("liters"))+(m.isNull("rate")?"":" · "+money(m.optDouble("rate"))+" L/100km"),null);}
         text(body,"Thời gian quản lý xe",18,true);JSONArray periods=presentation.optJSONArray("periods");
-        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(p.optBoolean("ongoing")?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null);}
+        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);boolean ongoing=p.optBoolean("ongoing");card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(ongoing?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null,ongoing?GREEN:BLUE,ongoing?Color.rgb(232,247,238):Color.WHITE);}
         button(body,"Xuất giao dịch CSV",this::exportCsv);
         button(body,"Xuất Excel",this::excelExport);
     }
