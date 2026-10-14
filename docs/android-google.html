@@ -2,18 +2,18 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kết nối Google cho APK Android 4.8.2 · Sổ Xe Tổ Chức</title>
+<title>Kết nối Google cho APK Android 4.8.3 · Sổ Xe Tổ Chức</title>
 <style>body{font:17px/1.65 system-ui;max-width:820px;margin:32px auto;padding:20px;color:#142b43;background:#f4f7fb}a{color:#176a65}main{background:white;padding:28px;border-radius:16px}code{overflow-wrap:anywhere}aside{padding:16px;background:#fff4df;border-radius:12px}h1{font-size:30px}</style>
 </head><body><main>
 <p><a href="downloads.html">← Quay lại trang tải</a></p>
-<h1>Kết nối Google cho APK Android 4.8.2</h1>
-<aside>APK 4.8.2 dùng keystore phát hành hiện dùng. OAuth Android Client phải có SHA-1 của khóa này; nếu khác, Google sẽ không cấp quyền Drive. App Web tái sử dụng Web OAuth Client của Sổ Xe cá nhân trong cùng dự án; không thay Web Client ID/Secret. Bản Android native cần Android Client riêng vì package và chứng thư ký khác.</aside>
+<h1>Kết nối Google cho APK Android 4.8.3</h1>
+<aside>APK 4.8.3 dùng keystore phát hành hiện dùng. OAuth Android Client phải có SHA-1 của khóa này; nếu khác, Google sẽ không cấp quyền Drive. App Web tái sử dụng Web OAuth Client của Sổ Xe cá nhân trong cùng dự án; không thay Web Client ID/Secret. Bản Android native cần Android Client riêng vì package và chứng thư ký khác.</aside>
 <h2>Cập nhật OAuth Client</h2>
 <ol>
 <li>Mở <a href="https://console.cloud.google.com/">Google Cloud Console</a> và chọn dự án đang dùng với Sổ Xe Tổ Chức (project number <strong>862228353042</strong>).</li>
 <li>Vào <strong>Google Auth Platform → Clients</strong>, chọn <strong>Create client → Android</strong>. Tùy giao diện có thể nằm ở <strong>APIs &amp; Services → Credentials → Create credentials → OAuth client ID</strong>.</li>
 <li>Nhập package name <code>vn.soxe.organization</code>.</li>
-<li>Nhập SHA-1 chứng thư của APK 4.8.2: <code>9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E</code>.</li>
+<li>Nhập SHA-1 chứng thư của APK 4.8.3: <code>9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E</code>.</li>
 <li>Tạo client; không cần dán Client ID hoặc Client Secret vào ứng dụng. Giữ nguyên Web Client hiện có. Chờ vài phút rồi thử kết nối lại.</li>
 <li>Kiểm tra Google Drive API đang bật. Nếu consent screen đang ở chế độ Testing, thêm cả hai tài khoản lưu dữ liệu vào danh sách Test users.</li>
 </ol>
@@ -25,5 +25,5 @@
 </ul>
 <h2>Nếu vẫn lỗi</h2>
 <p>Đảm bảo thiết bị có Google Play services, Internet và Android System WebView được cập nhật. Gửi cho quản trị viên nguyên văn thông báo lỗi và bước xuất hiện lỗi; che địa chỉ email, không gửi mật khẩu hoặc mã xác minh.</p>
-<p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/tag/platform-v4.8.2">Mở Release 4.8.2</a> · <a href="downloads.html">Trang tải</a></p>
+<p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/tag/platform-v4.8.3">Mở Release 4.8.3</a> · <a href="downloads.html">Trang tải</a></p>
 </main></body></html>

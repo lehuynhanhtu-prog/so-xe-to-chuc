@@ -133,7 +133,7 @@ public class MainActivity extends FragmentActivity {
         }));
         if(accountName("secondary").isEmpty()||adminMode&&accountName("primary").isEmpty())text(body,"Lần đầu, Android sẽ yêu cầu kết nối tài khoản Google lưu dữ liệu.",14,false);
         button(body,"Đổi loại đăng nhập",this::chooseRole);
-        if(adminMode&&accountName("primary").isEmpty())button(body,"Khởi tạo tổ chức mới",this::createOrganization);
+        if(adminMode){button(body,"Khởi tạo tổ chức mới",this::createOrganization);button(body,"Phục hồi từ hai Google cũ",this::transferBackup);}
         button(body,"Tài khoản Google đã kết nối",this::connections);
     }
     private void chooseRole(){
@@ -156,7 +156,7 @@ public class MainActivity extends FragmentActivity {
     }
     private void connections(){
         shell("Kết nối Google");text(body,"Google lưu dữ liệu Admin: "+accountName("primary")+"\nTK Google lưu dữ liệu NSD: "+accountName("secondary"),15,false);
-        if(adminMode)button(body,"Kết nối Google lưu dữ liệu Admin",()->chooseGoogle("primary",this::connections));
+        if(adminMode)button(body,"Kết nối Google lưu dữ liệu Admin",()->chooseGoogle("primary",()->chooseGoogle("secondary",this::connections)));
         button(body,"Kết nối TK Google lưu dữ liệu NSD",()->chooseGoogle("secondary",this::connections));
         button(body,"Ngắt kết nối trên thiết bị",()->new AlertDialog.Builder(this).setMessage("Xóa kết nối và đăng nhập vân tay trên thiết bị này? Dữ liệu Drive được giữ nguyên.")
             .setNegativeButton("Hủy",null).setPositiveButton("Ngắt kết nối",(d,w)->{prefs.edit().clear().apply();primaryToken=secondaryToken=loginPassword="";tokenExpiry.clear();vault.clear();engine.call("logout",obj(),(r,e)->{state=null;chooseRole();});}).show());
@@ -210,6 +210,8 @@ public class MainActivity extends FragmentActivity {
     private String processingText(String action){
         if("export".equals(action))return "Đang sao lưu giao dịch và tệp đính kèm…";
         if("inspectBackup".equals(action))return "Đang kiểm tra bản sao lưu…";
+        if("inspectTransfer".equals(action))return "Đang kiểm tra bản sao lưu đầy đủ…";
+        if("transferStorage".equals(action))return "Đang phục hồi dữ liệu và tệp sang hai Google mới…";
         if("restoreBackup".equals(action))return "Đang phục hồi dữ liệu và tệp đính kèm…";
         if("attachment".equals(action))return "Đang tải tệp đính kèm…";
         return "Đang xử lý, vui lòng chờ…";
@@ -445,6 +447,22 @@ public class MainActivity extends FragmentActivity {
         button(body,"Tạo bản sao lưu",()->operation("export",obj("password",f.string("password")),r->saveDocument("So-Xe-"+today()+".json","application/json",r.optString("backup").getBytes(java.nio.charset.StandardCharsets.UTF_8)),true));
         button(body,"Chọn bản sao lưu để phục hồi",()->{attachmentPicked=null;backupPicked=this::inspectRestore;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});button(body,"Quay lại",this::account);
     }
+    private void transferBackup(){
+        if(state!=null){message("Đăng xuất tổ chức trước khi phục hồi sang hai Google mới.");return;}
+        withGoogle(()->{progress(false);shell("Phục hồi từ hai Google cũ");
+            text(body,"Đăng nhập Admin trên hai Google cũ, tạo bản sao lưu đầy đủ trong Cài đặt. Sau đó kết nối hai Google mới tại đây. Tên đăng nhập, mật khẩu, lịch sử và tệp đính kèm được giữ nguyên.",16,false);
+            text(body,"Google Admin mới: "+accountName("primary")+"\nGoogle NSD mới: "+accountName("secondary"),16,true);
+            button(body,"Chọn bản sao lưu (.json hoặc .zip)",()->{attachmentPicked=null;backupPicked=this::inspectTransferBackup;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","application/zip","application/octet-stream"}).addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});button(body,"Quay lại",this::login);
+        });
+    }
+    private void inspectTransferBackup(String content){
+        shell("Kiểm tra bản sao lưu");Form f=new Form();f.password("password","Mật khẩu bản sao lưu","");
+        button(body,"Kiểm tra",()->operation("inspectTransfer",obj("backup",content,"password",f.string("password")),r->{
+            shell("Xác nhận chuyển dữ liệu");JSONObject s=r.optJSONObject("summary");text(body,s.optString("organizationName")+"\n"+s.optInt("cars")+" xe · "+s.optInt("transactions")+" giao dịch · "+s.optInt("attachments")+" tệp\nGoogle cũ: "+s.optString("oldPrimaryEmail")+" / "+s.optString("oldSecondaryEmail")+"\nGoogle mới: "+s.optString("newPrimaryEmail")+" / "+s.optString("newSecondaryEmail"),16,true);
+            text(body,"Giữ nguyên tên đăng nhập và mật khẩu tại thời điểm sao lưu. Dữ liệu trên Google cũ được giữ lại.",15,false);Form confirmation=new Form();confirmation.input("confirmation","Nhập tên tổ chức để xác nhận","",false);
+            button(body,"Phục hồi sang hai Google mới",()->operation("transferStorage",obj("backup",content,"password",f.string("password"),"confirmation",confirmation.string("confirmation"),"primaryEmail",s.optString("newPrimaryEmail"),"secondaryEmail",s.optString("newSecondaryEmail")),done->{vault.clear();loginPassword="";login();message("Đã phục hồi dữ liệu và tệp đính kèm. Đăng nhập bằng tên và mật khẩu tại thời điểm sao lưu.");},true));button(body,"Hủy",this::login);
+        },true));button(body,"Hủy",this::login);
+    }
     private void inspectRestore(String content){
         shell("Kiểm tra bản sao lưu");Form f=new Form();f.password("password","Mật khẩu bản sao lưu","");
         button(body,"Kiểm tra",()->operation("inspectBackup",obj("backup",content,"password",f.string("password")),r->{
@@ -505,7 +523,7 @@ public class MainActivity extends FragmentActivity {
             Uri uri=data.getData();Consumer<JSONObject> attach=attachmentPicked;Consumer<String> restore=backupPicked;attachmentPicked=null;backupPicked=null;
             io.execute(()->{try(InputStream in=getContentResolver().openInputStream(uri)){
                 if(in==null)throw new IOException();byte[] bytes=read(in,attach==null?200*1024*1024:2*1024*1024);
-                if(restore!=null)handler.post(()->restore.accept(new String(bytes,java.nio.charset.StandardCharsets.UTF_8)));
+                if(restore!=null){byte[] payload=bytes;if(bytes.length>3&&bytes[0]==80&&bytes[1]==75){try(java.util.zip.ZipInputStream zip=new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(bytes))){java.util.zip.ZipEntry entry;payload=null;while((entry=zip.getNextEntry())!=null){if(entry.getName().equals("so-xe-to-chuc.enc.json")){payload=read(zip,200*1024*1024);break;}}if(payload==null)throw new java.io.IOException("ZIP không có bản sao lưu Sổ Xe Tổ Chức.");}}String content=new String(payload,java.nio.charset.StandardCharsets.UTF_8);handler.post(()->restore.accept(content));}
                 else if(attach!=null){
                     String name="tep";try(android.database.Cursor cursor=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){if(cursor!=null&&cursor.moveToFirst())name=cursor.getString(0);}
                     JSONObject file=obj("name",name,"type",getContentResolver().getType(uri)==null?"application/octet-stream":getContentResolver().getType(uri),"base64",android.util.Base64.encodeToString(bytes,android.util.Base64.NO_WRAP));handler.post(()->attach.accept(file));

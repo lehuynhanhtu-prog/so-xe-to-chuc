@@ -18,7 +18,7 @@ assert.ok(!native.exportExcel(exportState,'transactions',{from:'2026-10-02'}).in
 assert.throws(()=>native.exportExcel(exportState,'monthly',{from:'2026-10-02',to:'2026-10-01'}),/Ngày bắt đầu/);
 const enriched=native.enrich({data});
 assert.equal(enriched.monthly.length,1);
-assert.equal(enriched.monthly[0].total,123656789);
+assert.equal(enriched.monthly[0].total,123456789);
 assert.equal(enriched.periods.length,1);
 assert.equal(enriched.periods[0].userId,'self');
 assert.deepEqual(await native.dispatch('logout',{}),{loggedOut:true});

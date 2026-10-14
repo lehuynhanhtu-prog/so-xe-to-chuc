@@ -200,3 +200,16 @@ NSD thấy giao dịch do mình nhập (kể cả nhập hộ xe khác) và giao
 Đăng nhập bằng mật khẩu trước, mở Cài đặt → Vân tay, xác thực mật khẩu hiện tại và bật bằng hộp thoại hệ thống. WebAuthn PRF + HKDF/AES-GCM bảo vệ thông tin đăng nhập lưu cục bộ; không lưu mật khẩu/khóa mở dạng rõ. Đăng nhập sinh trắc học vẫn xác thực mật khẩu hiện tại qua Drive và giữ nguyên phân quyền. Thiết bị/trình duyệt cần hỗ trợ authenticator nền tảng + PRF. Hệ thống có thể cho dùng vân tay, khuôn mặt hoặc khóa màn hình tùy thiết bị; app không thu thập ảnh vân tay. Mật khẩu luôn dùng được thay thế. Sau đổi/đặt lại mật khẩu, bật lại vân tay. Tắt trong Cài đặt → Vân tay sẽ xóa bản mã cục bộ, không xóa passkey trong trình quản lý mật khẩu của hệ điều hành. Google vẫn có thể yêu cầu cấp lại quyền khi phiên hết hạn.
 
 Android 4.8.0 là ứng dụng native, dùng OAuth Google Drive và hỗ trợ sinh trắc học trên thiết bị tương thích. Windows Portable, iOS Web App và Web dùng chung chức năng, dữ liệu Drive và số phiên bản 4.8.0.
+
+## 4.8.3 — Phục hồi sang hai Google mới
+
+Web và Android có **Phục hồi từ hai Google cũ** trước đăng nhập. Admin kết nối Google lưu dữ liệu Admin mới, sau đó Google lưu dữ liệu NSD mới. Nếu đã có tổ chức trên Google đích, mở dữ liệu hiện có; không ghi đè tổ chức đó qua luồng chuyển này.
+
+1. Trên hai Google cũ, đăng nhập Admin và tạo bản sao lưu **đầy đủ** trong Cài đặt. Đợi đồng bộ hoàn tất trước khi sao lưu.
+2. Đăng xuất/ngắt kết nối trên thiết bị, chọn Admin và kết nối hai Google mới.
+3. Chọn **Phục hồi từ hai Google cũ**, mở ZIP/JSON, nhập mật khẩu sao lưu, kiểm tra tổ chức, số xe/giao dịch/tệp và hai tài khoản đích.
+4. Nhập tên tổ chức để xác nhận. Sau khi hoàn tất, đăng nhập bằng tên và mật khẩu tại thời điểm sao lưu. NSD kết nối Google NSD mới trước khi đăng nhập.
+
+Bản sao lưu mang theo dữ liệu của hai tài khoản cũ; không cần cấp quyền cho hai Google cũ trong lúc ghi sang Google mới. Dữ liệu nguồn được giữ nguyên. Tệp đính kèm được tạo lại với ID mới; các tham chiếu được đổi trong dữ liệu mới. Hồ sơ tài khoản giữ phần kiểm tra mật khẩu gốc và ánh xạ nơi lưu mới được mã hóa/xác thực bằng AES-GCM. Đổi mật khẩu sau chuyển sẽ ghi hồ sơ tài khoản chuẩn ở nơi lưu mới. Nếu chuyển bị lỗi, ứng dụng dọn các tệp đích đã tạo; nếu dọn chưa xong, hiển thị thông báo để xử lý trước khi thử lại.
+
+Cấu hình phiên bản Android và đóng gói Web lấy cùng phiên bản 4.8.3. Workflow Windows đóng gói APK đã ký từ docs/downloads, Web ZIP, Windows và hồ sơ iOS, tạo release và SHA-256 chung.

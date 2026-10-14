@@ -38,6 +38,8 @@ export async function dispatch(action,args){
  }
  if(action==='logout'){service=null;identity='';return {loggedOut:true};}
  if(!service)throw new Error('Kết nối tài khoản Google trước.');
+ if(action==='inspectTransfer')return service.inspectTransfer(args);
+ if(action==='transferStorage')return service.transferStorage(args);
  if(action==='login'){
   const selected=await service.resolveNamed(args.username,args.password);
   if(selected.account.role==='admin'&&!primary)return {needsPrimary:true,ownerEmail:selected.account.ownerEmail};

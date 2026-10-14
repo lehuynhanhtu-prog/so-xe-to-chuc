@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   windows:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -36,10 +37,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          gh release download platform-v4.8.2 --pattern "So-Xe-To-Chuc-Android-4.8.2.apk" --dir dist
-          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.8.2.zip
-          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.8.2.mobileconfig
-          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.8.2.zip dist/
+          Copy-Item docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk dist/
+          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.8.3.zip
+          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.8.3.mobileconfig
+          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.8.3.zip dist/
           Get-ChildItem dist -File | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
           } | Set-Content -Encoding utf8 dist/SHA256SUMS.txt
@@ -48,12 +49,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = 'platform-v4.8.2'
+          $tag = 'platform-v4.8.3'
           $assets = (Get-ChildItem dist -File).FullName
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) { gh release create $tag --target '${{ github.sha }}' --title 'Sổ Xe Tổ Chức 4.8.3' --notes-file docs/release-4.8.3.md }
+          if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
           gh release upload $tag @assets --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed' }
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Platforms-4.8.2
+          name: So-Xe-To-Chuc-Platforms-4.8.3
           path: dist/
           if-no-files-found: error

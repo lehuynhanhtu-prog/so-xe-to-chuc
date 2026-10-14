@@ -1,9 +1,10 @@
 import {attachmentStem,attachmentToday,matchesAttachmentName,uniqueAttachmentName} from './attachment-names.mjs?v=3aed45752cdb';
-import {exportBackup,inspectBackup,restoreBackup} from './storage-backup.mjs?v=0aeb749460c3';
+import {inspectTransfer,transferStorage} from './storage-transfer.mjs?v=ebfb5a4551d6';
+import {exportBackup,inspectBackup,restoreBackup} from './storage-backup.mjs?v=a0f8eeb90d3a';
 import {normalizeUsername,validateUsername} from './identity.mjs?v=3d8bd802f0ca';
-import {Service,projection} from './service.mjs?v=47c552cc5cb5';
+import {Service,projection} from './service.mjs?v=69440dc1d132';
 import {MODEL} from './dual-drive.mjs?v=842317740181';
-import {lock,unlock,seal,open,randomKey,strongPassword} from './crypto.mjs?v=bb578fc7e8a4';
+import {lock,unlock,seal,open,randomKey,strongPassword} from './crypto.mjs?v=837e4bdbeb1e';
 const fail=m=>{throw new Error(m);},logical=username=>String(username||'').trim().toLowerCase()+'@users.invalid',now=()=>new Date().toISOString();
 export class DualService extends Service{
  constructor(drive){super(drive,{email:drive.primaryEmail||drive.secondaryEmail});this.resolvedProfiles=new Map();}
@@ -24,6 +25,8 @@ export class DualService extends Service{
  const account={model:MODEL,orgId:db.id,userId:u.id,username:u.username,email:u.email,role:u.role,ownerEmail:db.ownerEmail,secondaryEmail:this.drive.secondaryEmail,mustChange:true,journalId:u.journalId,memberKey:u.memberKey,...(u.role==='admin'?{rootId:this.account.rootId,rootKey:this.account.rootKey}:{viewId:u.viewId,viewOwnerEmail:u.viewOwnerEmail})};u.profileId??=find('account')?.id;if(!u.profileId){this.drive.profileTarget='member';u.profileId=(await this.drive.create('Sổ Xe · '+db.name+' · '+u.username,await lock(account,password,'account',100000),'account',{orgId:db.id,userId:u.id,username:u.username,role:u.role})).id;}return u;
  }
  async invite(){return null;}
+ async inspectTransfer(args){return this.enqueue(()=>inspectTransfer(this,args));}
+ async transferStorage(args){return this.enqueue(()=>transferStorage(this,args));}
  async resolveNamed(username,password,orgId='',kind=''){this.resolvedProfiles.clear();const name=normalizeUsername(username),[member,primary]=await Promise.all([this.drive.memberProfiles(),this.drive.primary?this.drive.profiles():[]]),profiles=[...new Map([...member,...primary].map(p=>[p.id,p])).values()],matches=profiles.filter(p=>normalizeUsername(p.appProperties?.username)===name&&(!orgId||p.appProperties.orgId===orgId));if(!matches.length)throw Object.assign(new Error('Tên đăng nhập hoặc mật khẩu không đúng.'),{code:'ACCOUNT_NOT_FOUND'});const valid=[];for(const p of matches){try{const r=await this.drive.read(p.id);this.checkOwner(r.meta);const account=await unlock(r.box,password,'account');if(!kind||kind!=='admin'||account.role==='admin')valid.push({profileId:p.id,account,storageSource:r.meta.storageSource,etag:r.etag});}catch(e){if(e.status)throw e;}}if(valid.length!==1)fail(valid.length?'Tên đăng nhập và mật khẩu trùng ở nhiều tổ chức. Dùng mật khẩu riêng cho từng tổ chức.':'Tên đăng nhập hoặc mật khẩu không đúng.');this.resolvedProfiles.clear();this.resolvedProfiles.set(valid[0].profileId,{...valid[0],password});return valid[0];}
  async loginNamed(username,password,orgId='',kind=''){const selected=await this.resolveNamed(username,password,orgId,kind);return this.login(selected.profileId,password);}
  async encryptedRead(file,key,purpose){const cached=this.readCache.get(file);if(this.operationReads?.has(file)&&cached?.key===key&&cached.purpose===purpose)return structuredClone(cached);const r=await super.encryptedRead(file,key,purpose);this.operationReads?.add(file);return r;}

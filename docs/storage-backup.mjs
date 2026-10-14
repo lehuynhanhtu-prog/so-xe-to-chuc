@@ -1,5 +1,5 @@
 import {attachmentToday,attachmentStem,uniqueAttachmentName} from './attachment-names.mjs?v=3aed45752cdb';
-import {lock,unlock,open,seal,b64,unb64} from './crypto.mjs?v=bb578fc7e8a4';
+import {lock,unlock,open,seal,b64,unb64} from './crypto.mjs?v=837e4bdbeb1e';
 const fail=m=>{throw new Error(m);},clone=x=>structuredClone(x),MAX=200*1024*1024;
 function summary(db,createdAt,files=[]){return {organizationName:db.name,createdAt,cars:db.cars.length,transactions:db.transactions.length,users:db.users.filter(u=>!u.deletedAt).length,attachments:[...db.cars,...db.transactions].reduce((n,r)=>n+(r.attachments||[]).length,0),complete:files.length>0};}
 function ids(service,db){return [...new Set([service.account.rootId,service.profileId,...db.users.filter(u=>!u.deletedAt).flatMap(u=>[u.profileId,u.journalId,u.viewId])].filter(Boolean))];}
