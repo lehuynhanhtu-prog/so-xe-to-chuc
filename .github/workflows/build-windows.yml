@@ -36,10 +36,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          gh release download platform-v4.8.0 --pattern "So-Xe-To-Chuc-Android-4.8.0.apk" --dir dist
-          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.8.0.zip
-          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.8.0.mobileconfig
-          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.8.0.zip dist/
+          gh release download platform-v4.8.2 --pattern "So-Xe-To-Chuc-Android-4.8.2.apk" --dir dist
+          Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.8.2.zip
+          Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.8.2.mobileconfig
+          Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.8.2.zip dist/
           Get-ChildItem dist -File | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
           } | Set-Content -Encoding utf8 dist/SHA256SUMS.txt
@@ -48,12 +48,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = 'platform-v4.8.0'
+          $tag = 'platform-v4.8.2'
           $assets = (Get-ChildItem dist -File).FullName
           gh release upload $tag @assets --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed' }
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Platforms-4.8.0
+          name: So-Xe-To-Chuc-Platforms-4.8.2
           path: dist/
           if-no-files-found: error
