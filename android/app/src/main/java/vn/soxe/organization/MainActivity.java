@@ -117,7 +117,7 @@ public class MainActivity extends FragmentActivity {
         return l;
     }
     private void message(String value){if(!isFinishing())new AlertDialog.Builder(this).setTitle("Sổ Xe Tổ Chức").setMessage(value).setPositiveButton("Đóng",null).show();}
-    private void progress(boolean value){busy=value;if(status!=null)status.setText(value?"Đang đồng bộ Drive…":"Sẵn sàng");}
+    private void progress(boolean value){busy=value;if(status!=null)status.setText(value?"Đang xử lý, vui lòng chờ…":"Sẵn sàng");}
     private String accountName(String slot){return prefs.getString(slot,"");}
     private void login(){
         state=null;presentation=null;
@@ -272,8 +272,8 @@ public class MainActivity extends FragmentActivity {
         if(admin()){button(body,"+ Thêm xe",()->editCar(obj()));button(body,"Người sử dụng",this::users);}
         button(body,"Bàn giao xe",this::handovers);
         if(list("cars").length()==0)text(body,"Chưa có xe trong phạm vi được xem.",15,false);
-        for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);
-            card(c.optString("plate")+" · "+c.optString("name"),"Quản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId"))+"\nODO "+money(c.optDouble("odo"))+" km",()->viewCar(c));
+        for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);String assigned=find("carChoices",c.optString("id")).optString("assignedUserId"),detail="Quản lý/Lái xe: "+person(assigned)+"\nODO "+money(c.optDouble("odo"))+" km";if(!admin()&&!assigned.equals(me("id")))detail+="\nĐã bàn giao · chỉ xem thông tin xe và giao dịch do bạn nhập.";
+            card(c.optString("plate")+" · "+c.optString("name"),detail,()->viewCar(c));
         }
     }
     private void viewCar(JSONObject c){
