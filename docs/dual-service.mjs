@@ -1,7 +1,7 @@
 import {attachmentStem,attachmentToday,matchesAttachmentName,uniqueAttachmentName} from './attachment-names.mjs?v=3aed45752cdb';
 import {exportBackup,inspectBackup,restoreBackup} from './storage-backup.mjs?v=0aeb749460c3';
 import {normalizeUsername,validateUsername} from './identity.mjs?v=3d8bd802f0ca';
-import {Service,projection} from './service.mjs?v=5e1f65e11748';
+import {Service,projection} from './service.mjs?v=39771b488197';
 import {MODEL} from './dual-drive.mjs?v=842317740181';
 import {lock,unlock,seal,open,randomKey,strongPassword} from './crypto.mjs?v=bb578fc7e8a4';
 const fail=m=>{throw new Error(m);},logical=username=>String(username||'').trim().toLowerCase()+'@users.invalid',now=()=>new Date().toISOString();
