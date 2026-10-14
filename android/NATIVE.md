@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Android native 4.8.0
+# Sổ Xe Tổ Chức — Android native 4.8.2
 
 Giao diện dùng Android Views: đăng nhập, hiện mật khẩu, Tổng quan, Xe, chi phí, phân công, NSD, bàn giao, báo cáo, tệp đính kèm, sao lưu và phục hồi. Không mở trang Web hoặc trình duyệt để sử dụng ứng dụng.
 
@@ -6,14 +6,14 @@ Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK
 
 ## Cấu hình Google một lần
 
-APK 4.8.0 được ký bằng keystore phát hành hiện dùng. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
+APK 4.8.2 được ký bằng keystore phát hành hiện dùng. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
 
 1. Mở Google Cloud Console, chọn dự án số **862228353042** đang dùng với Sổ Xe cá nhân và Sổ Xe tổ chức.
 2. Mở **Google Auth Platform → Clients** (hoặc **APIs & Services → Credentials**).
 3. Chọn **Create client / Create credentials → OAuth client ID**, loại **Android**.
-4. Tên: **Sổ Xe Tổ Chức Android 4.8.0**.
+4. Tên: **Sổ Xe Tổ Chức Android 4.8.2**.
 5. Package name: **vn.soxe.organization**.
-6. SHA-1 chính xác của chứng thư ký APK 4.8.0:
+6. SHA-1 chính xác của chứng thư ký APK 4.8.2:
 
    **9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E**
 
@@ -40,4 +40,4 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 
 GitHub Actions chạy Gradle assembleRelease, lintRelease và kiểm thử Android emulator API 29 cho giao diện native, khởi động bộ xử lý cục bộ và phân quyền giao diện. Các kiểm thử nghiệp vụ Drive dùng chung nằm ở tests/dual-drive.test.mjs, tests/handovers.test.mjs và tests/backup-web-ui.test.mjs.
 
-APK 4.8.0 dùng khóa phát hành hiện dùng, nên có thể cập nhật đè các APK trước đó được ký bằng cùng khóa. Nếu bản đang cài dùng khóa khác hoặc không rõ nguồn, hãy sao lưu dữ liệu rồi gỡ bản đó trước khi cài. Giữ keystore phát hành an toàn để dùng cho các bản Android sau. Khóa riêng và mật khẩu ký không được đưa vào repository.
+APK 4.8.2 dùng khóa phát hành hiện dùng, nên có thể cập nhật đè các APK trước đó được ký bằng cùng khóa. Nếu bản đang cài dùng khóa khác hoặc không rõ nguồn, hãy sao lưu dữ liệu rồi gỡ bản đó trước khi cài. Giữ keystore phát hành an toàn để dùng cho các bản Android sau. Khóa riêng và mật khẩu ký không được đưa vào repository.

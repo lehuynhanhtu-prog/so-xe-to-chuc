@@ -1,1 +1,34 @@
-plugins { id 'com.android.application' version '8.7.3' apply false }
+plugins { id 'com.android.application' }
+android {
+    namespace 'vn.soxe.organization'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'vn.soxe.organization'
+        minSdk 24
+        targetSdk 35
+        versionCode 483
+        versionName '4.8.2'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    buildTypes { release { minifyEnabled false } }
+}
+
+dependencies {
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    implementation 'androidx.fragment:fragment:1.8.5'
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+    implementation 'com.google.android.gms:play-services-auth:22.0.0'
+}
+// Build a local runtime, with no Web UI, from the same audited ledger core.
+def coreAssets = tasks.register('packageLedgerCore', Exec) {
+    workingDir rootDir.parentFile
+    commandLine 'node', 'tools/build-native-core.mjs'
+    inputs.files(fileTree('../../web') { include '*.mjs' })
+    inputs.file('src/main/assets/native-engine.mjs')
+    inputs.file('../../tools/build-native-core.mjs')
+    outputs.file(layout.buildDirectory.file('generated/ledgerAssets/native-runtime.js'))
+}
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir('generated/ledgerAssets'))
+tasks.named('preBuild').configure { dependsOn(coreAssets) }
