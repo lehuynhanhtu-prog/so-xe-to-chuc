@@ -203,11 +203,11 @@ Android 4.8.0 là ứng dụng native, dùng OAuth Google Drive và hỗ trợ s
 
 ## 4.8.3 — Phục hồi sang hai Google mới
 
-Web và Android có **Phục hồi từ hai Google cũ** trước đăng nhập. Admin kết nối Google lưu dữ liệu Admin mới, sau đó Google lưu dữ liệu NSD mới. Nếu đã có tổ chức trên Google đích, mở dữ liệu hiện có; không ghi đè tổ chức đó qua luồng chuyển này.
+Web và Android có **Tổ chức → Sao lưu & Phục hồi → Phục hồi từ hai Google cũ**. Admin đang đăng nhập tạo bản sao lưu đầy đủ, mở chức năng này, sau đó ứng dụng kết thúc phiên hiện tại và yêu cầu chọn lại Google lưu dữ liệu Admin mới rồi Google lưu dữ liệu NSD mới. Nếu đã có tổ chức trên Google đích, mở dữ liệu hiện có; không ghi đè tổ chức đó qua luồng chuyển này.
 
 1. Trên hai Google cũ, đăng nhập Admin và tạo bản sao lưu **đầy đủ** trong Cài đặt. Đợi đồng bộ hoàn tất trước khi sao lưu.
-2. Đăng xuất/ngắt kết nối trên thiết bị, chọn Admin và kết nối hai Google mới.
-3. Chọn **Phục hồi từ hai Google cũ**, mở ZIP/JSON, nhập mật khẩu sao lưu, kiểm tra tổ chức, số xe/giao dịch/tệp và hai tài khoản đích.
+2. Ngay trong **Tổ chức → Sao lưu & Phục hồi**, chọn **Phục hồi từ hai Google cũ**. Ứng dụng kết thúc phiên hiện tại và yêu cầu chọn lại Google Admin mới, sau đó Google NSD mới.
+3. Mở ZIP/JSON, nhập mật khẩu sao lưu, kiểm tra tổ chức, số xe/giao dịch/tệp và hai tài khoản đích.
 4. Nhập tên tổ chức để xác nhận. Sau khi hoàn tất, đăng nhập bằng tên và mật khẩu tại thời điểm sao lưu. NSD kết nối Google NSD mới trước khi đăng nhập.
 
 Bản sao lưu mang theo dữ liệu của hai tài khoản cũ; không cần cấp quyền cho hai Google cũ trong lúc ghi sang Google mới. Dữ liệu nguồn được giữ nguyên. Tệp đính kèm được tạo lại với ID mới; các tham chiếu được đổi trong dữ liệu mới. Hồ sơ tài khoản giữ phần kiểm tra mật khẩu gốc và ánh xạ nơi lưu mới được mã hóa/xác thực bằng AES-GCM. Đổi mật khẩu sau chuyển sẽ ghi hồ sơ tài khoản chuẩn ở nơi lưu mới. Nếu chuyển bị lỗi, ứng dụng dọn các tệp đích đã tạo; nếu dọn chưa xong, hiển thị thông báo để xử lý trước khi thử lại.

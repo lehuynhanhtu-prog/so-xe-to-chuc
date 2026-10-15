@@ -2,7 +2,7 @@
 
 - Đồng bộ phiên bản Web, Android native, Windows Portable và iOS Web App.
 - Admin kết nối Google lưu dữ liệu Admin mới, rồi Google lưu dữ liệu NSD mới.
-- Thêm “Phục hồi từ hai Google cũ” trước đăng nhập, trên Web và Android. Chọn bản sao lưu đầy đủ ZIP/JSON đã tạo bằng Admin trên hai Google cũ, kiểm tra thông tin và xác nhận hai Google đích.
+- Thêm “Phục hồi từ hai Google cũ” trong **Tổ chức → Sao lưu & Phục hồi** trên Web và Android. Chọn bản sao lưu đầy đủ ZIP/JSON đã tạo bằng Admin trên hai Google cũ, kiểm tra thông tin và xác nhận hai Google đích.
 - Chuyển dữ liệu, phân công/bàn giao, lịch sử, tài khoản và tệp đính kèm; giữ tên đăng nhập và mật khẩu tại thời điểm sao lưu. Không thay đổi dữ liệu trên hai Google cũ.
 - Android đọc được cả bản sao lưu JSON và ZIP từ Web.
 - Khi chọn “Phục hồi từ hai Google cũ”, Web và Android bắt buộc chọn lại lần lượt Google Admin mới và Google NSD mới trước khi đọc bản sao lưu; không tự dùng hai phiên Google đã nhớ.

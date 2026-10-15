@@ -133,7 +133,7 @@ public class MainActivity extends FragmentActivity {
         }));
         if(accountName("secondary").isEmpty()||adminMode&&accountName("primary").isEmpty())text(body,"Lần đầu, Android sẽ yêu cầu kết nối tài khoản Google lưu dữ liệu.",14,false);
         button(body,"Đổi loại đăng nhập",this::chooseRole);
-        if(adminMode){button(body,"Khởi tạo tổ chức mới",this::createOrganization);button(body,"Phục hồi từ hai Google cũ",this::transferBackup);}
+        if(adminMode)button(body,"Khởi tạo tổ chức mới",this::createOrganization);
         button(body,"Tài khoản Google đã kết nối",this::connections);
     }
     private void chooseRole(){
@@ -445,13 +445,13 @@ public class MainActivity extends FragmentActivity {
         shell("Sao lưu và phục hồi");text(body,"Bản sao lưu gồm dữ liệu, tài khoản NSD và toàn bộ tệp đính kèm. Giữ mật khẩu sao lưu để phục hồi.",15,false);
         Form f=new Form();f.password("password","Mật khẩu sao lưu (từ 6 ký tự)","");
         button(body,"Tạo bản sao lưu",()->operation("export",obj("password",f.string("password")),r->saveDocument("So-Xe-"+today()+".json","application/json",r.optString("backup").getBytes(java.nio.charset.StandardCharsets.UTF_8)),true));
-        button(body,"Chọn bản sao lưu để phục hồi",()->{attachmentPicked=null;backupPicked=this::inspectRestore;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});button(body,"Quay lại",this::account);
+        button(body,"Chọn bản sao lưu để phục hồi",()->{attachmentPicked=null;backupPicked=this::inspectRestore;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});
+        button(body,"Phục hồi từ hai Google cũ",this::transferBackup);button(body,"Quay lại",this::account);
     }
     private void transferBackup(){
-        if(state!=null){message("Đăng xuất tổ chức trước khi phục hồi sang hai Google mới.");return;}
-        adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();
-        progress(true,"Đang yêu cầu chọn hai Google mới…");
-        chooseGoogle("primary",()->chooseGoogle("secondary",this::openTransferBackup));
+        if(state==null||!admin()){message("Đăng nhập Admin và mở Tổ chức → Sao lưu và phục hồi.");return;}
+        new AlertDialog.Builder(this).setTitle("Phục hồi sang hai Google mới").setMessage("Hãy tạo và lưu bản sao lưu đầy đủ trước. Ứng dụng sẽ đăng xuất tổ chức hiện tại, sau đó yêu cầu chọn lại Google Admin mới và Google NSD mới.")
+            .setNegativeButton("Hủy",null).setPositiveButton("Tiếp tục",(d,w)->{progress(true,"Đang chuẩn bị chọn hai Google mới…");engine.call("logout",obj(),(r,e)->{state=presentation=null;loginPassword=loginName="";adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();chooseGoogle("primary",()->chooseGoogle("secondary",this::openTransferBackup));});}).show();
     }
     private void openTransferBackup(){
         withGoogle(()->{progress(false);shell("Phục hồi từ hai Google cũ");
@@ -518,7 +518,7 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
-        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;return;}
+        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;if((request==PICK_ACCOUNT||request==AUTHORIZE)&&state==null){authorized=null;selecting="";login();}return;}
         if(request==PICK_ACCOUNT){String name=data.getStringExtra("authAccount");if(name==null){message("Chưa chọn tài khoản Google.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
         else if(request==AUTHORIZE){try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}}
         else if(request==SAVE_FILE&&data.getData()!=null){
