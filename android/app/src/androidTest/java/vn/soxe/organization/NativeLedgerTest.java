@@ -58,6 +58,8 @@ public class NativeLedgerTest {
                     Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
                     MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
                     attempt.begin("admin","secret",true);
+                    attempt.rememberToken("primary","token-admin",Long.MAX_VALUE);
+                    attempt.rememberToken("secondary","token-nsd",Long.MAX_VALUE);
                 } catch(Exception e){throw new AssertionError(e);}
             });
             activity.recreate();
@@ -70,6 +72,9 @@ public class NativeLedgerTest {
                     Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
                     MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
                     assertTrue(attempt.pending);assertEquals("admin",attempt.username);assertEquals("secret",attempt.password);assertTrue(attempt.adminMode);
+                    Field primaryToken=MainActivity.class.getDeclaredField("primaryToken");primaryToken.setAccessible(true);
+                    Field secondaryToken=MainActivity.class.getDeclaredField("secondaryToken");secondaryToken.setAccessible(true);
+                    assertEquals("token-admin",primaryToken.get(a));assertEquals("token-nsd",secondaryToken.get(a));
                 } catch(Exception e){throw new AssertionError(e);}
             });
         }

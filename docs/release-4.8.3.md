@@ -13,6 +13,7 @@
 - Sửa đăng nhập Admin/Admin bổ sung trên APK qua đúng hai Google; APK kiểm tra rõ vai trò Admin và hoàn tất mở nhật ký cùng dữ liệu tổ chức.
 - Sửa kết nối Google trên APK: lưu ngay tài khoản vừa chọn trước khi xin quyền Drive, giữ đúng vị trí Google Admin/NSD khi màn hình cấp quyền làm Activity được tạo lại và bỏ lượt gọi Drive thừa khiến lựa chọn không được lưu.
 - APK giữ yêu cầu đăng nhập đang chờ trong bộ nhớ vòng đời khi chuyển qua màn hình Google; sau khi cấp quyền sẽ tự tiếp tục đăng nhập thay vì dừng im lặng. Mật khẩu chờ không ghi vào tệp hoặc SharedPreferences.
+- APK giữ đồng thời hai token Google ngắn hạn trong bộ nhớ vòng đời, tránh vòng lặp xin lại Google Admin sau khi vừa cấp quyền Google NSD.
 - Tối ưu đăng nhập Web/APK: hồ sơ tài khoản dùng PBKDF2 nhẹ hơn; dữ liệu nghiệp vụ lưu JSON trực tiếp. Dữ liệu mã hóa cũ vẫn đọc được và tự chuyển đổi sau lần đăng nhập thành công.
 - APK 4.8.3 được GitHub Actions ký bằng đúng khóa đã ký APK 4.7 và chỉ phát hành khi SHA-1 chứng thư khớp `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth.
 

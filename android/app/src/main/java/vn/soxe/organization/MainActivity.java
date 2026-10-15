@@ -66,12 +66,15 @@ public class MainActivity extends FragmentActivity {
     private Consumer<String> backupPicked;
     private byte[] exportBytes;
     public static final class LoginAttempt extends ViewModel {
-        String username="",password="";
+        String username="",password="",primaryToken="",secondaryToken="";
+        long primaryExpiry,secondaryExpiry;
         boolean adminMode,pending;
         public LoginAttempt(){}
         void begin(String username,String password,boolean adminMode){this.username=username;this.password=password;this.adminMode=adminMode;pending=true;}
-        void finish(){pending=false;}
-        void clear(){username=password="";pending=false;}
+        void rememberToken(String slot,String token,long expiry){if("primary".equals(slot)){primaryToken=token;primaryExpiry=expiry;}else{secondaryToken=token;secondaryExpiry=expiry;}}
+        void forgetToken(String slot){rememberToken(slot,"",0);}
+        void finish(){password="";pending=false;}
+        void clear(){username=password=primaryToken=secondaryToken="";primaryExpiry=secondaryExpiry=0;pending=false;}
     }
     private final Runnable automaticSync=new Runnable(){
         @Override public void run(){
@@ -86,6 +89,9 @@ public class MainActivity extends FragmentActivity {
         adminMode=prefs.getBoolean("adminMode",false);
         loginAttempt=new ViewModelProvider(this).get(LoginAttempt.class);
         if(loginAttempt.pending){loginName=loginAttempt.username;loginPassword=loginAttempt.password;adminMode=loginAttempt.adminMode;}
+        primaryToken=loginAttempt.primaryToken;secondaryToken=loginAttempt.secondaryToken;
+        if(loginAttempt.primaryExpiry>0)tokenExpiry.put("primary",loginAttempt.primaryExpiry);
+        if(loginAttempt.secondaryExpiry>0)tokenExpiry.put("secondary",loginAttempt.secondaryExpiry);
         vault=new BiometricVault(this);
         engine=new LedgerEngine(this,()->{ready=true;if(status!=null)status.setText("Sẵn sàng");resumePendingLogin();});
         login();handler.postDelayed(automaticSync,60000);
@@ -137,6 +143,7 @@ public class MainActivity extends FragmentActivity {
     private String pendingGoogleSlot(){return googleSlot(selecting)?selecting:prefs.getString(PENDING_GOOGLE_SLOT,"");}
     private boolean saveGoogleAccount(String slot,String email){
         if(!googleSlot(slot)||email==null||email.trim().isEmpty())return false;
+        loginAttempt.forgetToken(slot);tokenExpiry.remove(slot);if("primary".equals(slot))primaryToken="";else secondaryToken="";
         return prefs.edit().putString(slot,email.trim().toLowerCase(Locale.ROOT)).putString(PENDING_GOOGLE_SLOT,slot).commit();
     }
     private void login(){
@@ -218,7 +225,7 @@ public class MainActivity extends FragmentActivity {
         String email=pendingAccount==null?accountName(slot):pendingAccount.name.trim().toLowerCase(Locale.ROOT);
         if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
         if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}
-        tokenExpiry.put(slot,System.currentTimeMillis()+45*60000);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
+        long expiry=System.currentTimeMillis()+45*60000;tokenExpiry.put(slot,expiry);loginAttempt.rememberToken(slot,token,expiry);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
         pendingAccount=null;selecting="";Runnable next=authorized;authorized=null;progress(false);
         if(next!=null)next.run();else if(state==null&&loginAttempt.pending){resumePendingLogin();}else {message("Đã kết nối và lưu tài khoản Google "+email+".");if(state==null)login();else connections();}
     }
