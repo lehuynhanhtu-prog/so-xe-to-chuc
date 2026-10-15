@@ -65,9 +65,10 @@ public class MainActivity extends FragmentActivity {
     private Consumer<JSONObject> attachmentPicked;
     private Consumer<String> backupPicked;
     private byte[] exportBytes;
-    static final class LoginAttempt extends ViewModel {
+    public static final class LoginAttempt extends ViewModel {
         String username="",password="";
         boolean adminMode,pending;
+        public LoginAttempt(){}
         void begin(String username,String password,boolean adminMode){this.username=username;this.password=password;this.adminMode=adminMode;pending=true;}
         void finish(){pending=false;}
         void clear(){username=password="";pending=false;}
