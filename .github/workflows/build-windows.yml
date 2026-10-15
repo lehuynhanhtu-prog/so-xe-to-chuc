@@ -37,7 +37,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          Copy-Item docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk dist/
+          if (Test-Path docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk) { Copy-Item docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk dist/ }
           Compress-Archive -Path windows-portable/SoXeLauncher.exe,windows-portable/Chay-So-Xe.bat,windows-portable/HUONG-DAN.txt -DestinationPath dist/So-Xe-To-Chuc-Windows-4.8.3.zip
           Copy-Item docs/downloads/So-Xe-iOS.mobileconfig dist/So-Xe-To-Chuc-iOS-4.8.3.mobileconfig
           Copy-Item docs/downloads/So-Xe-To-Chuc-Web-4.8.3.zip dist/

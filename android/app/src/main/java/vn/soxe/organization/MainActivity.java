@@ -145,14 +145,14 @@ public class MainActivity extends FragmentActivity {
         if(username.trim().isEmpty()||password.isEmpty()){message("Nhập tên đăng nhập và mật khẩu.");return;}
         loginName=username.trim();loginPassword=password;
         if(loginName.equalsIgnoreCase("admin")&&!adminMode){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();}
-        withGoogle(()->engine.call("login",obj("username",loginName,"password",loginPassword),(result,error)->{
+        withGoogle(()->{progress(true,"Đang đăng nhập và đồng bộ dữ liệu…");engine.call("login",obj("username",loginName,"password",loginPassword),(result,error)->{
             progress(false);
             if(error!=null){loginPassword="";message(error);return;}
             if(result.optBoolean("needsPrimary")){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();doLogin(loginName,loginPassword);return;}
             if(result.optBoolean("mustChange")){changePassword(true);return;}
             if(result.optBoolean("deletionPending")){message("Tổ chức đang chờ xóa. Hoàn tất thao tác trên bản Web bằng Admin sở hữu.");return;}
             accept(result);render();
-        }));
+        });});
     }
     private void connections(){
         shell("Kết nối Google");text(body,"Google lưu dữ liệu Admin: "+accountName("primary")+"\nTK Google lưu dữ liệu NSD: "+accountName("secondary"),15,false);
@@ -205,7 +205,7 @@ public class MainActivity extends FragmentActivity {
                 if(e!=null){progress(false);message(e);}else{progress(true);action.run();}
             });
         });
-        if(adminMode)authorize("primary",secondary);else secondary.run();
+        if(adminMode){String previousPrimary=accountName("primary");authorize("primary",()->{if(!previousPrimary.equals(accountName("primary")))chooseGoogle("secondary",secondary);else secondary.run();});}else secondary.run();
     }
     private String processingText(String action){
         if("export".equals(action))return "Đang sao lưu giao dịch và tệp đính kèm…";
@@ -283,7 +283,7 @@ public class MainActivity extends FragmentActivity {
         button(body,"Bàn giao xe",this::handovers);
         if(list("cars").length()==0)text(body,"Chưa có xe trong phạm vi được xem.",15,false);
         for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);String assigned=find("carChoices",c.optString("id")).optString("assignedUserId"),detail="Quản lý/Lái xe: "+person(assigned)+"\nODO "+money(c.optDouble("odo"))+" km";boolean managed=admin()||assigned.equals(me("id"));JSONObject event=latestManagementEvent(c.optString("id"),managed?"toUserId":"fromUserId");if(!admin()&&managed){detail+="\nĐANG QUẢN LÝ";if(event!=null&&"handover".equals(event.optString("kind")))detail+=" · Nhận bàn giao "+localTime(event.optString("at"))+" từ "+person(event.optString("fromUserId"));}else if(!admin()){detail+="\nĐÃ BÀN GIAO"+(event==null?" · chỉ xem thông tin xe và giao dịch do bạn nhập.":" · "+localTime(event.optString("at"))+" · Người nhận gần nhất: "+person(event.optString("toUserId")));}
-            card(c.optString("plate")+" · "+c.optString("name"),detail,()->viewCar(c),managed?BLUE:Color.rgb(115,130,145),managed?Color.WHITE:Color.rgb(245,247,249));
+            LinearLayout vehicle=card(c.optString("plate")+" · "+c.optString("name"),detail,()->viewCar(c),managed?BLUE:Color.rgb(115,130,145),managed?Color.WHITE:Color.rgb(245,247,249));if(!managed)vehicle.setAlpha(0.65f);
         }
     }
     private JSONObject latestManagementEvent(String carId,String personKey){
@@ -367,7 +367,7 @@ public class MainActivity extends FragmentActivity {
         double total=0;for(JSONObject t:sortedTransactions())total+=t.optDouble("amount");text(body,"Chi phí trong phạm vi được xem: "+money(total)+" ₫",19,true);
         JSONArray months=presentation.optJSONArray("monthly");if(months!=null)for(int i=0;i<months.length();i++){JSONObject m=months.optJSONObject(i);card(m.optString("plate")+" · "+month(m.optString("month")),"Tổng: "+money(m.optDouble("total"))+" ₫\nSố lít: "+money(m.optDouble("liters"))+(m.isNull("rate")?"":" · "+money(m.optDouble("rate"))+" L/100km"),null);}
         text(body,"Thời gian quản lý xe",18,true);JSONArray periods=presentation.optJSONArray("periods");
-        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);boolean ongoing=p.optBoolean("ongoing");card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(ongoing?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null,ongoing?GREEN:BLUE,ongoing?Color.rgb(232,247,238):Color.WHITE);}
+        if(periods!=null)for(int i=0;i<periods.length();i++){JSONObject p=periods.optJSONObject(i);boolean ongoing=p.optBoolean("ongoing");LinearLayout row=card(person(p.optString("userId"))+" · "+car(p.optString("carId")),localTime(p.optString("from"))+" → "+(ongoing?"Đang quản lý":localTime(p.optString("to")))+"\n"+p.optString("duration"),null,ongoing?GREEN:BLUE,ongoing?Color.rgb(232,247,238):Color.WHITE);if(ongoing)for(int j=0;j<row.getChildCount();j++)if(row.getChildAt(j) instanceof TextView)((TextView)row.getChildAt(j)).setTypeface(null,Typeface.BOLD);}
         button(body,"Xuất giao dịch CSV",this::exportCsv);
         button(body,"Xuất Excel",this::excelExport);
     }

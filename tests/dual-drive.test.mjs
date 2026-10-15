@@ -131,3 +131,13 @@ test('role matrix enforces current management for writes and own-author records 
  const extraService=new DualService(new DualDrive(f.a,f.b,f.a.email,f.b.email));await extraService.login(extra.profile.id,password);for(const service of [f.s,extraService,viewer.m]){const data=(await service.api('read')).data;assert.equal(data.transactions.length,3);assert.equal(new Set(data.assignments.map(a=>a.userId)).size,2);assert.equal(selectTransactions(data).length,3);}for(const action of ['saveCar','deleteCar','assign','createUser','editUser','deleteUser','saveTransaction','deleteTransaction','saveHandover','deleteHandover','renameOrganization','deleteOrganization','export','inspectBackup','restoreBackup'])await assert.rejects(viewer.m.api(action,{...onBehalf,id:onBehalf.id}),/Không có quyền|Chỉ Admin/);
  await extraService.api('saveTransaction',{...onBehalf,amount:223});await extraService.api('deleteTransaction',{id:onBehalf.id,version:onBehalf.version+1});const ownAfter=(await one.m.api('read')).data.transactions[0];await one.m.api('deleteTransaction',{id:ownAfter.id,version:ownAfter.version});await f.s.api('read');assert.equal((await one.m.api('read')).data.transactions.length,0);
 });
+
+test('NSD sees assigned cars without expenses and retains read-only handover history',async()=>{
+ const f=await fixture(),one=await add(f,'driver','one'),two=await add(f,'driver','two');
+ const car=(await f.s.api('saveCar',{plate:'HANDOVER',name:'Full vehicle details',odo:120,year:2024})).data.cars[0];
+ await f.s.api('assign',{carId:car.id,userId:one.u.id});
+ let state=(await one.m.api('read')).data;assert.equal(state.cars[0].name,'Full vehicle details');assert.equal(state.transactions.length,0);
+ const at=new Date().toISOString();await f.s.api('saveHandover',{carId:car.id,fromUserId:one.u.id,toUserId:two.u.id,at,odo:150,note:'Complete'});
+ for(const member of [one,two]){state=(await member.m.api('read')).data;assert.equal(state.cars[0].id,car.id);assert.equal(state.cars[0].year,'2024');assert.equal(state.carChoices.find(c=>c.id===car.id).assignedUserId,two.u.id);const event=state.carManagementEvents.find(e=>e.kind==='handover');assert.equal(event.fromUserId,one.u.id);assert.equal(event.toUserId,two.u.id);assert.equal(event.at,at);}
+ await assert.rejects(one.m.api('saveTransaction',tx(car.id)),/đang quản lý xe/);
+});
