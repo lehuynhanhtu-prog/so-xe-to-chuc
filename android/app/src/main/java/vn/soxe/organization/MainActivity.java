@@ -31,9 +31,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
 import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.ClearCredentialStateRequest;
 import androidx.credentials.CustomCredential;
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.GetCredentialException;
 import com.google.android.gms.auth.api.identity.AuthorizationRequest;
 import com.google.android.gms.auth.api.identity.AuthorizationResult;
@@ -41,7 +43,7 @@ import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Scope;
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -219,7 +221,19 @@ public class MainActivity extends FragmentActivity {
         selecting=slot;authorized=next;
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
         progress(true,"Đang chọn tài khoản Google "+(slot.equals("primary")?"Admin":"NSD")+"…");
-        GetSignInWithGoogleOption option=new GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build();
+        // Xóa phiên Credential Manager đang được ưu tiên để mỗi ô Admin/NSD luôn
+        // hiện toàn bộ tài khoản. Nếu nhà cung cấp không hỗ trợ xóa, vẫn tiếp tục.
+        try{credentialManager.clearCredentialStateAsync(new ClearCredentialStateRequest(),new CancellationSignal(),ContextCompat.getMainExecutor(this),new CredentialManagerCallback<Void,ClearCredentialException>(){
+            @Override public void onResult(Void unused){showGoogleChooser();}
+            @Override public void onError(ClearCredentialException e){showGoogleChooser();}
+        });}catch(Exception e){showGoogleChooser();}
+    }
+    private void showGoogleChooser(){
+        GetGoogleIdOption option=new GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setAutoSelectEnabled(false)
+            .setServerClientId(WEB_CLIENT_ID)
+            .build();
         GetCredentialRequest request=new GetCredentialRequest.Builder().addCredentialOption(option).build();
         try{credentialManager.getCredentialAsync(this,request,new CancellationSignal(),ContextCompat.getMainExecutor(this),new CredentialManagerCallback<GetCredentialResponse,GetCredentialException>(){
             @Override public void onResult(GetCredentialResponse response){
@@ -267,6 +281,7 @@ public class MainActivity extends FragmentActivity {
         progress(false);
         String detail=e.getMessage()==null||e.getMessage().trim().isEmpty()?e.getClass().getSimpleName():e.getMessage().trim();
         String help="Hãy kiểm tra mạng, cập nhật Google Play Services rồi chọn lại tài khoản.";
+        if(detail.contains("Account reauth failed")||detail.contains("[16]"))help="Google không hoàn tất xác thực lại tài khoản. Hãy mở Cài đặt Android → Tài khoản/Google, xác nhận tài khoản vẫn hoạt động; sau đó quay lại app và chọn lại tài khoản.";
         if(e instanceof ApiException){
             int code=((ApiException)e).getStatusCode();
             detail=CommonStatusCodes.getStatusCodeString(code)+" ("+code+")";
