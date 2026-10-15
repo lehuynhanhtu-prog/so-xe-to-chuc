@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.*;
 import androidx.fragment.app.FragmentActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
@@ -220,7 +221,7 @@ public class MainActivity extends FragmentActivity {
         progress(true,"Đang chọn tài khoản Google "+(slot.equals("primary")?"Admin":"NSD")+"…");
         GetSignInWithGoogleOption option=new GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build();
         GetCredentialRequest request=new GetCredentialRequest.Builder().addCredentialOption(option).build();
-        try{credentialManager.getCredentialAsync(this,request,new CancellationSignal(),getMainExecutor(),new CredentialManagerCallback<GetCredentialResponse,GetCredentialException>(){
+        try{credentialManager.getCredentialAsync(this,request,new CancellationSignal(),ContextCompat.getMainExecutor(this),new CredentialManagerCallback<GetCredentialResponse,GetCredentialException>(){
             @Override public void onResult(GetCredentialResponse response){
                 try{
                     Credential credential=response.getCredential();
