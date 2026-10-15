@@ -49,6 +49,25 @@ public class NativeLedgerTest {
         assertNull(error[0]);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->engine[0].destroy());
     }
+    @Test public void googleAccountChoiceIsCommittedBeforeAuthorizationAndSurvivesRecreation() throws Exception {
+        try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
+            activity.onActivity(a->{
+                try {
+                    Method save=MainActivity.class.getDeclaredMethod("saveGoogleAccount",String.class,String.class);save.setAccessible(true);
+                    assertTrue((Boolean)save.invoke(a,"primary","Admin.Storage@Example.Test"));
+                } catch(Exception e){throw new AssertionError(e);}
+            });
+            activity.recreate();
+            activity.onActivity(a->{
+                try {
+                    Method account=MainActivity.class.getDeclaredMethod("accountName",String.class);account.setAccessible(true);
+                    Method pending=MainActivity.class.getDeclaredMethod("pendingGoogleSlot");pending.setAccessible(true);
+                    assertEquals("admin.storage@example.test",account.invoke(a,"primary"));
+                    assertEquals("primary",pending.invoke(a));
+                } catch(Exception e){throw new AssertionError(e);}
+            });
+        }
+    }
     @androidx.annotation.RequiresApi(29)
     private static void screenshot(MainActivity a,String name) {
         try {

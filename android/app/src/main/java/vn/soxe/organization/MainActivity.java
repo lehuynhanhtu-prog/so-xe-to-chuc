@@ -1,6 +1,7 @@
 package vn.soxe.organization;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -32,8 +33,6 @@ import com.google.android.gms.common.api.Scope;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -44,6 +43,7 @@ import java.util.function.Consumer;
 /** Native Views; the local JS runtime supplies only the shared ledger core. */
 public class MainActivity extends FragmentActivity {
     private static final int PICK_ACCOUNT=101, AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
+    private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
     private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -120,6 +120,12 @@ public class MainActivity extends FragmentActivity {
     private void progress(boolean value){progress(value,"Đang xử lý, vui lòng chờ…");}
     private void progress(boolean value,String message){busy=value;if(status!=null)status.setText(value?message:"Sẵn sàng");}
     private String accountName(String slot){return prefs.getString(slot,"");}
+    private boolean googleSlot(String slot){return "primary".equals(slot)||"secondary".equals(slot);}
+    private String pendingGoogleSlot(){return googleSlot(selecting)?selecting:prefs.getString(PENDING_GOOGLE_SLOT,"");}
+    private boolean saveGoogleAccount(String slot,String email){
+        if(!googleSlot(slot)||email==null||email.trim().isEmpty())return false;
+        return prefs.edit().putString(slot,email.trim().toLowerCase(Locale.ROOT)).putString(PENDING_GOOGLE_SLOT,slot).commit();
+    }
     private void login(){
         state=null;presentation=null;
         if(!prefs.contains("adminMode")){chooseRole();return;}
@@ -165,12 +171,14 @@ public class MainActivity extends FragmentActivity {
     private void chooseGoogle(String slot,Runnable next){
         if(state!=null){message("Đăng xuất trước khi đổi tài khoản lưu dữ liệu.");return;}
         selecting=slot;authorized=next;
+        if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
         try{startActivityForResult(AccountPicker.newChooseAccountIntent(new AccountPicker.AccountChooserOptions.Builder().setAllowableAccountsTypes(Collections.singletonList("com.google")).build()),PICK_ACCOUNT);}
         catch(Exception e){progress(false);message("Thiết bị cần Google Play services để kết nối Drive.");}
     }
     private void authorize(String slot,Runnable next){
         selecting=slot;authorized=next;String name=accountName(slot);
-        if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){authorized=null;next.run();return;}
+        if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái kết nối Google trên thiết bị.");return;}
+        if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";next.run();return;}
         if(name.isEmpty()){progress(false);chooseGoogle(slot,next);return;}
         pendingAccount=new Account(name,"com.google");requestAuthorization();
     }
@@ -184,19 +192,15 @@ public class MainActivity extends FragmentActivity {
     }
     private void googleError(Exception e){progress(false);message("Không kết nối được Google: "+e.getMessage()+"\n\nKiểm tra OAuth Client loại Android, tên gói vn.soxe.organization và SHA-1 trong hướng dẫn bản native.");}
     private void finishAuthorization(AuthorizationResult result){
-        String token=result.getAccessToken(),slot=selecting;
+        String token=result.getAccessToken(),slot=pendingGoogleSlot();
         if(token==null||token.isEmpty()){progress(false);message("Google chưa cấp quyền Drive.");return;}
-        io.execute(()->{try{
-            HttpURLConnection c=(HttpURLConnection)new URL("https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)").openConnection();
-            c.setRequestProperty("Authorization","Bearer "+token);c.setConnectTimeout(20000);c.setReadTimeout(20000);String email;
-            try(InputStream stream=c.getInputStream()){email=new JSONObject(new String(read(stream,65536),java.nio.charset.StandardCharsets.UTF_8)).getJSONObject("user").getString("emailAddress").toLowerCase(Locale.ROOT);}
-            finally{c.disconnect();}
-            handler.post(()->{
-                if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
-                prefs.edit().putString(slot,email).apply();tokenExpiry.put(slot,System.currentTimeMillis()+45*60000);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
-                Runnable next=authorized;authorized=null;progress(false);if(next!=null)next.run();
-            });
-        }catch(Exception e){handler.post(()->googleError(e));}});
+        if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
+        String email=pendingAccount==null?accountName(slot):pendingAccount.name.trim().toLowerCase(Locale.ROOT);
+        if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
+        if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}
+        tokenExpiry.put(slot,System.currentTimeMillis()+45*60000);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
+        pendingAccount=null;selecting="";Runnable next=authorized;authorized=null;progress(false);
+        if(next!=null)next.run();else {message("Đã kết nối và lưu tài khoản Google "+email+".");if(state==null)login();else connections();}
     }
     private void withGoogle(Runnable action){
         if(!ready){message("Đang khởi động bộ xử lý. Hãy thử lại sau vài giây.");return;}
@@ -524,8 +528,8 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
-        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;if((request==PICK_ACCOUNT||request==AUTHORIZE)&&state==null){authorized=null;selecting="";login();}return;}
-        if(request==PICK_ACCOUNT){String name=data.getStringExtra("authAccount");if(name==null){message("Chưa chọn tài khoản Google.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
+        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;if(request==PICK_ACCOUNT||request==AUTHORIZE){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";pendingAccount=null;if(state==null)login();}return;}
+        if(request==PICK_ACCOUNT){String slot=pendingGoogleSlot(),name=data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);if(!googleSlot(slot)||name==null||name.trim().isEmpty()){message("Chưa chọn được tài khoản Google. Hãy thử lại.");return;}name=name.trim().toLowerCase(Locale.ROOT);if(name.equals(accountName(slot.equals("primary")?"secondary":"primary"))){message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}if(!saveGoogleAccount(slot,name)){message("Không lưu được tài khoản Google trên thiết bị.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
         else if(request==AUTHORIZE){try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}}
         else if(request==SAVE_FILE&&data.getData()!=null){
             Uri uri=data.getData();byte[] bytes=exportBytes;exportBytes=null;
