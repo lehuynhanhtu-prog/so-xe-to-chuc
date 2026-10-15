@@ -65,7 +65,7 @@ jobs:
           apk=So-Xe-To-Chuc-Android-4.8.3.apk
           mkdir -p "$RUNNER_TEMP/platform-release"
           gh release download "$tag" --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/platform-release"
-          grep -vF "  $apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" > "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
+          grep -vF "$apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" > "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
           (cd android-dist && sha256sum "$apk") >> "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
           mv "$RUNNER_TEMP/platform-release/SHA256SUMS.new" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt"
           gh release upload "$tag" "android-dist/$apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" --clobber
