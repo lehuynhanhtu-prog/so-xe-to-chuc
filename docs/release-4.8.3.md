@@ -15,6 +15,7 @@
 - APK giữ yêu cầu đăng nhập đang chờ trong bộ nhớ vòng đời khi chuyển qua màn hình Google; sau khi cấp quyền sẽ tự tiếp tục đăng nhập thay vì dừng im lặng. Mật khẩu chờ không ghi vào tệp hoặc SharedPreferences.
 - APK giữ đồng thời hai token Google ngắn hạn trong bộ nhớ vòng đời, tránh vòng lặp xin lại Google Admin sau khi vừa cấp quyền Google NSD.
 - APK đọc dữ liệu đăng nhập Google Drive bằng kết nối HTTPS native có giới hạn thời gian, tránh WebView đứng mãi ở “Đang đăng nhập…” và trả thông báo rõ nếu mạng/Drive không phản hồi.
+- APK lấy access token bằng Google Play Services native; màn hình cấp quyền chỉ mở khi cần, tránh đứng mãi ở “Đang xử lý, vui lòng chờ…” trước khi đọc Drive.
 - Tối ưu đăng nhập Web/APK: hồ sơ tài khoản dùng PBKDF2 nhẹ hơn; dữ liệu nghiệp vụ lưu JSON trực tiếp. Dữ liệu mã hóa cũ vẫn đọc được và tự chuyển đổi sau lần đăng nhập thành công.
 - APK 4.8.3 được GitHub Actions ký bằng đúng khóa đã ký APK 4.7 và chỉ phát hành khi SHA-1 chứng thư khớp `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth.
 
