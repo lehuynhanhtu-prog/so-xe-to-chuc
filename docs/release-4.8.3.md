@@ -9,6 +9,6 @@
 - Android: làm mờ xe đã bàn giao; in đậm toàn dòng thời gian đang quản lý; hiển thị tiến trình đăng nhập. Khi chọn Google Admin mới, yêu cầu chọn lại Google NSD.
 - Kiểm tra NSD thấy xe được phân công dù chưa có giao dịch, giữ thông tin xe và lịch bàn giao sau khi chuyển người quản lý.
 - Phần **Xe** của NSD hiển thị đầy đủ cảnh báo bảo dưỡng, phụ tùng, bảo hiểm, đăng kiểm và phí đường bộ của xe đang quản lý giống Admin, kể cả cảnh báo được nhập bởi tài khoản khác. Dữ liệu cảnh báo được tách riêng nên NSD vẫn không xem/sửa/xóa giao dịch của người khác; cảnh báo tự mất khi bàn giao xe.
-- APK 4.8.3 mới được build unsigned trong GitHub Actions, cần ký bằng đúng khóa đã ký APK 4.7 trước khi cung cấp bản cài đặt. SHA-1 chứng thư 4.7 là `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth. Windows/Web/iOS được phát hành riêng trong lúc chờ ký APK.
+- APK 4.8.3 được GitHub Actions ký bằng đúng khóa đã ký APK 4.7 và chỉ phát hành khi SHA-1 chứng thư khớp `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth.
 
 Windows và iOS sử dụng bản Web được công bố. Bản iOS là hồ sơ Web App, không phải IPA native.

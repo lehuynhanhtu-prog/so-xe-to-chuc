@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['android/**', '.github/workflows/build-android.yml', 'web/*.mjs', 'tools/build-native-core.mjs']
 permissions:
-  contents: read
+  contents: write
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -34,9 +34,44 @@ jobs:
           mkdir -p android-dist
           cp android/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" android-dist/
+      - name: Sign with the Android 4.7 release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/so-xe-release.jks"
+          java -jar android-dist/apksigner.jar sign \
+            --ks "$RUNNER_TEMP/so-xe-release.jks" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --out android-dist/So-Xe-To-Chuc-Android-4.8.3.apk \
+            android-dist/app-release-unsigned.apk
+          certificate=$(java -jar android-dist/apksigner.jar verify --print-certs android-dist/So-Xe-To-Chuc-Android-4.8.3.apk | sed -n 's/.*SHA-1 digest: //p' | head -n 1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          test "$certificate" = "235B9DD64A926CF7FCF78F791D33C738E9F7CCE7"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android-dist/So-Xe-To-Chuc-Android-4.8.3.apk | grep -F "versionName='4.8.3'"
+          java -jar android-dist/apksigner.jar verify --verbose android-dist/So-Xe-To-Chuc-Android-4.8.3.apk
+      - name: Publish signed APK and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=platform-v4.8.3
+          apk=So-Xe-To-Chuc-Android-4.8.3.apk
+          mkdir -p "$RUNNER_TEMP/platform-release"
+          gh release download "$tag" --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/platform-release"
+          grep -vF "  $apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" > "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
+          sha256sum "android-dist/$apk" >> "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
+          mv "$RUNNER_TEMP/platform-release/SHA256SUMS.new" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt"
+          gh release upload "$tag" "android-dist/$apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" --clobber
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Android-4.8.3-native-unsigned
+          name: So-Xe-To-Chuc-Android-4.8.3-native
           path: android-dist/
           retention-days: 30
           if-no-files-found: error
