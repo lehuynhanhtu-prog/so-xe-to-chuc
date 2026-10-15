@@ -10,8 +10,12 @@ import android.webkit.WebViewClient;
 import androidx.webkit.WebViewAssetLoader;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
 
 /** Local computation only. All visible application screens are Android Views. */
 final class LedgerEngine {
@@ -64,6 +68,20 @@ final class LedgerEngine {
                     } catch (Exception e) { callback.accept(null, "Không đọc được dữ liệu trả về."); }
                 });
             }
+            @JavascriptInterface public String httpGet(String url, String authorization) {
+                JSONObject response=new JSONObject();HttpsURLConnection connection=null;
+                try {
+                    URL target=new URL(url);
+                    if(!"https".equals(target.getProtocol())||!"www.googleapis.com".equals(target.getHost()))throw new SecurityException("Địa chỉ Google Drive không hợp lệ.");
+                    if(authorization==null||!authorization.startsWith("Bearer ")||authorization.length()>8192)throw new SecurityException("Phiên Google không hợp lệ.");
+                    connection=(HttpsURLConnection)target.openConnection();connection.setRequestMethod("GET");connection.setConnectTimeout(15000);connection.setReadTimeout(30000);connection.setUseCaches(false);connection.setRequestProperty("Authorization",authorization);connection.setRequestProperty("Accept","application/json, application/octet-stream");
+                    int status=connection.getResponseCode();InputStream in=status>=400?connection.getErrorStream():connection.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
+                    if(in!=null)try(InputStream source=in){byte[] block=new byte[8192];int n,total=0;while((n=source.read(block))!=-1){total+=n;if(total>40*1024*1024)throw new java.io.IOException("Phản hồi Google Drive vượt giới hạn.");out.write(block,0,n);}}
+                    response.put("status",status);response.put("contentType",connection.getContentType()==null?"application/octet-stream":connection.getContentType());response.put("body",android.util.Base64.encodeToString(out.toByteArray(),android.util.Base64.NO_WRAP));
+                } catch(Exception e) { try{response.put("status",0);response.put("error",e.getMessage()==null?"Không kết nối được Google Drive.":e.getMessage());}catch(Exception ignored){} }
+                finally {if(connection!=null)connection.disconnect();}
+                return response.toString();
+            }
         }, "Native");
         runtime.loadUrl("https://appassets.androidplatform.net/assets/engine.html");
     }
@@ -75,7 +93,7 @@ final class LedgerEngine {
         main.postDelayed(() -> {
             Callback pending = callbacks.remove(id);
             if (pending != null) pending.accept(null, "Thao tác chưa hoàn tất. Kiểm tra mạng và đồng bộ để xác nhận trước khi nhập lại.");
-        }, 180000);
+        }, 90000);
     }
     void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {}; runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
 }

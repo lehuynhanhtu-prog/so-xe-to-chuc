@@ -19,6 +19,16 @@ crypto.randomUUID ??= function(){
 };
 String.prototype.replaceAll ??= function(search,replacement){return this.split(search).join(replacement);};
 export const categories={fuel:'Tiền xăng',charge:'Sạc xe',battery_rental:'Thuê pin',maintenance:'Bảo dưỡng',parts:'Phụ tùng',insurance:'Bảo hiểm TNDS',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Khác'};
+const bytesFromBase64=value=>{const binary=atob(value||''),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;};
+async function nativeFetch(url,options={}){
+ const method=(options.method||'GET').toUpperCase();
+ if(method==='GET'&&globalThis.Native?.httpGet){
+  const headers=new Headers(options.headers||{}),result=JSON.parse(Native.httpGet(String(url),headers.get('Authorization')||''));
+  if(!result.status)throw new Error(result.error||'Không kết nối được Google Drive.');
+  return new Response(bytesFromBase64(result.body),{status:result.status,headers:{'Content-Type':result.contentType||'application/octet-stream'}});
+ }
+ return globalThis.fetch(url,options);
+}
 let service,primary,secondary,identity='';
 export function enrich(result){if(result?.data){const state=result.data;return {...result,reminders:vehicleReminders(state,new Date().toLocaleDateString('sv-SE')),monthly:monthlySummary(state,{},categories),periods:managementPeriods(state).map(p=>({...p,duration:durationText(p.milliseconds)}))};}return result;}
 export function exportExcel(state,kind,filters={}){
@@ -32,7 +42,7 @@ export function exportExcel(state,kind,filters={}){
 export async function dispatch(action,args){
  if(action==='configure'){
   const key=JSON.stringify([args.primaryEmail||'',args.secondaryEmail]);
-  if(identity!==key||!service){primary=args.primaryToken?new Drive(args.primaryToken):null;secondary=new Drive(args.secondaryToken);service=new DualService(new DualDrive(primary,secondary,args.primaryEmail||'',args.secondaryEmail));identity=key;}
+  if(identity!==key||!service){primary=args.primaryToken?new Drive(args.primaryToken,nativeFetch):null;secondary=new Drive(args.secondaryToken,nativeFetch);service=new DualService(new DualDrive(primary,secondary,args.primaryEmail||'',args.secondaryEmail));identity=key;}
   else{if(primary)primary.token=args.primaryToken;secondary.token=args.secondaryToken;}
   return {configured:true};
  }

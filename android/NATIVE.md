@@ -36,6 +36,7 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 - Sao lưu đầy đủ dữ liệu và tệp; phục hồi yêu cầu xem trước, tên tổ chức và mật khẩu Admin.
 - Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
+- Các lượt đọc Google Drive khi đăng nhập đi qua HTTPS native giới hạn đúng máy chủ `www.googleapis.com`; ghi dữ liệu vẫn do core dùng Drive API. Kết nối và đọc đều có timeout để giao diện không treo vô hạn.
 - Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Hồ sơ đăng nhập dùng Web Crypto AES-GCM/PBKDF2 nhẹ; dữ liệu nghiệp vụ không mã hóa để giảm thời gian mở và đồng bộ.
 - Đăng nhập OAuth Android và vân tay cần cấu hình/kiểm tra trên thiết bị thật.
 
