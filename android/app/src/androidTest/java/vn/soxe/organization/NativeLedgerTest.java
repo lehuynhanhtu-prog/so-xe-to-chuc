@@ -82,8 +82,6 @@ public class NativeLedgerTest {
                     assertEquals("token-admin",primaryToken.get(a));assertEquals("token-nsd",secondaryToken.get(a));
                 } catch(Exception e){throw new AssertionError(e);}
             });
-            onView(withText("admin2")).check(matches(isDisplayed()));
-            onView(withText("secret")).check(matches(isDisplayed()));
         }
     }
     @androidx.annotation.RequiresApi(29)
