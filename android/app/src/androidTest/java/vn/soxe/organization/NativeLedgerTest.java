@@ -55,6 +55,9 @@ public class NativeLedgerTest {
                 try {
                     Method save=MainActivity.class.getDeclaredMethod("saveGoogleAccount",String.class,String.class);save.setAccessible(true);
                     assertTrue((Boolean)save.invoke(a,"primary","Admin.Storage@Example.Test"));
+                    Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
+                    MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
+                    attempt.begin("admin","secret",true);
                 } catch(Exception e){throw new AssertionError(e);}
             });
             activity.recreate();
@@ -64,6 +67,9 @@ public class NativeLedgerTest {
                     Method pending=MainActivity.class.getDeclaredMethod("pendingGoogleSlot");pending.setAccessible(true);
                     assertEquals("admin.storage@example.test",account.invoke(a,"primary"));
                     assertEquals("primary",pending.invoke(a));
+                    Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
+                    MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
+                    assertTrue(attempt.pending);assertEquals("admin",attempt.username);assertEquals("secret",attempt.password);assertTrue(attempt.adminMode);
                 } catch(Exception e){throw new AssertionError(e);}
             });
         }

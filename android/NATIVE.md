@@ -22,6 +22,7 @@ APK 4.8.3 phải được ký bằng đúng keystore đã ký bản 4.7. Android
 9. Trên thiết bị, chọn **ADMIN** và kết nối hai tài khoản lưu dữ liệu khác nhau: Google lưu dữ liệu Admin và Google lưu dữ liệu NSD. Khi đăng nhập vai trò **NSD** hoặc **Admin chỉ xem**, chỉ kết nối tài khoản Google lưu dữ liệu NSD. Sau khi cấp quyền thành công, dùng tên đăng nhập/mật khẩu ứng dụng hiện có. Không tạo tổ chức mới để thay cho việc kết nối dữ liệu cũ.
 
 APK lưu bền tài khoản ngay khi người dùng chọn trong Account Picker; bước cấp quyền Drive tiếp tục dùng đúng tài khoản và đúng vị trí Admin/NSD đó, kể cả khi Android tạo lại Activity trong lúc hiển thị màn hình cấp quyền.
+Tên đăng nhập và mật khẩu đang chờ chỉ được giữ trong ViewModel ở bộ nhớ để tiếp tục đăng nhập sau màn hình cấp quyền; mật khẩu không được ghi vào SharedPreferences hay tệp trên thiết bị.
 
 Nếu Android báo không kết nối được Google, kiểm tra lại package name/SHA-1 trong OAuth Android Client và Test users. Nếu hiện thông báo liên quan tới tài khoản, gửi nguyên văn lỗi (che địa chỉ email) để khoanh vùng tiếp.
 
