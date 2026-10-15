@@ -161,7 +161,7 @@ Ký APK tải từ artifact Android với khóa riêng đã sao lưu:
 python3 tools/sign-android.py --apk app-release-unsigned.apk --apksigner-jar apksigner.jar --keystore /private/so-xe-to-chuc-release.jks --password-file /private/password.txt --output docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk
 ```
 
-Không đặt khóa hoặc mật khẩu trong repo. Trước khi phát hành, kiểm tra package/version bằng aapt và chữ ký bằng apksigner; giữ nguyên khóa cho lần cập nhật sau. APK đã ký được workflow Windows đính kèm vào release chung.
+Không đặt khóa hoặc mật khẩu trong repo. Bản 4.8.3 phải dùng đúng khóa đã ký APK 4.7 (SHA-1 chứng thư `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`). Trước khi phát hành, kiểm tra package/version bằng aapt và chữ ký bằng apksigner. APK đã ký được workflow Windows đính kèm vào release chung.
 
 Đăng nhập Admin trên máy đã nhớ Google của NSD: nhập `admin` hoặc tên Admin bổ sung. Khi chưa có gợi ý Google Admin trên thiết bị, ứng dụng chuyển sang kết nối Google Admin, rồi xác nhận Google lưu dữ liệu NSD (hoặc chọn Google khác). Sau đó nhập lại tên và mật khẩu app; mật khẩu không được giữ qua bước kết nối. Những lần sau chỉ hiện form tên đăng nhập/mật khẩu.
 

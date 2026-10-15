@@ -6,7 +6,7 @@ Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK
 
 ## Cấu hình Google một lần
 
-APK 4.8.3 được ký bằng keystore phát hành hiện dùng. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
+APK 4.8.3 phải được ký bằng đúng keystore đã ký bản 4.7. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
 
 1. Mở Google Cloud Console, chọn dự án số **862228353042** đang dùng với Sổ Xe cá nhân và Sổ Xe tổ chức.
 2. Mở **Google Auth Platform → Clients** (hoặc **APIs & Services → Credentials**).
@@ -15,7 +15,7 @@ APK 4.8.3 được ký bằng keystore phát hành hiện dùng. Android OAuth C
 5. Package name: **vn.soxe.organization**.
 6. SHA-1 chính xác của chứng thư ký APK 4.8.3:
 
-   **9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E**
+   **23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7**
 
 7. Bấm **Create**. Không cần dán Client ID/Client Secret vào app; giữ nguyên Web Client đang dùng. Chờ vài phút để cấu hình OAuth được áp dụng.
 8. Kiểm tra **Google Drive API** đã bật. Nếu ứng dụng đang ở trạng thái Testing, thêm cả hai tài khoản Google lưu dữ liệu vào **Audience → Test users**.

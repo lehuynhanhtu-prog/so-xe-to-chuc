@@ -449,6 +449,11 @@ public class MainActivity extends FragmentActivity {
     }
     private void transferBackup(){
         if(state!=null){message("Đăng xuất tổ chức trước khi phục hồi sang hai Google mới.");return;}
+        adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();
+        progress(true,"Đang yêu cầu chọn hai Google mới…");
+        chooseGoogle("primary",()->chooseGoogle("secondary",this::openTransferBackup));
+    }
+    private void openTransferBackup(){
         withGoogle(()->{progress(false);shell("Phục hồi từ hai Google cũ");
             text(body,"Đăng nhập Admin trên hai Google cũ, tạo bản sao lưu đầy đủ trong Cài đặt. Sau đó kết nối hai Google mới tại đây. Tên đăng nhập, mật khẩu, lịch sử và tệp đính kèm được giữ nguyên.",16,false);
             text(body,"Google Admin mới: "+accountName("primary")+"\nGoogle NSD mới: "+accountName("secondary"),16,true);

@@ -7,13 +7,13 @@
 </head><body><main>
 <p><a href="downloads.html">← Quay lại trang tải</a></p>
 <h1>Kết nối Google cho APK Android 4.8.3</h1>
-<aside>APK 4.8.3 dùng keystore phát hành hiện dùng. OAuth Android Client phải có SHA-1 của khóa này; nếu khác, Google sẽ không cấp quyền Drive. App Web tái sử dụng Web OAuth Client của Sổ Xe cá nhân trong cùng dự án; không thay Web Client ID/Secret. Bản Android native cần Android Client riêng vì package và chứng thư ký khác.</aside>
+<aside>APK 4.8.3 phải dùng đúng keystore đã ký bản 4.7. OAuth Android Client phải có SHA-1 của khóa này; nếu khác, Google sẽ không cấp quyền Drive. App Web tái sử dụng Web OAuth Client của Sổ Xe cá nhân trong cùng dự án; không thay Web Client ID/Secret. Bản Android native cần Android Client riêng vì package và chứng thư ký khác.</aside>
 <h2>Cập nhật OAuth Client</h2>
 <ol>
 <li>Mở <a href="https://console.cloud.google.com/">Google Cloud Console</a> và chọn dự án đang dùng với Sổ Xe Tổ Chức (project number <strong>862228353042</strong>).</li>
 <li>Vào <strong>Google Auth Platform → Clients</strong>, chọn <strong>Create client → Android</strong>. Tùy giao diện có thể nằm ở <strong>APIs &amp; Services → Credentials → Create credentials → OAuth client ID</strong>.</li>
 <li>Nhập package name <code>vn.soxe.organization</code>.</li>
-<li>Nhập SHA-1 chứng thư của APK 4.8.3: <code>9C:53:3E:5F:E7:C1:57:16:16:CB:60:36:88:51:9C:F4:78:7D:D3:6E</code>.</li>
+<li>Nhập SHA-1 chứng thư của APK 4.7 (dùng lại để ký 4.8.3): <code>23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7</code>.</li>
 <li>Tạo client; không cần dán Client ID hoặc Client Secret vào ứng dụng. Giữ nguyên Web Client hiện có. Chờ vài phút rồi thử kết nối lại.</li>
 <li>Kiểm tra Google Drive API đang bật. Nếu consent screen đang ở chế độ Testing, thêm cả hai tài khoản lưu dữ liệu vào danh sách Test users.</li>
 </ol>
