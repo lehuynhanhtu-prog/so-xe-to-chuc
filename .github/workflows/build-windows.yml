@@ -51,8 +51,15 @@ jobs:
         run: |
           $tag = 'platform-v4.8.3'
           $assets = (Get-ChildItem dist -File).FullName
+          git tag --force $tag '${{ github.sha }}'
+          git push origin "refs/tags/$tag" --force
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag synchronization failed' }
           gh release view $tag *> $null
-          if ($LASTEXITCODE -ne 0) { gh release create $tag --target '${{ github.sha }}' --title 'Sổ Xe Tổ Chức 4.8.3' --notes-file docs/release-4.8.3.md }
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --verify-tag --title 'Sổ Xe Tổ Chức 4.8.3' --notes-file docs/release-4.8.3.md
+          } else {
+            gh release edit $tag --title 'Sổ Xe Tổ Chức 4.8.3' --notes-file docs/release-4.8.3.md
+          }
           if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
           gh release upload $tag @assets --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed' }
