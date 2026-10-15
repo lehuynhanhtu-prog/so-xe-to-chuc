@@ -121,7 +121,7 @@ Tổng quan kế thừa Sổ xe cá nhân: chi tháng này, năng lượng/bảo
 
 ## Bản 4.4
 
-NSD chỉ sửa giao dịch do chính mình nhập (kể cả nhập hộ); Admin sửa tất cả, Admin chỉ xem không sửa. Nhập chi phí mặc định chọn xe đang quản lý đầu tiên; bật Nhập hộ để chọn xe khác. Cảnh báo Tổng quan/Xe kèm người quản lý/lái xe hiện tại. Mọi ô ngày có lịch chọn ngày, tháng, năm và vẫn hiển thị dd/mm/yyyy. Lưu tiếp tục dùng AES native với khóa phiên, không dẫn xuất mật khẩu khi lưu; không ghi lại bản dữ liệu NSD có nội dung không thay đổi, kể cả sau lần đăng nhập Admin mới. Giữ nguyên kho dữ liệu 4.3.
+NSD chỉ sửa giao dịch do chính mình nhập (kể cả nhập hộ); Admin sửa tất cả, Admin chỉ xem không sửa. Nhập chi phí mặc định chọn xe đang quản lý đầu tiên; bật Nhập hộ để chọn xe khác. Cảnh báo Tổng quan/Xe kèm người quản lý/lái xe hiện tại; NSD nhận đầy đủ cảnh báo của xe đang quản lý giống Admin nhưng không được xem/sửa/xóa giao dịch của người khác. Mọi ô ngày có lịch chọn ngày, tháng, năm và vẫn hiển thị dd/mm/yyyy. Lưu tiếp tục dùng AES native với khóa phiên, không dẫn xuất mật khẩu khi lưu; không ghi lại bản dữ liệu NSD có nội dung không thay đổi, kể cả sau lần đăng nhập Admin mới. Giữ nguyên kho dữ liệu 4.3.
 
 ## Bản 4.4.1
 

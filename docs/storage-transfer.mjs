@@ -1,5 +1,5 @@
 import {unlock,open,seal,unb64} from './crypto.mjs?v=837e4bdbeb1e';
-import {projection} from './service.mjs?v=5fc15830b409';
+import {projection} from './service.mjs?v=234c5e358da6';
 import {MODEL} from './dual-drive.mjs?v=842317740181';
 const fail=message=>{throw new Error(message);};
 const MAX=400*1024*1024;

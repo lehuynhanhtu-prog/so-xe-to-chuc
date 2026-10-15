@@ -260,7 +260,7 @@ public class MainActivity extends FragmentActivity {
             JSONObject r=reminders.optJSONObject(i);if("valid".equals(r.optString("level")))continue;
             JSONObject t=r.optJSONObject("transaction"),c=r.optJSONObject("car");count++;
             String level=r.optString("level"),statusText="warning".equals(level)?"SẮP ĐẾN HẠN":"due".equals(level)?"ĐẾN HẠN":"ĐÃ QUÁ HẠN";
-            card(category(t.optString("category"))+" · "+c.optString("plate"),statusText+"\nQuản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId"))+"\nĐến hạn: "+date(r.optString("dueDate"))+(r.isNull("leftKm")?"":" · Còn "+money(r.optDouble("leftKm"))+" km"),()->viewTransaction(t),categoryAccent(t.optString("category")),reminderBackground(level));
+            card(category(t.optString("category"))+" · "+c.optString("plate"),statusText+"\nQuản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId"))+"\nĐến hạn: "+date(r.optString("dueDate"))+(r.isNull("leftKm")?"":" · Còn "+money(r.optDouble("leftKm"))+" km"),()->viewReminder(r),categoryAccent(t.optString("category")),reminderBackground(level));
         }
         if(count==0)text(body,"Chưa có mục sắp đến hạn.",14,false);
         text(body,"Giao dịch gần đây",18,true);List<JSONObject> recent=sortedTransactions();for(int i=0;i<Math.min(8,recent.size());i++)transactionCard(recent.get(i));
@@ -301,8 +301,14 @@ public class MainActivity extends FragmentActivity {
             });
         }
         JSONArray reminders=presentation.optJSONArray("reminders");
-        if(reminders!=null)for(int i=0;i<reminders.length();i++){JSONObject r=reminders.optJSONObject(i);if(r.optJSONObject("car").optString("id").equals(c.optString("id")))text(body,category(r.optJSONObject("transaction").optString("category"))+" · "+date(r.optString("dueDate"))+"\nQuản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId")),15,false);}
+        if(reminders!=null)for(int i=0;i<reminders.length();i++){JSONObject r=reminders.optJSONObject(i);if(r.optJSONObject("car").optString("id").equals(c.optString("id"))){JSONObject t=r.optJSONObject("transaction");String level=r.optString("level"),statusText="warning".equals(level)?"SẮP ĐẾN HẠN":"due".equals(level)?"ĐẾN HẠN":"expired".equals(level)?"ĐÃ QUÁ HẠN":"CÒN HIỆU LỰC";card(category(t.optString("category")),statusText+" · "+date(r.optString("dueDate"))+"\nQuản lý/Lái xe: "+person(find("carChoices",c.optString("id")).optString("assignedUserId")),()->viewReminder(r),categoryAccent(t.optString("category")),reminderBackground(level));}}
         attachments(c,"carId");button(body,"Quay lại",this::render);
+    }
+    private void viewReminder(JSONObject reminder){
+        JSONObject warning=reminder.optJSONObject("transaction"),visible=find("transactions",warning.optString("id"));if(visible.has("id")){viewTransaction(visible);return;}
+        shell("Cảnh báo · "+car(warning.optString("carId")));text(body,category(warning.optString("category")),22,true);
+        String due=reminder.optString("dueDate"),detail=(due.isEmpty()?"Theo ODO":"Đến hạn: "+date(due));if(!reminder.isNull("dueOdo"))detail+="\nODO đến hạn: "+money(reminder.optDouble("dueOdo"))+" km";
+        text(body,detail+"\n"+warning.optString("description")+(warning.optString("insuranceProvider").isEmpty()?"":"\nĐơn vị: "+warning.optString("insuranceProvider"))+(warning.optString("insurancePolicy").isEmpty()?"":"\nSố hợp đồng: "+warning.optString("insurancePolicy")),17,false);button(body,"Quay lại",this::render);
     }
     private void editCar(JSONObject old){
         shell(old.has("id")?"Sửa xe":"Thêm xe");Form f=new Form();
