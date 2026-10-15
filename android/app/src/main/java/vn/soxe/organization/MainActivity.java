@@ -1,7 +1,6 @@
 package vn.soxe.organization;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -13,6 +12,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.OpenableColumns;
@@ -27,13 +27,21 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
 import com.google.android.gms.auth.api.identity.AuthorizationRequest;
 import com.google.android.gms.auth.api.identity.AuthorizationResult;
 import com.google.android.gms.auth.api.identity.Identity;
-import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
@@ -46,12 +54,14 @@ import java.util.function.Consumer;
 
 /** Native Views; the local JS runtime supplies only the shared ledger core. */
 public class MainActivity extends FragmentActivity {
-    private static final int PICK_ACCOUNT=101, AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
+    private static final int AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
     private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
+    private static final String WEB_CLIENT_ID="862228353042-bboej03g9j2nnhvmcp9n4uhlp97opdoj.apps.googleusercontent.com";
     private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
     private SharedPreferences prefs;
+    private CredentialManager credentialManager;
     private LedgerEngine engine;
     private BiometricVault vault;
     private LoginAttempt loginAttempt;
@@ -91,6 +101,7 @@ public class MainActivity extends FragmentActivity {
         // chụp/quay màn hình của Android trên bất kỳ trang nào của ứng dụng.
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
         prefs=getSharedPreferences("google-storage",MODE_PRIVATE);
+        credentialManager=CredentialManager.create(this);
         adminMode=prefs.getBoolean("adminMode",false);
         loginAttempt=new ViewModelProvider(this).get(LoginAttempt.class);
         if(loginAttempt.pending){loginName=loginAttempt.username;loginPassword=loginAttempt.password;adminMode=loginAttempt.adminMode;}
@@ -206,15 +217,32 @@ public class MainActivity extends FragmentActivity {
         if(state!=null){message("Đăng xuất trước khi đổi tài khoản lưu dữ liệu.");return;}
         selecting=slot;authorized=next;
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
-        try{startActivityForResult(AccountPicker.newChooseAccountIntent(new AccountPicker.AccountChooserOptions.Builder().setAllowableAccountsTypes(Collections.singletonList("com.google")).build()),PICK_ACCOUNT);}
-        catch(Exception e){progress(false);message("Thiết bị cần Google Play services để kết nối Drive.");}
+        progress(true,"Đang chọn tài khoản Google "+(slot.equals("primary")?"Admin":"NSD")+"…");
+        GetSignInWithGoogleOption option=new GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build();
+        GetCredentialRequest request=new GetCredentialRequest.Builder().addCredentialOption(option).build();
+        try{credentialManager.getCredentialAsync(this,request,new CancellationSignal(),getMainExecutor(),new CredentialManagerCallback<GetCredentialResponse,GetCredentialException>(){
+            @Override public void onResult(GetCredentialResponse response){
+                try{
+                    Credential credential=response.getCredential();
+                    if(!(credential instanceof CustomCredential)||!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType()))throw new IllegalStateException("Google không trả thông tin tài khoản.");
+                    GoogleIdTokenCredential google=GoogleIdTokenCredential.createFrom(((CustomCredential)credential).getData());
+                    String email=google.getId().trim().toLowerCase(Locale.ROOT),current=pendingGoogleSlot();
+                    if(!googleSlot(current)||email.isEmpty())throw new IllegalStateException("Chưa chọn được tài khoản Google.");
+                    if(email.equals(accountName(current.equals("primary")?"secondary":"primary")))throw new IllegalStateException("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");
+                    if(!saveGoogleAccount(current,email))throw new IllegalStateException("Không lưu được tài khoản Google trên thiết bị.");
+                    pendingAccount=new Account(email,"com.google");requestAuthorization();
+                }catch(Exception e){googleError(e);}
+            }
+            @Override public void onError(GetCredentialException e){googleError(e);}
+        });}catch(Exception e){googleError(e);}
     }
     private void authorize(String slot,Runnable next){
         selecting=slot;authorized=next;String name=accountName(slot);
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái kết nối Google trên thiết bị.");return;}
         if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";next.run();return;}
-        if(name.isEmpty()){progress(false);chooseGoogle(slot,next);return;}
-        pendingAccount=new Account(name,"com.google");requestAuthorization();
+        // Credential Manager phải xác thực tài khoản trước để AuthorizationClient
+        // dùng đúng Google mặc định. AccountPicker chỉ trả email và có thể gây mã 8.
+        progress(false);chooseGoogle(slot,next);
     }
     private void requestAuthorization(){
         progress(true,"Đang kết nối Google…");
@@ -223,7 +251,6 @@ public class MainActivity extends FragmentActivity {
         if(account==null){authorizationSequence++;googleError(new IllegalStateException("Chưa xác định được tài khoản Google."));return;}
         handler.postDelayed(()->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(new java.io.IOException("Google Play Services không phản hồi sau 30 giây."));}},30000);
         AuthorizationRequest request=AuthorizationRequest.builder()
-            .setAccount(account)
             .setRequestedScopes(Collections.singletonList(new Scope("https://www.googleapis.com/auth/drive.file")))
             .build();
         Identity.getAuthorizationClient(this).authorize(request).addOnSuccessListener(result->{
@@ -593,9 +620,8 @@ public class MainActivity extends FragmentActivity {
             try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}
             return;
         }
-        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;if(request==PICK_ACCOUNT){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";pendingAccount=null;if(state==null)login();}return;}
-        if(request==PICK_ACCOUNT){String slot=pendingGoogleSlot(),name=data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);if(!googleSlot(slot)||name==null||name.trim().isEmpty()){message("Chưa chọn được tài khoản Google. Hãy thử lại.");return;}name=name.trim().toLowerCase(Locale.ROOT);if(name.equals(accountName(slot.equals("primary")?"secondary":"primary"))){message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}if(!saveGoogleAccount(slot,name)){message("Không lưu được tài khoản Google trên thiết bị.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
-        else if(request==SAVE_FILE&&data.getData()!=null){
+        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;return;}
+        if(request==SAVE_FILE&&data.getData()!=null){
             Uri uri=data.getData();byte[] bytes=exportBytes;exportBytes=null;
             io.execute(()->{try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null||bytes==null)throw new IOException();out.write(bytes);handler.post(()->message("Đã lưu tệp."));}catch(Exception e){handler.post(()->message("Không ghi được tệp."));}});
         }else if(request==PICK_FILE&&data.getData()!=null){

@@ -18,6 +18,7 @@
 - APK lấy access token bằng Google Play Services native; màn hình cấp quyền chỉ mở khi cần, tránh đứng mãi ở “Đang xử lý, vui lòng chờ…” trước khi đọc Drive.
 - Sửa lại kết nối Google APK bằng `AuthorizationClient` chính thức, giới hạn chờ 30 giây và hiển thị mã lỗi chính xác thay vì luôn quy lỗi cho OAuth Client.
 - APK đọc kết quả form cấp quyền Google ngay cả khi một số thiết bị trả mã Activity không chuẩn; không còn chớp form rồi âm thầm quay về trang đăng nhập. Tên đăng nhập và mật khẩu đang chờ được giữ trong bộ nhớ để tự tiếp tục hoặc thử lại.
+- Thay AccountPicker bằng Credential Manager để Google xác thực và đặt đúng tài khoản mặc định trước khi xin quyền Drive, sửa lỗi `INTERNAL_ERROR (8)` trên thiết bị thật và vẫn tách riêng Google Admin/NSD.
 - Cho phép chụp và quay màn hình APK để lưu báo cáo và gửi ảnh hỗ trợ.
 - Tối ưu đăng nhập Web/APK: hồ sơ tài khoản dùng PBKDF2 nhẹ hơn; dữ liệu nghiệp vụ lưu JSON trực tiếp. Dữ liệu mã hóa cũ vẫn đọc được và tự chuyển đổi sau lần đăng nhập thành công.
 - APK 4.8.3 được GitHub Actions ký bằng đúng khóa đã ký APK 4.7 và chỉ phát hành khi SHA-1 chứng thư khớp `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth.
