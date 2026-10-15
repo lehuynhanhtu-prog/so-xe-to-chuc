@@ -1,13 +1,13 @@
 # Sổ Xe Tổ Chức — Đa nền tảng 4.8.3
 
-Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
+Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Hồ sơ tài khoản/mật khẩu được mã hóa cơ bản; dữ liệu nghiệp vụ lưu JSON trực tiếp để ưu tiên tốc độ. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
 - Admin tự đồng bộ TK Google lưu dữ liệu NSD khi đăng nhập và mỗi 15 giây khi app đang mở.
 - Root JSON của Admin chứa xe, NSD, phân công, giao dịch, khóa và mã file NSD.
 - Tổng quan/Chi phí/Báo cáo dùng cùng danh sách chi tiết; có ODO, thông tin theo loại, người nhập và nhập hộ. Báo cáo có bộ lọc và xuất Excel.
 - Admin bổ sung cần kết nối cả hai Google; vai trò chỉ xem không ghi dữ liệu.
 - Không dùng Gmail/Picker trong mô hình mới, không lưu mật khẩu Google. Kết nối Google được giữ tạm trong tab đến khi token hết hạn; không lưu token trong localStorage. Mật khẩu app ít nhất 6 ký tự.
-- Tất cả người đăng nhập Google TK Google lưu dữ liệu NSD đều sở hữu dữ liệu Drive TK Google lưu dữ liệu NSD: phân quyền trong app không chặn xóa file trực tiếp trên Drive. Mật khẩu riêng bảo vệ các khóa mã hóa; sao lưu thường xuyên.
+- Tất cả người đăng nhập Google TK Google lưu dữ liệu NSD đều sở hữu dữ liệu Drive TK Google lưu dữ liệu NSD: phân quyền trong app không chặn đọc/xóa file trực tiếp trên Drive. Dữ liệu nghiệp vụ không mã hóa; chỉ hồ sơ đăng nhập được bảo vệ bằng mật khẩu. Cần kiểm soát quyền Google và sao lưu thường xuyên.
 
 Web: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/
 Hướng dẫn: https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/setup.html
@@ -36,7 +36,7 @@ Admin tạo tổ chức, tài khoản và lời mời bằng đúng email Google
 
 Tổ chức và các bản dữ liệu được xem thuộc Drive Admin tạo chúng. Nhật ký và file tài khoản của NSD thuộc Drive NSD. Admin chọn nhật ký NSD qua Picker một lần. Các thay đổi NSD nằm trong nhật ký đến khi Admin mở app và đồng bộ để phát bản dữ liệu mới; app không có máy chủ chạy nền. Admin bổ sung cần chọn các nhật ký và file được xem qua Picker.
 
-Dữ liệu dùng AES-256-GCM; mật khẩu dùng PBKDF2-SHA256 600.000 vòng. ETag/If-Match ngăn ghi đè đồng thời; operation ID ngăn lặp giao dịch. Driver nhận bản dữ liệu mã hóa đã lọc và chỉ sửa giao dịch mình nhập. Viewer chỉ xem. NSD từng có phân công hoặc hoạt động không được xóa. Xóa tổ chức cần xác nhận tên/mật khẩu của Admin sở hữu; không thể xóa file riêng trong Drive của NSD.
+Hồ sơ tài khoản dùng AES-256-GCM với PBKDF2-SHA256 10.000 vòng để ưu tiên tốc độ đăng nhập. Dữ liệu tổ chức, nhật ký và bản xem NSD là JSON không mã hóa; app vẫn đọc dữ liệu AES cũ và chuyển sang JSON sau lần đăng nhập thành công. ETag/If-Match ngăn ghi đè đồng thời; operation ID ngăn lặp giao dịch. Driver nhận bản dữ liệu đã lọc và chỉ sửa giao dịch mình nhập. Viewer chỉ xem.
 
 ## Build và kiểm tra
 
@@ -107,7 +107,7 @@ Dự án Sổ Xe cá nhân ở `so-xe-android` không thay đổi.
 Bật thêm Gmail API; cấu hình gmail.send và gmail.readonly trong Google Auth Platform → Data Access. Quyền gửi là nhạy cảm, quyền đọc là hạn chế và có thể yêu cầu xác minh Google khi phát hành rộng rãi. Admin lưu file JSON mã hóa tại “Sổ xe tổ chức”; NSD tại “NSD-Sổ xe tổ chức”. App chỉ chia sẻ từng file. Xem hướng dẫn đầy đủ tại docs/setup.html.
 
 ## Bản 4.1
-Chọn ADMIN/NSD trước Google; NSD gõ tên đăng nhập. Đăng xuất app giữ phiên Google trong bộ nhớ. Admin sửa họ tên/tên đăng nhập NSD mà không đổi mật khẩu hoặc lịch sử. Giao dịch theo hàng ngang. Không tạo lời mời mã hóa ở TK Google lưu dữ liệu NSD; bỏ dẫn xuất mật khẩu lặp lúc đăng nhập và tạo tổ chức. Ghi dùng AES native, cache theo từng thao tác và ETag chống ghi đè; phát bản dữ liệu song song theo nhóm bốn file.
+Chọn ADMIN/NSD trước Google; NSD gõ tên đăng nhập. Đăng xuất app giữ phiên Google trong bộ nhớ. Admin sửa họ tên/tên đăng nhập NSD mà không đổi mật khẩu hoặc lịch sử. Giao dịch theo hàng ngang. Không tạo lời mời ở TK Google lưu dữ liệu NSD; hồ sơ đăng nhập dùng dẫn xuất khóa nhẹ, dữ liệu JSON không mã hóa, cache theo từng thao tác và ETag chống ghi đè; phát bản dữ liệu song song theo nhóm bốn file.
 
 ## Bản 4.2
 

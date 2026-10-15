@@ -41,7 +41,7 @@ export async function dispatch(action,args){
  if(action==='inspectTransfer')return service.inspectTransfer(args);
  if(action==='transferStorage')return service.transferStorage(args);
  if(action==='login'){
-  const selected=await service.resolveNamed(args.username,args.password);
+  const selected=await service.resolveNamed(args.username,args.password,'',args.adminMode?'admin':'');
   if(selected.account.role==='admin'&&!primary)return {needsPrimary:true,ownerEmail:selected.account.ownerEmail};
   return enrich(await service.login(selected.profileId,args.password));
  }

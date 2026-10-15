@@ -145,7 +145,7 @@ public class MainActivity extends FragmentActivity {
         if(username.trim().isEmpty()||password.isEmpty()){message("Nhập tên đăng nhập và mật khẩu.");return;}
         loginName=username.trim();loginPassword=password;
         if(loginName.equalsIgnoreCase("admin")&&!adminMode){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();}
-        withGoogle(()->{progress(true,"Đang đăng nhập và đồng bộ dữ liệu…");engine.call("login",obj("username",loginName,"password",loginPassword),(result,error)->{
+        withGoogle(()->{progress(true,"Đang đăng nhập và đồng bộ dữ liệu…");engine.call("login",obj("username",loginName,"password",loginPassword,"adminMode",adminMode),(result,error)->{
             progress(false);
             if(error!=null){loginPassword="";message(error);return;}
             if(result.optBoolean("needsPrimary")){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();doLogin(loginName,loginPassword);return;}

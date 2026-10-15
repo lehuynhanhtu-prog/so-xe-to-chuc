@@ -9,7 +9,9 @@
 - Android: làm mờ xe đã bàn giao; in đậm toàn dòng thời gian đang quản lý; hiển thị tiến trình đăng nhập. Khi chọn Google Admin mới, yêu cầu chọn lại Google NSD.
 - Kiểm tra NSD thấy xe được phân công dù chưa có giao dịch, giữ thông tin xe và lịch bàn giao sau khi chuyển người quản lý.
 - Phần **Xe** của NSD hiển thị đầy đủ cảnh báo bảo dưỡng, phụ tùng, bảo hiểm, đăng kiểm và phí đường bộ của xe đang quản lý giống Admin, kể cả cảnh báo được nhập bởi tài khoản khác. Dữ liệu cảnh báo được tách riêng nên NSD vẫn không xem/sửa/xóa giao dịch của người khác; cảnh báo tự mất khi bàn giao xe.
-- Sửa đăng nhập Web cho Admin bổ sung (`admin2`): nếu metadata tên tài khoản trên Drive bị cũ, ứng dụng xác minh hồ sơ Admin bằng dữ liệu tổ chức đã mã hóa và đăng nhập đúng tài khoản hiện hành.
+- Sửa đăng nhập Web cho Admin bổ sung (`admin2`): nếu metadata tên tài khoản trên Drive bị cũ, ứng dụng xác minh hồ sơ Admin bằng dữ liệu tổ chức và đăng nhập đúng tài khoản hiện hành.
+- Sửa đăng nhập Admin/Admin bổ sung trên APK qua đúng hai Google; APK kiểm tra rõ vai trò Admin và hoàn tất mở nhật ký cùng dữ liệu tổ chức.
+- Tối ưu đăng nhập Web/APK: hồ sơ tài khoản dùng PBKDF2 nhẹ hơn; dữ liệu nghiệp vụ lưu JSON trực tiếp. Dữ liệu mã hóa cũ vẫn đọc được và tự chuyển đổi sau lần đăng nhập thành công.
 - APK 4.8.3 được GitHub Actions ký bằng đúng khóa đã ký APK 4.7 và chỉ phát hành khi SHA-1 chứng thư khớp `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`. Không dùng khóa mới vì sẽ đổi chữ ký cập nhật và cấu hình OAuth.
 
 Windows và iOS sử dụng bản Web được công bố. Bản iOS là hồ sơ Web App, không phải IPA native.

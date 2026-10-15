@@ -1,5 +1,5 @@
-import {unlock,open,seal,unb64} from './crypto.mjs?v=837e4bdbeb1e';
-import {projection} from './service.mjs?v=234c5e358da6';
+import {unlock,open,seal,plain,unb64} from './crypto.mjs?v=c7db6486b392';
+import {projection} from './service.mjs?v=551b02e6e0ac';
 import {MODEL} from './dual-drive.mjs?v=842317740181';
 const fail=message=>{throw new Error(message);};
 const MAX=400*1024*1024;
@@ -37,24 +37,24 @@ export async function transferStorage(service,args){
  let published=false;
  try{
   await drive.prepare();
-  const rootId=await create('Sổ Xe · tổ chức phục hồi',await seal({format:'soxe-transfer-pending'},backup.account.rootKey,'organization:'+db.id),'organization');
+  const rootId=await create('Sổ Xe · tổ chức phục hồi',plain({format:'soxe-transfer-pending'},'organization:'+db.id),'organization');
   const attachmentIds=new Map();for(const record of [...db.cars,...db.transactions])for(const f of record.attachments||[])if(f.driveFileId){if(!attachmentIds.has(f.driveFileId)){const saved=files.get(f.driveFileId),r=await drive.secondary.createBinary(saved.name,saved.binary,saved.type||f.type,{model:MODEL,orgId:db.id,attachmentId:f.id,migrationBatch:batch});created.push(r.id);drive.sources.set(r.id,'member');attachmentIds.set(f.driveFileId,r.id);}f.driveFileId=attachmentIds.get(f.driveFileId);}
   const oldOwner=db.ownerEmail;db.ownerEmail=drive.primaryEmail;db.storage={model:MODEL,secondaryEmail:drive.secondaryEmail};db.revision++;db.updatedAt=new Date().toISOString();db.operations=[];
   for(const u of db.users){if(u.deletedAt){delete u.profileId;delete u.journalId;delete u.viewId;continue;}const isPrimary=u.id===primary.id;
    const oldProfile=isPrimary?[...files.values()].find(f=>f.source==='admin'&&f.appProperties?.kind==='account'&&f.appProperties.userId===u.id):files.get(u.profileId);
    if(isPrimary){u.email=drive.primaryEmail;delete u.journalId;delete u.viewId;}else{
     const journal=await open(files.get(u.journalId).box,u.memberKey,'journal:'+db.id+':'+u.id);
-    u.journalId=await create('Sổ Xe · nhật ký · '+u.username,await seal(journal,u.memberKey,'journal:'+db.id+':'+u.id),'journal',{userId:u.id});
-    if(u.role!=='admin')u.viewId=await create('Sổ Xe · dữ liệu được xem · '+u.username,await seal({},u.memberKey,'view:'+db.id+':'+u.id),'view',{userId:u.id});else delete u.viewId;
+    u.journalId=await create('Sổ Xe · nhật ký · '+u.username,plain(journal,'journal:'+db.id+':'+u.id),'journal',{userId:u.id});
+    if(u.role!=='admin')u.viewId=await create('Sổ Xe · dữ liệu được xem · '+u.username,plain({},'view:'+db.id+':'+u.id),'view',{userId:u.id});else delete u.viewId;
    }
    u.viewOwnerEmail=db.ownerEmail;
    const mapping={orgId:db.id,userId:u.id,role:u.role,model:MODEL,username:u.username,email:u.email,ownerEmail:db.ownerEmail,secondaryEmail:drive.secondaryEmail,primaryProfile:isPrimary,organizationName:db.name,passwordEpoch:u.passwordEpoch||'',...(isPrimary?{}:{journalId:u.journalId,memberKey:u.memberKey}),...(u.role==='admin'?{rootId,rootKey:backup.account.rootKey}:{viewId:u.viewId,viewOwnerEmail:db.ownerEmail})};
    const profile={format:'soxe-relocated-account',credentials:oldProfile.box,relocation:await seal(mapping,isPrimary?backup.account.rootKey:u.memberKey,'relocation:'+db.id+':'+u.id)};
    drive.profileTarget=isPrimary?'admin':'member';u.profileId=await create('Sổ Xe · '+db.name+' · '+u.username,profile,'account',{userId:u.id,username:u.username,role:u.role});
   }
-  for(const u of db.users.filter(u=>!u.deletedAt&&u.role!=='admin')){const r=await drive.read(u.viewId);await drive.write(u.viewId,await seal(projection(db,u),u.memberKey,'view:'+db.id+':'+u.id),r.etag);}
+  for(const u of db.users.filter(u=>!u.deletedAt&&u.role!=='admin')){const r=await drive.read(u.viewId);await drive.write(u.viewId,plain(projection(db,u),'view:'+db.id+':'+u.id),r.etag);}
   db.audit??=[];db.audit.push({action:'transferStorage',at:db.updatedAt,userId:primary.id,fromPrimary:oldOwner,fromSecondary:backup.db.storage.secondaryEmail});
-  const root=await drive.read(rootId);await drive.write(rootId,await seal(db,backup.account.rootKey,'organization:'+db.id),root.etag);published=true;
+  const root=await drive.read(rootId);await drive.write(rootId,plain(db,'organization:'+db.id),root.etag);published=true;
   return {transferred:true,organizationName:db.name,username:primary.username,files:created.length};
  }catch(e){if(!published){const cleanup=[];for(const id of created.reverse())try{await drive.trash(id);}catch{cleanup.push(id);}if(cleanup.length)e.message+=' · Chưa dọn được '+cleanup.length+' tệp phục hồi tạm. Kết nối lại và kiểm tra Drive trước khi thử lại.';}throw e;}
  finally{delete drive.batchId;drive.orgId=oldOrgId;drive.profileTarget='admin';service.readCache.clear();service.resolvedProfiles.clear();}

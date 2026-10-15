@@ -31,7 +31,7 @@ await native.dispatch('logout',{});
 console.log('Native engine: shared module bundle, role-scoped reports, large amounts, account pinning and login errors passed.');
 // An additional Admin typed on a previously NSD-only device must connect primary,
 // rather than failing silently or accepting a partial storage configuration.
-const {lock,randomKey}=await import('../web/crypto.mjs');
+const {lock,plain,randomKey}=await import('../web/crypto.mjs');
 const adminAccount={model:'two-google-v2',orgId:crypto.randomUUID(),userId:crypto.randomUUID(),username:'admin2',email:'admin2@users.invalid',role:'admin',ownerEmail:'admin@gmail.com',secondaryEmail:'storage@gmail.com',rootId:'root',rootKey:randomKey(),mustChange:true};
 const encrypted=await lock(adminAccount,'000000','account',100000);
 globalThis.fetch=async(url,options={})=>{
@@ -47,3 +47,23 @@ await native.dispatch('configure',{primaryEmail:'admin@gmail.com',secondaryEmail
 assert.deepEqual(await native.dispatch('login',{username:'admin2',password:'000000'}),{mustChange:true});
 await native.dispatch('logout',{});
 console.log('Native additional Admin connection handoff passed.');
+
+// A configured APK must complete an additional Admin login across both Drives,
+// including the journal on member storage and organization data on Admin storage.
+const fullRootKey=randomKey(),fullMemberKey=randomKey(),fullOrg=crypto.randomUUID(),fullUser=crypto.randomUUID();
+const fullAccount={model:'two-google-v2',orgId:fullOrg,userId:fullUser,username:'admin2',email:'admin2@users.invalid',role:'admin',ownerEmail:'admin@gmail.com',secondaryEmail:'storage@gmail.com',rootId:'root',rootKey:fullRootKey,journalId:'journal',memberKey:fullMemberKey,mustChange:false,passwordEpoch:'epoch'};
+const fullProfile=await lock(fullAccount,'admin-secret','account',10000),fullData={format:'soxe-org-v3',id:fullOrg,name:'Native Admin Org',ownerEmail:'admin@gmail.com',revision:1,updatedAt:new Date().toISOString(),storage:{model:'two-google-v2',secondaryEmail:'storage@gmail.com'},users:[{id:fullUser,username:'admin2',name:'Admin 2',email:'admin2@users.invalid',role:'admin',active:true,passwordEpoch:'epoch',journalId:'journal',memberKey:fullMemberKey}],cars:[],assignments:[],assignmentEvents:[],handovers:[],transactions:[],receipts:{},tombstones:[],audit:[],operations:[]};
+const nativeFiles={profile:{owner:'storage@gmail.com',box:fullProfile},root:{owner:'admin@gmail.com',box:plain(fullData,'organization:'+fullOrg)},journal:{owner:'storage@gmail.com',box:plain({format:'soxe-journal-v3',orgId:fullOrg,userId:fullUser,email:'admin2@users.invalid',token:undefined,events:[],activated:true,passwordEpoch:'epoch'},'journal:'+fullOrg+':'+fullUser)}};
+globalThis.fetch=async(url,options={})=>{
+ const token=options.headers?.Authorization,match=url.match(/\/files\/([^?]+)/),id=match?.[1];let body;
+ if(url.includes('/drive/v3/files?'))body={files:token==='Bearer s'?[{id:'profile',appProperties:{model:'two-google-v2',kind:'account',username:'admin2',orgId:fullOrg,userId:fullUser}}]:[]};
+ else if(url.includes('/drive/v2/files/')&&id)body={id,etag:'1',owners:[{emailAddress:nativeFiles[id].owner}],labels:{trashed:false}};
+ else if(url.includes('?alt=media')&&id)body=nativeFiles[id].box;
+ else throw new Error('Unexpected native Drive request: '+url);
+ return new Response(JSON.stringify(body),{headers:{'Content-Type':'application/json'}});
+};
+await native.dispatch('configure',{primaryEmail:'admin@gmail.com',secondaryEmail:'storage@gmail.com',primaryToken:'p',secondaryToken:'s'});
+const fullLogin=await native.dispatch('login',{username:'admin2',password:'admin-secret',adminMode:true});
+assert.equal(fullLogin.data.me.role,'admin');assert.equal(fullLogin.data.organization.name,'Native Admin Org');
+await native.dispatch('logout',{});
+console.log('Native full additional Admin login passed.');

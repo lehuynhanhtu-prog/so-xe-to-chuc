@@ -27,13 +27,13 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 
 ## Tính tương thích và giới hạn
 
-- Cùng file JSON mã hóa, cách đặt tên tệp, ETag chống ghi đè và phân quyền với Web.
+- Cùng định dạng dữ liệu JSON trực tiếp, cách đặt tên tệp, ETag chống ghi đè và phân quyền với Web. Hồ sơ tài khoản/mật khẩu vẫn được mã hóa cơ bản.
 - Admin toàn quyền; viewer chỉ xem; NSD sửa/xóa bản ghi do mình nhập. Báo cáo thời gian NSD chỉ chứa kỳ quản lý của chính mình.
 - Đồng bộ tự động mỗi phút khi ứng dụng ở foreground; không xóa nội dung form đang nhập.
 - Sao lưu đầy đủ dữ liệu và tệp; phục hồi yêu cầu xem trước, tên tổ chức và mật khẩu Admin.
 - Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
-- Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Mã hóa vẫn dùng Web Crypto AES-GCM/PBKDF2.
+- Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Hồ sơ đăng nhập dùng Web Crypto AES-GCM/PBKDF2 nhẹ; dữ liệu nghiệp vụ không mã hóa để giảm thời gian mở và đồng bộ.
 - Đăng nhập OAuth Android và vân tay cần cấu hình/kiểm tra trên thiết bị thật.
 
 ## Kiểm tra và build
