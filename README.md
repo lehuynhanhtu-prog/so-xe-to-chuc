@@ -1,4 +1,4 @@
-# Sổ Xe Tổ Chức — Đa nền tảng 4.6
+# Sổ Xe Tổ Chức — Đa nền tảng 4.8.3
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Mọi nội dung JSON được mã hóa trong trình duyệt. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
 
@@ -158,7 +158,7 @@ Gói Web: `npm run package:web`. Kiểm tra: `npm test`, `npm run check`, `npm r
 Ký APK tải từ artifact Android với khóa riêng đã sao lưu:
 
 ```sh
-python3 tools/sign-android.py --apk app-release-unsigned.apk --apksigner-jar apksigner.jar --keystore /private/so-xe-to-chuc-release.jks --password-file /private/password.txt --output docs/downloads/So-Xe-To-Chuc-Android-4.6.0.apk
+python3 tools/sign-android.py --apk app-release-unsigned.apk --apksigner-jar apksigner.jar --keystore /private/so-xe-to-chuc-release.jks --password-file /private/password.txt --output docs/downloads/So-Xe-To-Chuc-Android-4.8.3.apk
 ```
 
 Không đặt khóa hoặc mật khẩu trong repo. Trước khi phát hành, kiểm tra package/version bằng aapt và chữ ký bằng apksigner; giữ nguyên khóa cho lần cập nhật sau. APK đã ký được workflow Windows đính kèm vào release chung.
