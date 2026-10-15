@@ -12,7 +12,6 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.OpenableColumns;
@@ -24,27 +23,16 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.*;
 import androidx.fragment.app.FragmentActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.credentials.Credential;
-import androidx.credentials.CredentialManager;
-import androidx.credentials.CredentialManagerCallback;
-import androidx.credentials.ClearCredentialStateRequest;
-import androidx.credentials.CustomCredential;
-import androidx.credentials.GetCredentialRequest;
-import androidx.credentials.GetCredentialResponse;
-import androidx.credentials.exceptions.ClearCredentialException;
-import androidx.credentials.exceptions.GetCredentialException;
 import com.google.android.gms.auth.api.identity.AuthorizationRequest;
 import com.google.android.gms.auth.api.identity.AuthorizationResult;
 import com.google.android.gms.auth.api.identity.Identity;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Scope;
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
@@ -59,12 +47,10 @@ import java.util.function.Consumer;
 public class MainActivity extends FragmentActivity {
     private static final int AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
     private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
-    private static final String WEB_CLIENT_ID="862228353042-bboej03g9j2nnhvmcp9n4uhlp97opdoj.apps.googleusercontent.com";
     private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
     private SharedPreferences prefs;
-    private CredentialManager credentialManager;
     private LedgerEngine engine;
     private BiometricVault vault;
     private LoginAttempt loginAttempt;
@@ -104,7 +90,6 @@ public class MainActivity extends FragmentActivity {
         // chụp/quay màn hình của Android trên bất kỳ trang nào của ứng dụng.
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
         prefs=getSharedPreferences("google-storage",MODE_PRIVATE);
-        credentialManager=CredentialManager.create(this);
         adminMode=prefs.getBoolean("adminMode",false);
         loginAttempt=new ViewModelProvider(this).get(LoginAttempt.class);
         if(loginAttempt.pending){loginName=loginAttempt.username;loginPassword=loginAttempt.password;adminMode=loginAttempt.adminMode;}
@@ -220,54 +205,27 @@ public class MainActivity extends FragmentActivity {
         if(state!=null){message("Đăng xuất trước khi đổi tài khoản lưu dữ liệu.");return;}
         selecting=slot;authorized=next;
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
-        progress(true,"Đang chọn tài khoản Google "+(slot.equals("primary")?"Admin":"NSD")+"…");
-        // Xóa phiên Credential Manager đang được ưu tiên để mỗi ô Admin/NSD luôn
-        // hiện toàn bộ tài khoản. Nếu nhà cung cấp không hỗ trợ xóa, vẫn tiếp tục.
-        try{credentialManager.clearCredentialStateAsync(new ClearCredentialStateRequest(),new CancellationSignal(),ContextCompat.getMainExecutor(this),new CredentialManagerCallback<Void,ClearCredentialException>(){
-            @Override public void onResult(Void unused){showGoogleChooser();}
-            @Override public void onError(ClearCredentialException e){showGoogleChooser();}
-        });}catch(Exception e){showGoogleChooser();}
-    }
-    private void showGoogleChooser(){
-        GetGoogleIdOption option=new GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setAutoSelectEnabled(false)
-            .setServerClientId(WEB_CLIENT_ID)
-            .build();
-        GetCredentialRequest request=new GetCredentialRequest.Builder().addCredentialOption(option).build();
-        try{credentialManager.getCredentialAsync(this,request,new CancellationSignal(),ContextCompat.getMainExecutor(this),new CredentialManagerCallback<GetCredentialResponse,GetCredentialException>(){
-            @Override public void onResult(GetCredentialResponse response){
-                try{
-                    Credential credential=response.getCredential();
-                    if(!(credential instanceof CustomCredential)||!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType()))throw new IllegalStateException("Google không trả thông tin tài khoản.");
-                    GoogleIdTokenCredential google=GoogleIdTokenCredential.createFrom(((CustomCredential)credential).getData());
-                    String email=google.getId().trim().toLowerCase(Locale.ROOT),current=pendingGoogleSlot();
-                    if(!googleSlot(current)||email.isEmpty())throw new IllegalStateException("Chưa chọn được tài khoản Google.");
-                    if(email.equals(accountName(current.equals("primary")?"secondary":"primary")))throw new IllegalStateException("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");
-                    if(!saveGoogleAccount(current,email))throw new IllegalStateException("Không lưu được tài khoản Google trên thiết bị.");
-                    pendingAccount=new Account(email,"com.google");requestAuthorization();
-                }catch(Exception e){googleError(e);}
-            }
-            @Override public void onError(GetCredentialException e){googleError(e);}
-        });}catch(Exception e){googleError(e);}
+        pendingAccount=null;
+        requestAuthorization(true);
     }
     private void authorize(String slot,Runnable next){
         selecting=slot;authorized=next;String name=accountName(slot);
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái kết nối Google trên thiết bị.");return;}
         if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";next.run();return;}
-        // Credential Manager phải xác thực tài khoản trước để AuthorizationClient
-        // dùng đúng Google mặc định. AccountPicker chỉ trả email và có thể gây mã 8.
+        // Token chỉ giữ trong bộ nhớ. Khi hết hạn, mở lại đúng một form Google để
+        // chọn tài khoản và cấp quyền Drive, không đi qua Credential Manager.
         progress(false);chooseGoogle(slot,next);
     }
-    private void requestAuthorization(){
-        progress(true,"Đang kết nối Google…");
-        String slot=pendingGoogleSlot();if(pendingAccount==null&&googleSlot(slot)&&!accountName(slot).isEmpty())pendingAccount=new Account(accountName(slot),"com.google");
+    private void requestAuthorization(boolean chooseAccount){
+        progress(true,chooseAccount?"Đang chọn tài khoản và kết nối Google…":"Đang kết nối Google…");
+        String slot=pendingGoogleSlot();if(!chooseAccount&&pendingAccount==null&&googleSlot(slot)&&!accountName(slot).isEmpty())pendingAccount=new Account(accountName(slot),"com.google");
         Account account=pendingAccount;int authorizationId=++authorizationSequence;
-        if(account==null){authorizationSequence++;googleError(new IllegalStateException("Chưa xác định được tài khoản Google."));return;}
         handler.postDelayed(()->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(new java.io.IOException("Google Play Services không phản hồi sau 30 giây."));}},30000);
-        AuthorizationRequest request=AuthorizationRequest.builder()
-            .setRequestedScopes(Collections.singletonList(new Scope("https://www.googleapis.com/auth/drive.file")))
-            .build();
+        AuthorizationRequest.Builder builder=AuthorizationRequest.builder()
+            .setRequestedScopes(Collections.singletonList(new Scope("https://www.googleapis.com/auth/drive.file")));
+        if(chooseAccount)builder.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT);
+        else if(account!=null)builder.setAccount(account);
+        AuthorizationRequest request=builder.build();
         Identity.getAuthorizationClient(this).authorize(request).addOnSuccessListener(result->{
             if(authorizationId!=authorizationSequence)return;
             authorizationSequence++;
@@ -294,6 +252,9 @@ public class MainActivity extends FragmentActivity {
         String slot=pendingGoogleSlot();
         if(token==null||token.isEmpty()){progress(false);message("Google chưa cấp quyền Drive.");return;}
         if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
+        GoogleSignInAccount selected=result.toGoogleSignInAccount();
+        if(selected!=null&&selected.getEmail()!=null&&!selected.getEmail().trim().isEmpty())pendingAccount=new Account(selected.getEmail().trim().toLowerCase(Locale.ROOT),"com.google");
+        if(pendingAccount==null){progress(false);message("Google đã cấp quyền nhưng không trả về tài khoản đã chọn. Hãy chọn lại tài khoản.");return;}
         String email=pendingAccount==null?accountName(slot):pendingAccount.name.trim().toLowerCase(Locale.ROOT);
         if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
         if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}

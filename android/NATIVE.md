@@ -37,7 +37,7 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 - Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
 - Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
 - Các lượt đọc Google Drive khi đăng nhập đi qua HTTPS native giới hạn đúng máy chủ `www.googleapis.com`; ghi dữ liệu vẫn do core dùng Drive API. Kết nối và đọc đều có timeout để giao diện không treo vô hạn.
-- Tài khoản được chọn/xác thực trước bằng Credential Manager, sau đó access token Drive được lấy bằng `AuthorizationClient` của Google Play Services. Cách này đặt đúng tài khoản mặc định cho Google Identity, tránh `INTERNAL_ERROR (8)` do chỉ dùng AccountPicker. Nếu Google cần người dùng cấp lại quyền, Activity mở màn hình cấp quyền rồi đọc kết quả và tiếp tục đăng nhập. Mỗi lượt kết nối có giới hạn 30 giây và hiển thị mã lỗi Google thực tế.
+- Tài khoản và quyền Drive được chọn trong cùng một màn hình bằng `AuthorizationClient` của Google Play Services với `SELECT_ACCOUNT`. APK không phụ thuộc Credential Manager hoặc ID token Web, tránh các lỗi `Account reauth failed` và `No credentials available` trên thiết bị không cung cấp Google Credential Provider. Mỗi lượt kết nối có giới hạn 30 giây và hiển thị mã lỗi Google thực tế.
 - APK cho phép chụp và quay màn hình để người dùng lưu báo cáo hoặc gửi thông tin hỗ trợ.
 - Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Hồ sơ đăng nhập dùng Web Crypto AES-GCM/PBKDF2 nhẹ; dữ liệu nghiệp vụ không mã hóa để giảm thời gian mở và đồng bộ.
 - Đăng nhập OAuth Android và vân tay cần cấu hình/kiểm tra trên thiết bị thật.
