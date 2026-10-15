@@ -36,6 +36,11 @@ public class NativeLedgerTest {
             onView(withText("Đăng nhập")).check(matches(isDisplayed()));
         }
     }
+    @Test public void screenshotsAreAllowed() {
+        try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
+            activity.onActivity(a->assertEquals(0,a.getWindow().getAttributes().flags&android.view.WindowManager.LayoutParams.FLAG_SECURE));
+        }
+    }
     @Test public void localLedgerCoreBootsWithoutBrowserOrNetwork() throws Exception {
         CountDownLatch latch=new CountDownLatch(1);
         final String[] error=new String[1];

@@ -27,9 +27,13 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.auth.api.identity.AuthorizationRequest;
+import com.google.android.gms.auth.api.identity.AuthorizationResult;
+import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.common.AccountPicker;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.common.api.Scope;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
@@ -83,7 +87,9 @@ public class MainActivity extends FragmentActivity {
     };
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        // Báo cáo và hướng dẫn sử dụng cần ảnh chụp màn hình; không chặn chức năng
+        // chụp/quay màn hình của Android trên bất kỳ trang nào của ứng dụng.
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
         prefs=getSharedPreferences("google-storage",MODE_PRIVATE);
         adminMode=prefs.getBoolean("adminMode",false);
         loginAttempt=new ViewModelProvider(this).get(LoginAttempt.class);
@@ -214,13 +220,32 @@ public class MainActivity extends FragmentActivity {
         Account account=pendingAccount;int authorizationId=++authorizationSequence;
         if(account==null){authorizationSequence++;googleError(new IllegalStateException("Chưa xác định được tài khoản Google."));return;}
         handler.postDelayed(()->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(new java.io.IOException("Google Play Services không phản hồi sau 30 giây."));}},30000);
-        io.execute(()->{try{
-            String token=GoogleAuthUtil.getToken(this,account,"oauth2:https://www.googleapis.com/auth/drive.file");handler.post(()->{if(authorizationId==authorizationSequence){authorizationSequence++;finishAuthorization(token);}});
-        }catch(UserRecoverableAuthException e){handler.post(()->{if(authorizationId!=authorizationSequence)return;authorizationSequence++;try{startActivityForResult(e.getIntent(),AUTHORIZE);}catch(Exception failure){googleError(failure);}});}
-        catch(Exception e){handler.post(()->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(e);}});}});
+        AuthorizationRequest request=AuthorizationRequest.builder()
+            .setAccount(account)
+            .setRequestedScopes(Collections.singletonList(new Scope("https://www.googleapis.com/auth/drive.file")))
+            .build();
+        Identity.getAuthorizationClient(this).authorize(request).addOnSuccessListener(result->{
+            if(authorizationId!=authorizationSequence)return;
+            authorizationSequence++;
+            if(result.hasResolution()){
+                try{startIntentSenderForResult(result.getPendingIntent().getIntentSender(),AUTHORIZE,null,0,0,0);}
+                catch(Exception e){googleError(e);}
+            }else finishAuthorization(result);
+        }).addOnFailureListener(e->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(e);}});
     }
-    private void googleError(Exception e){progress(false);message("Không kết nối được Google: "+e.getMessage()+"\n\nKiểm tra OAuth Client loại Android, tên gói vn.soxe.organization và SHA-1 trong hướng dẫn bản native.");}
-    private void finishAuthorization(String token){
+    private void googleError(Exception e){
+        progress(false);
+        String detail=e.getMessage()==null||e.getMessage().trim().isEmpty()?e.getClass().getSimpleName():e.getMessage().trim();
+        String help="Hãy kiểm tra mạng, cập nhật Google Play Services rồi chọn lại tài khoản.";
+        if(e instanceof ApiException){
+            int code=((ApiException)e).getStatusCode();
+            detail=CommonStatusCodes.getStatusCodeString(code)+" ("+code+")";
+            if(code==CommonStatusCodes.DEVELOPER_ERROR)help="OAuth Android chưa khớp APK. Client phải dùng gói vn.soxe.organization và SHA-1 của khóa ký 4.7.";
+        }
+        message("Không kết nối được Google: "+detail+"\n\n"+help);
+    }
+    private void finishAuthorization(AuthorizationResult result){
+        String token=result.getAccessToken();
         String slot=pendingGoogleSlot();
         if(token==null||token.isEmpty()){progress(false);message("Google chưa cấp quyền Drive.");return;}
         if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
@@ -559,7 +584,7 @@ public class MainActivity extends FragmentActivity {
         super.onActivityResult(request,result,data);
         if(result!=RESULT_OK||data==null&&request!=AUTHORIZE){progress(false);attachmentPicked=null;backupPicked=null;if(request==PICK_ACCOUNT||request==AUTHORIZE){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();loginAttempt.clear();authorized=null;selecting="";pendingAccount=null;if(state==null)login();}return;}
         if(request==PICK_ACCOUNT){String slot=pendingGoogleSlot(),name=data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);if(!googleSlot(slot)||name==null||name.trim().isEmpty()){message("Chưa chọn được tài khoản Google. Hãy thử lại.");return;}name=name.trim().toLowerCase(Locale.ROOT);if(name.equals(accountName(slot.equals("primary")?"secondary":"primary"))){message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}if(!saveGoogleAccount(slot,name)){message("Không lưu được tài khoản Google trên thiết bị.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
-        else if(request==AUTHORIZE){requestAuthorization();}
+        else if(request==AUTHORIZE){try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}}
         else if(request==SAVE_FILE&&data.getData()!=null){
             Uri uri=data.getData();byte[] bytes=exportBytes;exportBytes=null;
             io.execute(()->{try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null||bytes==null)throw new IOException();out.write(bytes);handler.post(()->message("Đã lưu tệp."));}catch(Exception e){handler.post(()->message("Không ghi được tệp."));}});
