@@ -155,7 +155,9 @@ public class MainActivity extends FragmentActivity {
         state=null;presentation=null;
         if(!prefs.contains("adminMode")){chooseRole();return;}
         shell(adminMode?"Đăng nhập ADMIN":"Đăng nhập NSD");
-        Form f=new Form();f.input("username","Tên đăng nhập",adminMode?"admin":"",false);f.password("password","Mật khẩu","");
+        String pendingName=loginAttempt!=null&&loginAttempt.pending?loginAttempt.username:adminMode?"admin":"";
+        String pendingPassword=loginAttempt!=null&&loginAttempt.pending?loginAttempt.password:"";
+        Form f=new Form();f.input("username","Tên đăng nhập",pendingName,false);f.password("password","Mật khẩu",pendingPassword);
         button(body,"Đăng nhập",()->doLogin(f.string("username"),f.string("password")));
         if(vault.exists()&&vault.available())button(body,"Đăng nhập bằng vân tay",()->vault.authenticate(null,(credentials,error)->{
             if(error!=null){message(error);return;}
@@ -582,9 +584,17 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
-        if(result!=RESULT_OK||data==null&&request!=AUTHORIZE){progress(false);attachmentPicked=null;backupPicked=null;if(request==PICK_ACCOUNT||request==AUTHORIZE){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();loginAttempt.clear();authorized=null;selecting="";pendingAccount=null;if(state==null)login();}return;}
+        if(request==AUTHORIZE){
+            // Một số bản Google Play Services/OEM trả mã khác RESULT_OK dù Intent
+            // vẫn chứa AuthorizationResult hợp lệ. Luôn đọc dữ liệu trước thay vì
+            // xóa phiên đăng nhập và lặng lẽ quay về form.
+            authorizationSequence++;
+            if(data==null){progress(false);message("Màn hình cấp quyền Google đã đóng nhưng không trả dữ liệu. Hãy cập nhật Google Play Services rồi bấm Đăng nhập lại.");return;}
+            try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}
+            return;
+        }
+        if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;if(request==PICK_ACCOUNT){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";pendingAccount=null;if(state==null)login();}return;}
         if(request==PICK_ACCOUNT){String slot=pendingGoogleSlot(),name=data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);if(!googleSlot(slot)||name==null||name.trim().isEmpty()){message("Chưa chọn được tài khoản Google. Hãy thử lại.");return;}name=name.trim().toLowerCase(Locale.ROOT);if(name.equals(accountName(slot.equals("primary")?"secondary":"primary"))){message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}if(!saveGoogleAccount(slot,name)){message("Không lưu được tài khoản Google trên thiết bị.");return;}pendingAccount=new Account(name,"com.google");requestAuthorization();}
-        else if(request==AUTHORIZE){try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}}
         else if(request==SAVE_FILE&&data.getData()!=null){
             Uri uri=data.getData();byte[] bytes=exportBytes;exportBytes=null;
             io.execute(()->{try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null||bytes==null)throw new IOException();out.write(bytes);handler.post(()->message("Đã lưu tệp."));}catch(Exception e){handler.post(()->message("Không ghi được tệp."));}});

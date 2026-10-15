@@ -62,7 +62,7 @@ public class NativeLedgerTest {
                     assertTrue((Boolean)save.invoke(a,"primary","Admin.Storage@Example.Test"));
                     Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
                     MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
-                    attempt.begin("admin","secret",true);
+                    attempt.begin("admin2","secret",true);
                     attempt.rememberToken("primary","token-admin",Long.MAX_VALUE);
                     attempt.rememberToken("secondary","token-nsd",Long.MAX_VALUE);
                 } catch(Exception e){throw new AssertionError(e);}
@@ -76,12 +76,14 @@ public class NativeLedgerTest {
                     assertEquals("primary",pending.invoke(a));
                     Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
                     MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
-                    assertTrue(attempt.pending);assertEquals("admin",attempt.username);assertEquals("secret",attempt.password);assertTrue(attempt.adminMode);
+                    assertTrue(attempt.pending);assertEquals("admin2",attempt.username);assertEquals("secret",attempt.password);assertTrue(attempt.adminMode);
                     Field primaryToken=MainActivity.class.getDeclaredField("primaryToken");primaryToken.setAccessible(true);
                     Field secondaryToken=MainActivity.class.getDeclaredField("secondaryToken");secondaryToken.setAccessible(true);
                     assertEquals("token-admin",primaryToken.get(a));assertEquals("token-nsd",secondaryToken.get(a));
                 } catch(Exception e){throw new AssertionError(e);}
             });
+            onView(withText("admin2")).check(matches(isDisplayed()));
+            onView(withText("secret")).check(matches(isDisplayed()));
         }
     }
     @androidx.annotation.RequiresApi(29)
