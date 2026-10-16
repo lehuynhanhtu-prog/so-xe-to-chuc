@@ -38,6 +38,10 @@ import org.json.JSONObject;
 import java.io.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +51,8 @@ import java.util.function.Consumer;
 public class MainActivity extends FragmentActivity {
     private static final int AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
     private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
+    private static final String BROWSER_OAUTH_STATE="browserOAuthState";
+    private static final String BROWSER_OAUTH_URL="https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/android-oauth.html";
     private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -62,6 +68,7 @@ public class MainActivity extends FragmentActivity {
     private String page="Tổng quan",primaryToken="",secondaryToken="",loginName="",loginPassword="";
     private String selecting="",filterCar="",filterCategory="",filterFrom="",filterTo="";
     private Account pendingAccount;
+    private volatile ServerSocket browserOAuthServer;
     private int authorizationSequence;
     private Runnable authorized;
     private Consumer<JSONObject> attachmentPicked;
@@ -102,7 +109,7 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onStart(){super.onStart();stopped=false;}
     @Override protected void onStop(){super.onStop();stopped=true;}
-    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);io.shutdownNow();engine.destroy();super.onDestroy();}
+    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);closeBrowserOAuthServer();io.shutdownNow();engine.destroy();super.onDestroy();}
     private static JSONObject obj(Object...values){
         JSONObject o=new JSONObject();
         try{for(int i=0;i<values.length;i+=2)o.put((String)values[i],values[i+1]);}catch(Exception e){throw new IllegalArgumentException(e);}
@@ -244,9 +251,50 @@ public class MainActivity extends FragmentActivity {
             int code=((ApiException)e).getStatusCode();
             detail=CommonStatusCodes.getStatusCodeString(code)+" ("+code+")";
             if(code==CommonStatusCodes.DEVELOPER_ERROR)help="OAuth Android chưa khớp APK. Client phải dùng gói vn.soxe.organization và SHA-1 của khóa ký 4.7.";
+            if(code==CommonStatusCodes.INTERNAL_ERROR){startBrowserAuthorization();return;}
         }
+        if(detail.contains("INTERNAL_ERROR (8)")){startBrowserAuthorization();return;}
         message("Không kết nối được Google: "+detail+"\n\n"+help);
     }
+    private void startBrowserAuthorization(){
+        String slot=pendingGoogleSlot();
+        if(!googleSlot(slot)){message("Không xác định được tài khoản Google cần kết nối.");return;}
+        String oauthState=UUID.randomUUID().toString()+UUID.randomUUID().toString();
+        if(!prefs.edit().putString(BROWSER_OAUTH_STATE,oauthState).commit()){message("Không lưu được phiên kết nối Google.");return;}
+        closeBrowserOAuthServer();
+        final ServerSocket server;
+        try{server=new ServerSocket(0,1,InetAddress.getByName("127.0.0.1"));server.setSoTimeout(120000);browserOAuthServer=server;}
+        catch(Exception socketError){progress(false);message("Không tạo được kết nối an toàn với trình duyệt.");return;}
+        Uri page=Uri.parse(BROWSER_OAUTH_URL).buildUpon().appendQueryParameter("state",oauthState).appendQueryParameter("slot",slot).appendQueryParameter("port",String.valueOf(server.getLocalPort())).build();
+        io.execute(()->receiveBrowserAuthorization(server,oauthState));
+        progress(true,"Đang mở Google trong trình duyệt…");
+        try{startActivity(new Intent(Intent.ACTION_VIEW,page));}
+        catch(Exception browserError){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();closeBrowserOAuthServer();progress(false);message("Không mở được trình duyệt để kết nối Google.");}
+    }
+    private void receiveBrowserAuthorization(ServerSocket server,String oauthState){
+        try(Socket socket=server.accept()){
+            socket.setSoTimeout(5000);BufferedReader reader=new BufferedReader(new InputStreamReader(socket.getInputStream(),java.nio.charset.StandardCharsets.UTF_8));
+            String request=reader.readLine();if(request==null||request.length()>16384||!request.startsWith("GET "))throw new IOException("Yêu cầu trả về không hợp lệ.");
+            int end=request.indexOf(' ',4);if(end<5)throw new IOException("Yêu cầu trả về không hợp lệ.");
+            Uri uri=Uri.parse("http://127.0.0.1"+request.substring(4,end));
+            String returnedState=uri.getQueryParameter("state"),error=uri.getQueryParameter("error"),token=uri.getQueryParameter("access_token"),email=uri.getQueryParameter("email");
+            byte[] body=("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Đã kết nối Google</title><style>body{font:18px/1.6 system-ui;padding:32px;color:#142b43}main{max-width:520px;margin:auto}</style><main><h1>Đã trả kết quả về Sổ Xe Tổ Chức</h1><p>Hãy bấm nút Quay lại của Android để trở về ứng dụng.</p></main><script>history.replaceState(null,'','/done')</script>").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            OutputStream out=socket.getOutputStream();out.write(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.US_ASCII));out.write(body);out.flush();
+            handler.post(()->completeBrowserAuthorization(returnedState,error,token,email));
+        }catch(SocketTimeoutException timeout){handler.post(()->{if(oauthState.equals(prefs.getString(BROWSER_OAUTH_STATE,""))){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();progress(false);message("Kết nối Google đã hết thời gian. Hãy thử lại.");}});}
+        catch(Exception error){handler.post(()->{if(oauthState.equals(prefs.getString(BROWSER_OAUTH_STATE,""))){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();progress(false);message("Không nhận được kết quả Google từ trình duyệt. Hãy thử lại.");}});}
+        finally{try{server.close();}catch(Exception ignored){}if(browserOAuthServer==server)browserOAuthServer=null;}
+    }
+    private void completeBrowserAuthorization(String returnedState,String error,String token,String email){
+        String expected=prefs.getString(BROWSER_OAUTH_STATE,"");
+        prefs.edit().remove(BROWSER_OAUTH_STATE).apply();
+        progress(false);
+        if(expected.isEmpty()||!expected.equals(returnedState)){message("Phiên kết nối Google không hợp lệ hoặc đã hết hạn. Hãy thử lại.");return;}
+        if(error!=null&&!error.isEmpty()){message("Google chưa cấp quyền: "+error);return;}
+        if(token==null||token.isEmpty()||email==null||email.trim().isEmpty()){message("Trình duyệt không trả đủ thông tin Google. Hãy thử lại.");return;}
+        finishGoogleConnection(token,email.trim().toLowerCase(Locale.ROOT));
+    }
+    private void closeBrowserOAuthServer(){ServerSocket server=browserOAuthServer;browserOAuthServer=null;if(server!=null)try{server.close();}catch(Exception ignored){}}
     private void finishAuthorization(AuthorizationResult result){
         String token=result.getAccessToken();
         String slot=pendingGoogleSlot();
@@ -255,7 +303,12 @@ public class MainActivity extends FragmentActivity {
         GoogleSignInAccount selected=result.toGoogleSignInAccount();
         if(selected!=null&&selected.getEmail()!=null&&!selected.getEmail().trim().isEmpty())pendingAccount=new Account(selected.getEmail().trim().toLowerCase(Locale.ROOT),"com.google");
         if(pendingAccount==null){progress(false);message("Google đã cấp quyền nhưng không trả về tài khoản đã chọn. Hãy chọn lại tài khoản.");return;}
-        String email=pendingAccount==null?accountName(slot):pendingAccount.name.trim().toLowerCase(Locale.ROOT);
+        String email=pendingAccount.name.trim().toLowerCase(Locale.ROOT);
+        finishGoogleConnection(token,email);
+    }
+    private void finishGoogleConnection(String token,String email){
+        String slot=pendingGoogleSlot();
+        if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
         if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
         if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}
         long expiry=System.currentTimeMillis()+45*60000;tokenExpiry.put(slot,expiry);loginAttempt.rememberToken(slot,token,expiry);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
