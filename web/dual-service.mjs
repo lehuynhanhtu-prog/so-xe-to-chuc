@@ -1,3 +1,4 @@
+// Web bundle revision 4.8.3-r1: invalidates the previously corrupted Pages cache.
 import {attachmentStem,attachmentToday,matchesAttachmentName,uniqueAttachmentName} from './attachment-names.mjs';
 import {inspectTransfer,transferStorage} from './storage-transfer.mjs';
 import {exportBackup,inspectBackup,restoreBackup} from './storage-backup.mjs';
