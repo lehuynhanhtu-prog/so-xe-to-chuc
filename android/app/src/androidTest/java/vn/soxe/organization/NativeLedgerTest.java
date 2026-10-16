@@ -40,7 +40,7 @@ public class NativeLedgerTest {
         try(ActivityScenario<BrowserMainActivity> activity=ActivityScenario.launch(BrowserMainActivity.class)) {
             onView(withText("Sổ Xe Tổ Chức")).check(matches(isDisplayed()));
             onView(withText("Đăng nhập")).check(matches(isDisplayed()));
-            onView(withText("MỞ ỨNG DỤNG VÀ ĐĂNG NHẬP")).check(matches(isDisplayed()));
+            onView(withText("MỞ ỨNG DỤNG VÀ ĐĂNG NHẬP")).perform(scrollTo()).check(matches(isDisplayed()));
         }
     }
     @Test public void screenshotsAreAllowed() {

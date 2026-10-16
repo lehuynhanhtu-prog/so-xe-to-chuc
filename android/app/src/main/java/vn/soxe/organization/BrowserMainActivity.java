@@ -11,6 +11,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +30,8 @@ public final class BrowserMainActivity extends Activity {
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
         final int ink=Color.rgb(20,43,67),teal=Color.rgb(23,106,101),muted=Color.rgb(92,113,132);
-        LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(22),dp(42),dp(22),dp(24));page.setBackgroundColor(Color.rgb(244,247,251));page.setGravity(Gravity.CENTER_HORIZONTAL);setContentView(page);
+        ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.rgb(244,247,251));
+        LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(22),dp(42),dp(22),dp(24));page.setGravity(Gravity.CENTER_HORIZONTAL);scroll.addView(page,new ScrollView.LayoutParams(-1,-2));setContentView(scroll);
 
         LinearLayout hero=new LinearLayout(this);hero.setOrientation(LinearLayout.VERTICAL);hero.setPadding(dp(24),dp(26),dp(24),dp(28));hero.setBackground(background(teal,22));page.addView(hero,new LinearLayout.LayoutParams(-1,-2));
         TextView mark=text(hero,"SX",20,teal,true);mark.setGravity(Gravity.CENTER);mark.setBackground(background(Color.WHITE,16));mark.setLayoutParams(new LinearLayout.LayoutParams(dp(52),dp(52)));
