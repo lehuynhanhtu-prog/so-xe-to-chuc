@@ -25,7 +25,7 @@ async function nativeFetch(url,options={}){
  if(method==='GET'&&globalThis.Native?.httpGet){
   const headers=new Headers(options.headers||{}),result=JSON.parse(Native.httpGet(String(url),headers.get('Authorization')||''));
   if(!result.status)throw new Error(result.error||'Không kết nối được Google Drive.');
-  return new Response(bytesFromBase64(result.body),{status:result.status,headers:{'Content-Type':result.contentType||'application/octet-stream'}});
+  return new Response(bytesFromBase64(result.body),{status:result.status,headers:{'Content-Type':result.contentType||'application/octet-stream',...(result.etag?{ETag:result.etag}:{})}});
  }
  return globalThis.fetch(url,options);
 }

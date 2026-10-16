@@ -1,30 +1,20 @@
-# Sổ Xe Tổ Chức — Android native 4.8.3
+# Sổ Xe Tổ Chức — Android 4.8.3
 
-Giao diện dùng Android Views: đăng nhập, hiện mật khẩu, Tổng quan, Xe, chi phí, phân công, NSD, bàn giao, báo cáo, tệp đính kèm, sao lưu và phục hồi. Không mở trang Web hoặc trình duyệt để sử dụng ứng dụng.
+APK dùng lại ranh giới đăng nhập ổn định của bản 4.7: launcher mở toàn bộ Sổ Xe Tổ Chức trong Chrome/trình duyệt hệ thống. Giao diện, Google OAuth và dữ liệu giống trực tiếp bản Web đã phát hành.
 
-Bộ xử lý nghiệp vụ dùng chung với Web được đóng gói trong APK và chạy trong một WebView không gắn vào giao diện. Đây là bộ xử lý JavaScript cục bộ, không phải màn hình Web. OAuth dùng Google Play services; lịch, chọn tệp và xác thực sinh trắc học dùng Android. Cần kết nối Internet để đọc/lưu Drive. Cần Android 7 trở lên, Google Play services và Android System WebView được cập nhật (Chromium 74 trở lên).
+Cần kết nối Internet và trình duyệt hiện đại để đăng nhập, đọc/lưu Drive. APK không nhúng OAuth vào WebView và không gọi Google Play Services Auth.
 
 ## Cấu hình Google một lần
 
-APK 4.8.3 phải được ký bằng đúng keystore đã ký bản 4.7. Android OAuth Client phải có đúng SHA-1 của khóa này; nếu không khớp, việc cấp quyền Google Drive sẽ thất bại với cả hai tài khoản.
+APK 4.8.3 phải được ký bằng đúng keystore đã ký bản 4.7 để cài cập nhật đè. Luồng Google dùng Web OAuth Client đang hoạt động của bản Web và không phụ thuộc Android OAuth Client/package SHA-1.
 
 1. Mở Google Cloud Console, chọn dự án số **862228353042** đang dùng với Sổ Xe cá nhân và Sổ Xe tổ chức.
-2. Mở **Google Auth Platform → Clients** (hoặc **APIs & Services → Credentials**).
-3. Chọn **Create client / Create credentials → OAuth client ID**, loại **Android**.
-4. Tên: **Sổ Xe Tổ Chức Android 4.8.3**.
-5. Package name: **vn.soxe.organization**.
-6. SHA-1 chính xác của chứng thư ký APK 4.8.3:
+2. Kiểm tra **Google Drive API** đã bật. Nếu ứng dụng đang ở trạng thái Testing, thêm cả hai tài khoản Google lưu dữ liệu vào **Audience → Test users**.
+3. Trên thiết bị, chọn **ADMIN** và kết nối hai tài khoản lưu dữ liệu khác nhau: Google lưu dữ liệu Admin và Google lưu dữ liệu NSD. Khi đăng nhập vai trò **NSD** hoặc **Admin chỉ xem**, chỉ kết nối tài khoản Google lưu dữ liệu NSD. Sau khi cấp quyền thành công, dùng tên đăng nhập/mật khẩu ứng dụng hiện có. Không tạo tổ chức mới để thay cho việc kết nối dữ liệu cũ.
 
-   **23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7**
+Phiên Web giữ riêng hai access token Google ngắn hạn trong session của trình duyệt; token không được ghi vào dữ liệu Drive hay localStorage. Gợi ý email được giữ để chọn lại đúng Google khi token hết hạn.
 
-7. Bấm **Create**. Không cần dán Client ID/Client Secret vào app; giữ nguyên Web Client đang dùng. Chờ vài phút để cấu hình OAuth được áp dụng.
-8. Kiểm tra **Google Drive API** đã bật. Nếu ứng dụng đang ở trạng thái Testing, thêm cả hai tài khoản Google lưu dữ liệu vào **Audience → Test users**.
-9. Trên thiết bị, chọn **ADMIN** và kết nối hai tài khoản lưu dữ liệu khác nhau: Google lưu dữ liệu Admin và Google lưu dữ liệu NSD. Khi đăng nhập vai trò **NSD** hoặc **Admin chỉ xem**, chỉ kết nối tài khoản Google lưu dữ liệu NSD. Sau khi cấp quyền thành công, dùng tên đăng nhập/mật khẩu ứng dụng hiện có. Không tạo tổ chức mới để thay cho việc kết nối dữ liệu cũ.
-
-APK lưu bền tài khoản ngay khi người dùng chọn trong Account Picker; bước cấp quyền Drive tiếp tục dùng đúng tài khoản và đúng vị trí Admin/NSD đó, kể cả khi Android tạo lại Activity trong lúc hiển thị màn hình cấp quyền.
-Tên đăng nhập, mật khẩu đang chờ và hai access token Google ngắn hạn chỉ được giữ trong ViewModel ở bộ nhớ để tiếp tục đăng nhập sau màn hình cấp quyền; chúng không được ghi vào SharedPreferences hay tệp trên thiết bị. Giữ cả hai token giúp đăng nhập Admin không quay lại xin Google Admin sau khi vừa cấp quyền Google NSD.
-
-Nếu Android báo không kết nối được Google, kiểm tra lại package name/SHA-1 trong OAuth Android Client và Test users. Nếu hiện thông báo liên quan tới tài khoản, gửi nguyên văn lỗi (che địa chỉ email) để khoanh vùng tiếp.
+Nếu Android báo không kết nối được Google, kiểm tra trình duyệt, mạng và Test users. Nếu hiện thông báo liên quan tới tài khoản, gửi nguyên văn lỗi (che địa chỉ email) để khoanh vùng tiếp.
 
 Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng nhập bằng vân tay**. Vân tay mở thông tin đăng nhập được mã hóa bằng khóa Android Keystore yêu cầu xác thực từng lần; app vẫn kiểm tra mật khẩu và quyền trên Drive. Nếu Admin đặt lại mật khẩu hoặc đổi vân tay, đăng nhập bằng mật khẩu và bật lại.
 
@@ -32,16 +22,13 @@ Sau khi đăng nhập bằng mật khẩu, mở **Cài đặt → Bật đăng n
 
 - Cùng định dạng dữ liệu JSON trực tiếp, cách đặt tên tệp, ETag chống ghi đè và phân quyền với Web. Hồ sơ tài khoản/mật khẩu vẫn được mã hóa cơ bản.
 - Admin toàn quyền; viewer chỉ xem; NSD sửa/xóa bản ghi do mình nhập. Báo cáo thời gian NSD chỉ chứa kỳ quản lý của chính mình.
-- Đồng bộ tự động mỗi phút khi ứng dụng ở foreground; không xóa nội dung form đang nhập.
+- Đồng bộ và giao diện dùng trực tiếp bản Web hiện hành.
 - Sao lưu đầy đủ dữ liệu và tệp; phục hồi yêu cầu xem trước, tên tổ chức và mật khẩu Admin.
-- Bản native xuất CSV và Excel giao dịch chi tiết, chi phí theo tháng, thời gian quản lý; có lọc xe, loại chi phí và ngày.
-- Mật khẩu thường không lưu trên thiết bị. Chỉ khi bật vân tay, thông tin đăng nhập được mã hóa với khóa thiết bị. Access token Google chỉ ở bộ nhớ.
-- Các lượt đọc Google Drive khi đăng nhập đi qua HTTPS native giới hạn đúng máy chủ `www.googleapis.com`; ghi dữ liệu vẫn do core dùng Drive API. Kết nối và đọc đều có timeout để giao diện không treo vô hạn.
-- Tài khoản và quyền Drive được chọn trong cùng một màn hình bằng `AuthorizationClient` của Google Play Services với `SELECT_ACCOUNT`. APK không phụ thuộc Credential Manager hoặc ID token Web, tránh các lỗi `Account reauth failed` và `No credentials available` trên thiết bị không cung cấp Google Credential Provider. Mỗi lượt kết nối có giới hạn 30 giây và hiển thị mã lỗi Google thực tế.
-- Nếu Google Play Services trả `INTERNAL_ERROR (8)` trước khi mở màn hình tài khoản, APK tự chuyển sang trang OAuth của chính ứng dụng trong trình duyệt. Trang dùng Web Client công khai, chỉ xin `drive.file` và email, rồi trả access token về máy chủ tạm thời chỉ lắng nghe trên `127.0.0.1` của chính thiết bị trong tối đa 2 phút; không dùng deep link có thể bị ứng dụng khác chặn và không nhận hoặc lưu mật khẩu Google.
+- Xuất CSV/Excel, vân tay/passkey và chọn tệp dùng khả năng của trình duyệt hệ thống.
+- APK mở toàn bộ app Web như bản 4.7, không phụ thuộc Google Play Services nên loại bỏ nhánh lỗi `INTERNAL_ERROR (8)`, `Account reauth failed` và `No credentials available`.
 - APK cho phép chụp và quay màn hình để người dùng lưu báo cáo hoặc gửi thông tin hỗ trợ.
-- Bộ xử lý được bundle và chuyển đổi cú pháp cho Chromium 74, kèm tương thích structuredClone/UUID. Hồ sơ đăng nhập dùng Web Crypto AES-GCM/PBKDF2 nhẹ; dữ liệu nghiệp vụ không mã hóa để giảm thời gian mở và đồng bộ.
-- Đăng nhập OAuth Android và vân tay cần cấu hình/kiểm tra trên thiết bị thật.
+- Chỉ hồ sơ tài khoản dùng AES-GCM/PBKDF2 nhẹ 10.000 vòng; dữ liệu tổ chức, xe, giao dịch, nhật ký và dữ liệu được xem là JSON không mã hóa để giảm thời gian mở và đồng bộ. Dữ liệu cũ vẫn đọc được và tự chuyển đổi.
+- Đăng nhập OAuth trình duyệt và vân tay/passkey cần kiểm tra trên thiết bị thật.
 
 ## Kiểm tra và build
 

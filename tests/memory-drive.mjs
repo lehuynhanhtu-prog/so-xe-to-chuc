@@ -13,7 +13,7 @@ export class MemoryDrive{
  async renameProfile(id,username,name){const f=this.file(id,true);f.name=name;f.appProperties.username=username;}
  async modelFiles(model){return [...this.files.values()].filter(f=>f.owner===this.email&&!f.trashed&&f.appProperties.model===model);}
  async fileInfo(id){const f=this.files.get(id);if(!f||f.owner!==this.email&&!f.permissions.has(this.email))throw Object.assign(new Error("missing"),{status:404});return {id:f.id,name:f.name,appProperties:f.appProperties,mimeType:f.type,owners:[{emailAddress:f.owner}]};}
- async profiles(){return [...this.files.values()].filter(f=>f.owner===this.email&&!f.trashed&&f.kind==='account');}
+ async profiles(username=''){return [...this.files.values()].filter(f=>f.owner===this.email&&!f.trashed&&f.kind==='account'&&(!username||f.appProperties?.username===username));}
  async createBinary(name,base64,type,properties){const r=await this.create(name,null,'attachment',properties);Object.assign(this.files.get(r.id),{base64,type});return r;}
  async readBinary(id){const f=this.files.get(id);if(!f||f.owner!==this.email)throw Object.assign(new Error('missing'),{status:404});return Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0));}
  async writeBinary(id,bytes,type,etag){const f=this.file(id,true);if(String(f.rev)!==etag)throw Object.assign(new Error('conflict'),{status:412});f.base64=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));f.type=type;return {id,etag:String(++f.rev)};}

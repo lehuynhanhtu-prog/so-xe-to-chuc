@@ -77,7 +77,7 @@ final class LedgerEngine {
                     connection=(HttpsURLConnection)target.openConnection();connection.setRequestMethod("GET");connection.setConnectTimeout(15000);connection.setReadTimeout(30000);connection.setUseCaches(false);connection.setRequestProperty("Authorization",authorization);connection.setRequestProperty("Accept","application/json, application/octet-stream");
                     int status=connection.getResponseCode();InputStream in=status>=400?connection.getErrorStream():connection.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
                     if(in!=null)try(InputStream source=in){byte[] block=new byte[8192];int n,total=0;while((n=source.read(block))!=-1){total+=n;if(total>40*1024*1024)throw new java.io.IOException("Phản hồi Google Drive vượt giới hạn.");out.write(block,0,n);}}
-                    response.put("status",status);response.put("contentType",connection.getContentType()==null?"application/octet-stream":connection.getContentType());response.put("body",android.util.Base64.encodeToString(out.toByteArray(),android.util.Base64.NO_WRAP));
+                    response.put("status",status);response.put("contentType",connection.getContentType()==null?"application/octet-stream":connection.getContentType());response.put("etag",connection.getHeaderField("ETag"));response.put("body",android.util.Base64.encodeToString(out.toByteArray(),android.util.Base64.NO_WRAP));
                 } catch(Exception e) { try{response.put("status",0);response.put("error",e.getMessage()==null?"Không kết nối được Google Drive.":e.getMessage());}catch(Exception ignored){} }
                 finally {if(connection!=null)connection.disconnect();}
                 return response.toString();

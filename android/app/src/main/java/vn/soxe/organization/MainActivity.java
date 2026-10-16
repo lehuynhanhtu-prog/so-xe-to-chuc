@@ -1,6 +1,5 @@
 package vn.soxe.organization;
 
-import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -26,13 +25,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import com.google.android.gms.auth.api.identity.AuthorizationRequest;
-import com.google.android.gms.auth.api.identity.AuthorizationResult;
-import com.google.android.gms.auth.api.identity.Identity;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.CommonStatusCodes;
-import com.google.android.gms.common.api.Scope;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
@@ -49,7 +41,7 @@ import java.util.function.Consumer;
 
 /** Native Views; the local JS runtime supplies only the shared ledger core. */
 public class MainActivity extends FragmentActivity {
-    private static final int AUTHORIZE=102, PICK_FILE=103, SAVE_FILE=104;
+    private static final int PICK_FILE=103, SAVE_FILE=104;
     private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
     private static final String BROWSER_OAUTH_STATE="browserOAuthState";
     private static final String BROWSER_OAUTH_URL="https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/android-oauth.html";
@@ -67,9 +59,7 @@ public class MainActivity extends FragmentActivity {
     private final Map<String,Long> tokenExpiry=new HashMap<>();
     private String page="Tổng quan",primaryToken="",secondaryToken="",loginName="",loginPassword="";
     private String selecting="",filterCar="",filterCategory="",filterFrom="",filterTo="";
-    private Account pendingAccount;
     private volatile ServerSocket browserOAuthServer;
-    private int authorizationSequence;
     private Runnable authorized;
     private Consumer<JSONObject> attachmentPicked;
     private Consumer<String> backupPicked;
@@ -212,49 +202,15 @@ public class MainActivity extends FragmentActivity {
         if(state!=null){message("Đăng xuất trước khi đổi tài khoản lưu dữ liệu.");return;}
         selecting=slot;authorized=next;
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
-        pendingAccount=null;
-        requestAuthorization(true);
+        startBrowserAuthorization();
     }
     private void authorize(String slot,Runnable next){
         selecting=slot;authorized=next;String name=accountName(slot);
         if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái kết nối Google trên thiết bị.");return;}
         if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";next.run();return;}
-        // Token chỉ giữ trong bộ nhớ. Khi hết hạn, mở lại đúng một form Google để
-        // chọn tài khoản và cấp quyền Drive, không đi qua Credential Manager.
+        // Giống APK 4.7: OAuth chạy trong trình duyệt hệ thống. Token chỉ giữ
+        // trong bộ nhớ và được chọn lại khi hết hạn.
         progress(false);chooseGoogle(slot,next);
-    }
-    private void requestAuthorization(boolean chooseAccount){
-        progress(true,chooseAccount?"Đang chọn tài khoản và kết nối Google…":"Đang kết nối Google…");
-        String slot=pendingGoogleSlot();if(!chooseAccount&&pendingAccount==null&&googleSlot(slot)&&!accountName(slot).isEmpty())pendingAccount=new Account(accountName(slot),"com.google");
-        Account account=pendingAccount;int authorizationId=++authorizationSequence;
-        handler.postDelayed(()->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(new java.io.IOException("Google Play Services không phản hồi sau 30 giây."));}},30000);
-        AuthorizationRequest.Builder builder=AuthorizationRequest.builder()
-            .setRequestedScopes(Collections.singletonList(new Scope("https://www.googleapis.com/auth/drive.file")));
-        if(chooseAccount)builder.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT);
-        else if(account!=null)builder.setAccount(account);
-        AuthorizationRequest request=builder.build();
-        Identity.getAuthorizationClient(this).authorize(request).addOnSuccessListener(result->{
-            if(authorizationId!=authorizationSequence)return;
-            authorizationSequence++;
-            if(result.hasResolution()){
-                try{startIntentSenderForResult(result.getPendingIntent().getIntentSender(),AUTHORIZE,null,0,0,0);}
-                catch(Exception e){googleError(e);}
-            }else finishAuthorization(result);
-        }).addOnFailureListener(e->{if(authorizationId==authorizationSequence){authorizationSequence++;googleError(e);}});
-    }
-    private void googleError(Exception e){
-        progress(false);
-        String detail=e.getMessage()==null||e.getMessage().trim().isEmpty()?e.getClass().getSimpleName():e.getMessage().trim();
-        String help="Hãy kiểm tra mạng, cập nhật Google Play Services rồi chọn lại tài khoản.";
-        if(detail.contains("Account reauth failed")||detail.contains("[16]"))help="Google không hoàn tất xác thực lại tài khoản. Hãy mở Cài đặt Android → Tài khoản/Google, xác nhận tài khoản vẫn hoạt động; sau đó quay lại app và chọn lại tài khoản.";
-        if(e instanceof ApiException){
-            int code=((ApiException)e).getStatusCode();
-            detail=CommonStatusCodes.getStatusCodeString(code)+" ("+code+")";
-            if(code==CommonStatusCodes.DEVELOPER_ERROR)help="OAuth Android chưa khớp APK. Client phải dùng gói vn.soxe.organization và SHA-1 của khóa ký 4.7.";
-            if(code==CommonStatusCodes.INTERNAL_ERROR){startBrowserAuthorization();return;}
-        }
-        if(detail.contains("INTERNAL_ERROR (8)")){startBrowserAuthorization();return;}
-        message("Không kết nối được Google: "+detail+"\n\n"+help);
     }
     private void startBrowserAuthorization(){
         String slot=pendingGoogleSlot();
@@ -295,24 +251,13 @@ public class MainActivity extends FragmentActivity {
         finishGoogleConnection(token,email.trim().toLowerCase(Locale.ROOT));
     }
     private void closeBrowserOAuthServer(){ServerSocket server=browserOAuthServer;browserOAuthServer=null;if(server!=null)try{server.close();}catch(Exception ignored){}}
-    private void finishAuthorization(AuthorizationResult result){
-        String token=result.getAccessToken();
-        String slot=pendingGoogleSlot();
-        if(token==null||token.isEmpty()){progress(false);message("Google chưa cấp quyền Drive.");return;}
-        if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
-        GoogleSignInAccount selected=result.toGoogleSignInAccount();
-        if(selected!=null&&selected.getEmail()!=null&&!selected.getEmail().trim().isEmpty())pendingAccount=new Account(selected.getEmail().trim().toLowerCase(Locale.ROOT),"com.google");
-        if(pendingAccount==null){progress(false);message("Google đã cấp quyền nhưng không trả về tài khoản đã chọn. Hãy chọn lại tài khoản.");return;}
-        String email=pendingAccount.name.trim().toLowerCase(Locale.ROOT);
-        finishGoogleConnection(token,email);
-    }
     private void finishGoogleConnection(String token,String email){
         String slot=pendingGoogleSlot();
         if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
         if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
         if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}
         long expiry=System.currentTimeMillis()+45*60000;tokenExpiry.put(slot,expiry);loginAttempt.rememberToken(slot,token,expiry);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
-        pendingAccount=null;selecting="";Runnable next=authorized;authorized=null;progress(false);
+        selecting="";Runnable next=authorized;authorized=null;progress(false);
         if(next!=null)next.run();else if(state==null&&loginAttempt.pending){resumePendingLogin();}else {message("Đã kết nối và lưu tài khoản Google "+email+".");if(state==null)login();else connections();}
     }
     private void withGoogle(Runnable action){
@@ -641,15 +586,6 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
-        if(request==AUTHORIZE){
-            // Một số bản Google Play Services/OEM trả mã khác RESULT_OK dù Intent
-            // vẫn chứa AuthorizationResult hợp lệ. Luôn đọc dữ liệu trước thay vì
-            // xóa phiên đăng nhập và lặng lẽ quay về form.
-            authorizationSequence++;
-            if(data==null){progress(false);message("Màn hình cấp quyền Google đã đóng nhưng không trả dữ liệu. Hãy cập nhật Google Play Services rồi bấm Đăng nhập lại.");return;}
-            try{finishAuthorization(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}catch(Exception e){googleError(e);}
-            return;
-        }
         if(result!=RESULT_OK||data==null){progress(false);attachmentPicked=null;backupPicked=null;return;}
         if(request==SAVE_FILE&&data.getData()!=null){
             Uri uri=data.getData();byte[] bytes=exportBytes;exportBytes=null;

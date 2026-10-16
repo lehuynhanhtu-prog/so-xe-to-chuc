@@ -144,7 +144,7 @@ Gợi ý email Google và loại đăng nhập được giữ trên thiết bị
 
 [Tải ứng dụng](https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/downloads.html).
 
-- Android: APK `vn.soxe.organization`, Android 7+, mở Web bằng trình duyệt hệ thống. Google OAuth chạy trong trình duyệt, không nhúng vào WebView. Không cần OAuth Android riêng.
+- Android: APK `vn.soxe.organization`, Android 7+, mở toàn bộ bản Web trong trình duyệt hệ thống giống APK 4.7. Google OAuth chạy trực tiếp trong phiên Web, không cần OAuth Android riêng.
 - Windows Portable: EXE/BAT mở cùng Web HTTPS; không chạy máy chủ localhost, không yêu cầu thêm origin localhost.
 - iOS: hồ sơ Web Clip hoặc Safari → Thêm vào Màn hình chính, tương tự Sổ Xe cá nhân. Không phải IPA native.
 - Web: bản trực tuyến và gói ZIP cho tự host. Cần HTTPS và cấu hình OAuth origin nếu đổi nơi host.
