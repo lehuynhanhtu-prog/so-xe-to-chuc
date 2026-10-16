@@ -5,6 +5,8 @@ const html=readFileSync('apps-script/Index.html','utf8');
 new vm.Script(html.match(/<script>([\s\S]*?)<\/script>/)[1],{filename:'Index.html'});
 console.log('Apps Script and browser JavaScript parse successfully.');
 const web=readFileSync('web/index.html','utf8');
+const published=readFileSync('docs/index.html','utf8');
+if(!published.startsWith('<!doctype html>')||!published.includes('<title>Sổ Xe Tổ Chức</title>'))throw new Error('Published Web entry is not valid HTML.');
 if(web.includes('google.script.run'))throw new Error('Web v3 must not call Apps Script.');
 if(!web.includes('SO_XE_GOOGLE_CONFIG'))throw new Error('Google config missing.');
 const {spawnSync}=await import('node:child_process');

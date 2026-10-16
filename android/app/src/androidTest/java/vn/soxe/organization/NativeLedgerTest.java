@@ -36,6 +36,13 @@ public class NativeLedgerTest {
             onView(withText("Đăng nhập")).check(matches(isDisplayed()));
         }
     }
+    @Test public void browserLauncherHasProfessionalLoginScreen() {
+        try(ActivityScenario<BrowserMainActivity> activity=ActivityScenario.launch(BrowserMainActivity.class)) {
+            onView(withText("Sổ Xe Tổ Chức")).check(matches(isDisplayed()));
+            onView(withText("Đăng nhập")).check(matches(isDisplayed()));
+            onView(withText("MỞ ỨNG DỤNG VÀ ĐĂNG NHẬP")).check(matches(isDisplayed()));
+        }
+    }
     @Test public void screenshotsAreAllowed() {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
             activity.onActivity(a->assertEquals(0,a.getWindow().getAttributes().flags&android.view.WindowManager.LayoutParams.FLAG_SECURE));
