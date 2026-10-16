@@ -16,7 +16,9 @@ import android.widget.Toast;
 
 /** Stable 4.7 browser sign-in boundary with a small native launch screen. */
 public final class BrowserMainActivity extends Activity {
-    private static final String APP_URL="https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/";
+    // Versioned query forces Chrome to request the current Web shell instead of
+    // reusing a previously cached (and possibly corrupted) document.
+    private static final String APP_URL="https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/?source=android-4.8.3-484";
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private TextView text(LinearLayout parent,String value,int size,int color,boolean bold){
         TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setTextColor(color);view.setLineSpacing(0,1.12f);
