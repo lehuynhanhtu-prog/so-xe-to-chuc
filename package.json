@@ -1,18 +1,20 @@
 {
   "name": "so-xe-to-chuc",
   "version": "4.8.3",
-  "description": "Organization vehicle ledger using direct Google Drive API",
+  "description": "Organization vehicle ledger with a single-owner Google Apps Script service",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "build": "node tools/build.mjs && node tools/build-web.mjs",
-    "test": "npm run build && node --test tests/drive-service.test.cjs tests/direct-drive.test.mjs tests/google.test.mjs tests/mail-storage.test.mjs tests/dual-drive.test.mjs tests/reports.test.mjs tests/reminders.test.mjs tests/ledger-view.test.mjs tests/dates.test.mjs tests/handovers.test.mjs tests/money-input.test.mjs tests/attachment-names.test.mjs tests/biometric.test.mjs tests/storage-transfer.test.mjs",
+    "build": "node tools/build.mjs && node tools/build-web.mjs && node tools/build-cloud.mjs",
+    "test": "npm run build && node --test tests/drive-service.test.cjs tests/direct-drive.test.mjs tests/google.test.mjs tests/mail-storage.test.mjs tests/dual-drive.test.mjs tests/reports.test.mjs tests/reminders.test.mjs tests/ledger-view.test.mjs tests/dates.test.mjs tests/handovers.test.mjs tests/money-input.test.mjs tests/attachment-names.test.mjs tests/biometric.test.mjs tests/storage-transfer.test.mjs tests/cloud-service.test.cjs",
     "check": "node tools/check.mjs",
     "test:ui": "node --test tests/direct-web-ui.test.mjs tests/dual-web-ui.test.mjs tests/backup-web-ui.test.mjs",
     "package:web": "npm run build && python3 tools/package-platform-web.py",
-    "test:android-core": "node tools/test-native-engine.mjs"
+    "test:android-core": "node tools/test-native-engine.mjs",
+    "test:cloud": "npm run build && node --test tests/cloud-service.test.cjs",
+    "test:cloud-ui": "node --test tests/cloud-web-ui.test.mjs"
   },
   "repository": {
     "type": "git",

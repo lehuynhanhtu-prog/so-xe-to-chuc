@@ -1,3 +1,20 @@
+# Sổ Xe Tổ Chức — 4.8.3 một Google
+
+Bản một Google dùng Apps Script chạy dưới tài khoản chủ dữ liệu. Admin và NSD đăng nhập bằng tên/mật khẩu app; không cần kết nối Google trên thiết bị NSD.
+
+- Mã triển khai mới: [`apps-script-cloud/`](apps-script-cloud/), **không phải** thư mục Apps Script cũ và không phải repo/project Sổ xe V2.
+- [Hướng dẫn triển khai và chuyển dữ liệu](apps-script-cloud/DEPLOY.md).
+- [Gói triển khai Apps Script](docs/downloads/So-Xe-To-Chuc-Apps-Script-4.8.3-cloud.1.zip).
+- `web/cloud.html` giữ giao diện nghiệp vụ 4.8.3; build tạo `apps-script-cloud/Index.html` tự chứa toàn bộ JavaScript/CSS, không tải mô-đun từ Pages.
+- `web/index.html` / `docs/index.html` là trang mở ứng dụng. Điền URL triển khai mới trong `web/cloud-config.js`, chạy build để áp dụng chung. Khi chưa cấu hình, vẫn có nút mở **bản 4.8.3 hai Google** để sao lưu; không chuyển dữ liệu tự động.
+- Bản cũ giữ tại `web/legacy-two-google.html` / `docs/legacy-two-google.html`. Chỉ tiếp tục nhập ở một bản sau khi chuyển.
+- JSON nghiệp vụ lưu riêng tư trên Drive chủ; mật khẩu dùng PBKDF2-SHA256 có salt. Backup đầy đủ mã hóa AES-GCM. NSD chỉ nhận dữ liệu đã lọc, không nhận token Google, đường dẫn Drive hay thông tin kiểm tra mật khẩu.
+- Giới hạn triển khai ban đầu: dữ liệu JSON 32 MB, mỗi tệp 2 MB, 5 tệp/bản ghi, gói nhập 64 MB. Cần kiểm thử tải và quyền Google trên deployment thật trước khi chuyển sản xuất.
+
+Kiểm tra: `npm test`, `npm run check`, `npm run test:cloud-ui` (cần Chromium), `npm run test:ui` cho bản hai Google được giữ lại.
+
+<details><summary>Tài liệu bản hai Google và lịch sử trước chuyển đổi</summary>
+
 # Sổ Xe Tổ Chức — Đa nền tảng 4.8.3
 
 Mô hình hai Google: tài khoản thứ nhất lưu dữ liệu Admin; tài khoản TK Google lưu dữ liệu NSD lưu tài khoản, nhật ký và bản dữ liệu được xem của NSD. Hồ sơ tài khoản/mật khẩu được mã hóa cơ bản; dữ liệu nghiệp vụ lưu JSON trực tiếp để ưu tiên tốc độ. Admin tạo NSD bằng tên định danh và mật khẩu ban đầu, không cần email hoặc lời mời. NSD kết nối Google TK Google lưu dữ liệu NSD, nhập tên định danh và bắt buộc đổi mật khẩu lần đầu.
@@ -213,3 +230,5 @@ Web và Android có **Tổ chức → Sao lưu & Phục hồi → Phục hồi t
 Bản sao lưu mang theo dữ liệu của hai tài khoản cũ; không cần cấp quyền cho hai Google cũ trong lúc ghi sang Google mới. Dữ liệu nguồn được giữ nguyên. Tệp đính kèm được tạo lại với ID mới; các tham chiếu được đổi trong dữ liệu mới. Hồ sơ tài khoản giữ phần kiểm tra mật khẩu gốc và ánh xạ nơi lưu mới được mã hóa/xác thực bằng AES-GCM. Đổi mật khẩu sau chuyển sẽ ghi hồ sơ tài khoản chuẩn ở nơi lưu mới. Nếu chuyển bị lỗi, ứng dụng dọn các tệp đích đã tạo; nếu dọn chưa xong, hiển thị thông báo để xử lý trước khi thử lại.
 
 Cấu hình phiên bản Android và đóng gói Web lấy cùng phiên bản 4.8.3. Workflow Windows đóng gói APK đã ký từ docs/downloads, Web ZIP, Windows và hồ sơ iOS, tạo release và SHA-256 chung.
+
+</details>
