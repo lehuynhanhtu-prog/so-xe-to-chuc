@@ -68,5 +68,9 @@ export async function dispatch(action,args={}){
 let tail=Promise.resolve();
 if(globalThis.Native){
  globalThis.nativeCall=(id,action,args)=>{tail=tail.then(async()=>{try{Native.reply(id,JSON.stringify({ok:true,result:await dispatch(action,args)}));}catch(e){Native.reply(id,JSON.stringify({ok:false,error:e.message,status:e.status||0}));}});};
- Native.ready();
+ const signalReady=()=>{
+  if(globalThis.location?.hostname?.endsWith('-script.googleusercontent.com')&&!globalThis.google?.script?.run){setTimeout(signalReady,50);return;}
+  Native.ready();
+ };
+ signalReady();
 }

@@ -7,6 +7,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,6 +33,7 @@ final class LedgerEngine {
     private boolean ready;
     private boolean injected;
     private boolean injecting;
+    private final boolean documentStartInjection;
     private Runnable onReady;
     @SuppressLint("SetJavaScriptEnabled")
     LedgerEngine(Context context, Runnable onReady) {
@@ -43,15 +47,16 @@ final class LedgerEngine {
         final String nativeRuntime;
         try(InputStream in=context.getAssets().open("native-runtime.js")){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] block=new byte[8192];int n;while((n=in.read(block))!=-1)out.write(block,0,n);nativeRuntime=out.toString(StandardCharsets.UTF_8.name());}
         catch(Exception error){throw new IllegalStateException("Không đọc được bộ xử lý native.",error);}
+        documentStartInjection=WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT);
         runtime.setWebViewClient(new WebViewClient() {
-            private boolean allowed(String scheme,String host){return "https".equals(scheme)&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host));}
+            private boolean allowed(String scheme,String host){return "https".equals(scheme)&&host!=null&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||host.endsWith("-script.googleusercontent.com")||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host));}
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !allowed(request.getUrl().getScheme(),request.getUrl().getHost()); }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 if(allowed(request.getUrl().getScheme(),request.getUrl().getHost()))return null;
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));
             }
             @Override public void onPageFinished(WebView view,String url){
-                if(destroyed||injected||injecting)return;String host=android.net.Uri.parse(url).getHost();
+                if(documentStartInjection||destroyed||injected||injecting)return;String host=android.net.Uri.parse(url).getHost();
                 if("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)){injecting=true;injectWhenRpcReady(view,nativeRuntime,0);}
             }
         });
@@ -93,6 +98,10 @@ final class LedgerEngine {
                 finally {if(connection!=null)connection.disconnect();}
             }
         }, "Native");
+        if(documentStartInjection){
+            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){"+nativeRuntime+"}";
+            WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
+        }
         runtime.loadUrl(SERVICE_URL);
     }
     private void injectWhenRpcReady(WebView view,String nativeRuntime,int attempt){
