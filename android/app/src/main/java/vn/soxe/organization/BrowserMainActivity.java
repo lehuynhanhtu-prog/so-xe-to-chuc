@@ -15,7 +15,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Stable 4.7 browser sign-in boundary with a small native launch screen. */
+/** Small native launch screen for the single-owner Apps Script application. */
 public final class BrowserMainActivity extends Activity {
     // Versioned query forces Chrome to request the current Web shell instead of
     // reusing a previously cached (and possibly corrupted) document.
@@ -40,10 +40,10 @@ public final class BrowserMainActivity extends Activity {
 
         LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(22),dp(24),dp(22),dp(22));card.setBackground(background(Color.WHITE,18));card.setElevation(dp(5));LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);cardParams.setMargins(0,dp(18),0,0);page.addView(card,cardParams);
         text(card,"Đăng nhập",22,ink,true);
-        TextView info=text(card,"Ứng dụng dùng luồng đăng nhập Google ổn định của bản 4.7. Bạn sẽ tiếp tục trong trình duyệt hệ thống.",15,muted,false);info.setPadding(0,dp(8),0,dp(16));
-        text(card,"✓  Kết nối riêng Google Admin và NSD",14,ink,false);
+        TextView info=text(card,"Ứng dụng mở dịch vụ một Google trong trình duyệt hệ thống. Đăng nhập bằng tài khoản do Admin cấp.",15,muted,false);info.setPadding(0,dp(8),0,dp(16));
+        text(card,"✓  NSD không cần đăng nhập Google",14,ink,false);
+        text(card,"✓  Dữ liệu do Google của chủ ứng dụng quản lý",14,ink,false);
         text(card,"✓  Đồng bộ chung với Web, Windows và iOS",14,ink,false);
-        text(card,"✓  Không lưu mật khẩu Google trong APK",14,ink,false);
         Button open=new Button(this);open.setText("MỞ ỨNG DỤNG VÀ ĐĂNG NHẬP");open.setTextSize(15);open.setTypeface(null,Typeface.BOLD);open.setTextColor(Color.WHITE);open.setAllCaps(false);open.setBackground(background(teal,12));open.setMinHeight(dp(56));LinearLayout.LayoutParams buttonParams=new LinearLayout.LayoutParams(-1,dp(56));buttonParams.setMargins(0,dp(22),0,0);card.addView(open,buttonParams);open.setOnClickListener(v->openApp());
         TextView version=text(page,"Phiên bản 4.8.3  •  Android 7 trở lên",13,muted,false);version.setGravity(Gravity.CENTER);version.setPadding(0,dp(20),0,0);
     }
@@ -52,6 +52,6 @@ public final class BrowserMainActivity extends Activity {
         Intent intent=new Intent(Intent.ACTION_VIEW,Uri.parse(APP_URL));intent.addCategory(Intent.CATEGORY_BROWSABLE);
         Bundle extras=new Bundle();extras.putBinder("android.support.customtabs.extra.SESSION",null);intent.putExtras(extras);
         intent.putExtra("android.support.customtabs.extra.TOOLBAR_COLOR",Color.rgb(23,106,101));intent.putExtra("android.support.customtabs.extra.TITLE_VISIBILITY",0);intent.putExtra("android.support.customtabs.extra.ENABLE_URLBAR_HIDING",true);
-        try{startActivity(intent);}catch(ActivityNotFoundException error){Toast.makeText(this,"Hãy cài Chrome hoặc trình duyệt hiện đại để đăng nhập Google.",Toast.LENGTH_LONG).show();}
+        try{startActivity(intent);}catch(ActivityNotFoundException error){Toast.makeText(this,"Hãy cài Chrome hoặc trình duyệt hiện đại để mở ứng dụng.",Toast.LENGTH_LONG).show();}
     }
 }
