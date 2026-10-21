@@ -6,7 +6,8 @@ Bản một Google dùng Apps Script chạy dưới tài khoản chủ dữ li�
 - [Hướng dẫn triển khai và chuyển dữ liệu](apps-script-cloud/DEPLOY.md).
 - [Gói triển khai Apps Script](docs/downloads/So-Xe-To-Chuc-Apps-Script-4.8.3-cloud.1.zip).
 - `web/cloud.html` giữ giao diện nghiệp vụ 4.8.3; build tạo `apps-script-cloud/Index.html` tự chứa toàn bộ JavaScript/CSS, không tải mô-đun từ Pages.
-- `web/index.html` / `docs/index.html` là trang mở ứng dụng. Điền URL triển khai mới trong `web/cloud-config.js`, chạy build để áp dụng chung. Khi chưa cấu hình, vẫn có nút mở **bản 4.8.3 hai Google** để sao lưu; không chuyển dữ liệu tự động.
+- `web/index.html` / `docs/index.html` là đường dẫn đăng nhập chính của NSD và tự chuyển đến Web App một Google trong `web/cloud-config.js`.
+- `web/chuyen-doi.html` / `docs/chuyen-doi.html` là trang riêng cho Admin mở dịch vụ hoặc mở **bản 4.8.3 hai Google** để sao lưu; không chuyển dữ liệu tự động.
 - Bản cũ giữ tại `web/legacy-two-google.html` / `docs/legacy-two-google.html`. Chỉ tiếp tục nhập ở một bản sau khi chuyển.
 - JSON nghiệp vụ lưu riêng tư trên Drive chủ; mật khẩu dùng PBKDF2-SHA256 có salt. Backup đầy đủ mã hóa AES-GCM. NSD chỉ nhận dữ liệu đã lọc, không nhận token Google, đường dẫn Drive hay thông tin kiểm tra mật khẩu.
 - Giới hạn triển khai ban đầu: dữ liệu JSON 32 MB, mỗi tệp 2 MB, 5 tệp/bản ghi, gói nhập 64 MB. Cần kiểm thử tải và quyền Google trên deployment thật trước khi chuyển sản xuất.

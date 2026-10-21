@@ -6,7 +6,10 @@ new vm.Script(html.match(/<script>([\s\S]*?)<\/script>/)[1],{filename:'Index.htm
 console.log('Apps Script and browser JavaScript parse successfully.');
 const web=readFileSync('web/legacy-two-google.html','utf8');
 const published=readFileSync('docs/index.html','utf8');
-if(!published.startsWith('<!doctype html>')||!published.includes('<title>Sổ Xe Tổ Chức</title>'))throw new Error('Published Web entry is not valid HTML.');
+const migration=readFileSync('docs/chuyen-doi.html','utf8');
+if(!published.startsWith('<!doctype html>')||!published.includes('<title>Đăng nhập NSD · Sổ Xe Tổ Chức</title>'))throw new Error('Published Web entry is not valid HTML.');
+if(!published.includes('location.replace(endpoint)')||!published.includes('Đăng nhập NSD'))throw new Error('Published Web entry must redirect to the main NSD login.');
+if(!migration.includes('legacy-two-google.html')||!migration.includes('Chuyển đổi và quản trị đường dẫn'))throw new Error('Admin migration page is missing.');
 if(web.includes('google.script.run'))throw new Error('Web v3 must not call Apps Script.');
 if(!web.includes('SO_XE_GOOGLE_CONFIG'))throw new Error('Google config missing.');
 const {spawnSync}=await import('node:child_process');

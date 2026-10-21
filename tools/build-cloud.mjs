@@ -16,4 +16,5 @@ if(/<script[^>]+src=|<script type="module"/.test(html))throw new Error('Apps Scr
 await writeFile('apps-script-cloud/Index.html',html);
 await copyFile('web/cloud-config.js','docs/cloud-config.js');
 await copyFile('web/index.html','docs/index.html');
+await copyFile('web/chuyen-doi.html','docs/chuyen-doi.html');
 console.log('Single-owner Apps Script service and self-contained UI built.');
