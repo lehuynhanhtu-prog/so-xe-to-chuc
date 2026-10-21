@@ -7,7 +7,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import androidx.webkit.WebViewAssetLoader;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +28,7 @@ final class LedgerEngine {
     private final Map<Integer, Callback> callbacks = new HashMap<>();
     private int sequence;
     private boolean ready;
+    private boolean injected;
     private Runnable onReady;
     @SuppressLint("SetJavaScriptEnabled")
     LedgerEngine(Context context, Runnable onReady) {
@@ -39,21 +39,19 @@ final class LedgerEngine {
         runtime.getSettings().setAllowContentAccess(false);
         runtime.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         runtime.getSettings().setDomStorageEnabled(false);
-        WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(context)).build();
+        final String nativeRuntime;
+        try(InputStream in=context.getAssets().open("native-runtime.js")){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] block=new byte[8192];int n;while((n=in.read(block))!=-1)out.write(block,0,n);nativeRuntime=out.toString(StandardCharsets.UTF_8.name());}
+        catch(Exception error){throw new IllegalStateException("Không đọc được bộ xử lý native.",error);}
         runtime.setWebViewClient(new WebViewClient() {
-            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return true; }
+            private boolean allowed(String scheme,String host){return "https".equals(scheme)&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host));}
+            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !allowed(request.getUrl().getScheme(),request.getUrl().getHost()); }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                if ("appassets.androidplatform.net".equals(request.getUrl().getHost())
-                        && "https".equals(request.getUrl().getScheme())) {
-                    String path=request.getUrl().getPath();
-                    if(path!=null&&path.startsWith("/assets/")&&path.endsWith(".mjs")&&!path.contains("..")){
-                        try{return new WebResourceResponse("text/javascript","UTF-8",context.getAssets().open(path.substring(8)));}
-                        catch(java.io.IOException ignored){return new WebResourceResponse("text/plain","UTF-8",404,"Missing",new HashMap<>(),new ByteArrayInputStream(new byte[0]));}
-                    }
-                    return loader.shouldInterceptRequest(request.getUrl());
-                }
+                if(allowed(request.getUrl().getScheme(),request.getUrl().getHost()))return null;
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));
+            }
+            @Override public void onPageFinished(WebView view,String url){
+                if(destroyed||injected)return;String host=android.net.Uri.parse(url).getHost();
+                if("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)){injected=true;view.evaluateJavascript(nativeRuntime,null);}
             }
         });
         runtime.addJavascriptInterface(new Object() {
@@ -94,7 +92,7 @@ final class LedgerEngine {
                 finally {if(connection!=null)connection.disconnect();}
             }
         }, "Native");
-        runtime.loadUrl("https://appassets.androidplatform.net/assets/engine.html");
+        runtime.loadUrl(SERVICE_URL);
     }
     void call(String action, JSONObject args, Callback callback) {
         if (!ready) { callback.accept(null, "Bộ xử lý đang khởi động. Hãy thử lại."); return; }

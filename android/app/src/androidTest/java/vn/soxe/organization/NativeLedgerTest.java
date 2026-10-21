@@ -48,13 +48,13 @@ public class NativeLedgerTest {
             activity.onActivity(a->assertEquals(0,a.getWindow().getAttributes().flags&android.view.WindowManager.LayoutParams.FLAG_SECURE));
         }
     }
-    @Test public void localLedgerCoreBootsWithoutBrowserOrNetwork() throws Exception {
+    @Test public void nativeBridgeBootsAndReachesAppsScriptHealth() throws Exception {
         CountDownLatch latch=new CountDownLatch(1);
         final String[] error=new String[1];
         final LedgerEngine[] engine=new LedgerEngine[1];
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{
             engine[0]=new LedgerEngine(InstrumentationRegistry.getInstrumentation().getTargetContext(),()->{
-                engine[0].call("logout",new JSONObject(),(r,e)->{error[0]=e;if(r==null||!r.optBoolean("loggedOut"))error[0]="Invalid result";latch.countDown();});
+                engine[0].call("health",new JSONObject(),(r,e)->{error[0]=e;if(r==null||r.optString("version").isEmpty())error[0]="Invalid health result";latch.countDown();});
             });
         });
         assertTrue("Bundled module engine did not start",latch.await(30,TimeUnit.SECONDS));

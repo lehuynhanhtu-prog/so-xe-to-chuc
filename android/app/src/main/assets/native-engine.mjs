@@ -14,13 +14,21 @@ globalThis.structuredClone ??= function clone(value){
 String.prototype.replaceAll ??= function(search,replacement){return this.split(search).join(replacement);};
 
 export const categories={fuel:'Tiền xăng',charge:'Sạc xe',battery_rental:'Thuê pin',maintenance:'Bảo dưỡng',parts:'Phụ tùng',insurance:'Bảo hiểm TNDS',inspection:'Đăng kiểm',road_fee:'Phí đường bộ',other:'Khác'};
-let token='';
+let token='',directAvailable=true;
 
-function rpc(method,request={}){
- if(!globalThis.Native?.httpPost)throw new Error('Bộ kết nối Apps Script chưa sẵn sàng.');
- const envelope=JSON.parse(Native.httpPost(JSON.stringify({method,request})));
- if(!envelope.ok)throw new Error(envelope.error||'Không kết nối được dịch vụ.');
- return envelope.result||{};
+async function rpc(method,request={}){
+ let directError='';
+ if(directAvailable&&globalThis.Native?.httpPost){
+  try{const envelope=JSON.parse(Native.httpPost(JSON.stringify({method,request})));if(envelope.ok)return envelope.result||{};directError=envelope.error||'';directAvailable=false;}catch(error){directError=error.message||'';directAvailable=false;}
+ }
+ if(globalThis.google?.script?.run)return new Promise((resolve,reject)=>{
+  const call=google.script.run.withSuccessHandler(resolve).withFailureHandler(error=>reject(new Error(error?.message||'Không kết nối được dịch vụ.')));
+  if(method==='health')call.sxHealth();
+  else if(method==='login')call.sxLogin(request);
+  else if(method==='api')call.sxApi(request);
+  else reject(new Error('RPC không hợp lệ.'));
+ });
+ throw new Error(directError||'Bộ kết nối Apps Script chưa sẵn sàng.');
 }
 
 export function enrich(result){
@@ -42,19 +50,19 @@ export function exportExcel(state,kind,filters={}){
 }
 
 export async function dispatch(action,args={}){
- if(action==='health')return rpc('health');
- if(action==='login')return enrich(rpc('login',{username:args.username,password:args.password}));
+ if(action==='health')return await rpc('health');
+ if(action==='login')return enrich(await rpc('login',{username:args.username,password:args.password}));
  if(action==='logout'){
   const current=token;token='';
   if(!current)return {loggedOut:true};
-  try{return rpc('api',{token:current,action:'logout',args:{}});}catch{return {loggedOut:true};}
+  try{return await rpc('api',{token:current,action:'logout',args:{}});}catch{return {loggedOut:true};}
  }
  if(!token)throw new Error('Phiên đăng nhập chưa có hoặc đã hết hạn. Đăng nhập lại.');
  if(action==='exportExcel'){
-  const result=enrich(rpc('api',{token,action:'read',args:{}}));
+  const result=enrich(await rpc('api',{token,action:'read',args:{}}));
   return {document:exportExcel(result.data,args.kind,args.filters||{})};
  }
- return enrich(rpc('api',{token,action,args}));
+ return enrich(await rpc('api',{token,action,args}));
 }
 
 let tail=Promise.resolve();
