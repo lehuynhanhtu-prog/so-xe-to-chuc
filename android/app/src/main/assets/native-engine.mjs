@@ -18,7 +18,7 @@ let token='',directAvailable=true;
 
 async function rpc(method,request={}){
  if(globalThis.google?.script?.run)return new Promise((resolve,reject)=>{
-  const call=google.script.run.withSuccessHandler(resolve).withFailureHandler(error=>reject(new Error(error?.message||'Không kết nối được dịch vụ.')));
+  const call=google.script.run.withSuccessHandler(value=>{globalThis.Native?.trace?.('success:'+method);resolve(value);}).withFailureHandler(error=>{globalThis.Native?.trace?.('failure:'+method);reject(new Error(error?.message||'Không kết nối được dịch vụ.'));});
   if(method==='health')call.sxHealth();
   else if(method==='login')call.sxLogin(request);
   else if(method==='api')call.sxApi(request);

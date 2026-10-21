@@ -53,7 +53,7 @@ final class LedgerEngine {
         android.content.pm.PackageInfo webViewPackage=WebViewCompat.getCurrentWebViewPackage(context);
         webViewVersion=webViewPackage==null?"unknown":webViewPackage.versionName;
         runtime.setWebViewClient(new WebViewClient() {
-            private boolean allowed(String scheme,String host){return "https".equals(scheme)&&host!=null&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||host.endsWith("-script.googleusercontent.com")||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host));}
+            private boolean allowed(String scheme,String host){return "https".equals(scheme)&&host!=null&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||host.endsWith("-script.googleusercontent.com")||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host)||"fonts.googleapis.com".equals(host)||"www.google.com".equals(host));}
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !allowed(request.getUrl().getScheme(),request.getUrl().getHost()); }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 lastRequest=request.getUrl().toString();

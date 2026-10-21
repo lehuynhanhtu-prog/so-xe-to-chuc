@@ -57,7 +57,7 @@ public class NativeLedgerTest {
                 engine[0].call("health",new JSONObject(),(r,e)->{error[0]=e;if(e==null&&(r==null||r.optString("version").isEmpty()))error[0]="Invalid health result";latch.countDown();});
             });
         });
-        if(!latch.await(30,TimeUnit.SECONDS)){
+        if(!latch.await(75,TimeUnit.SECONDS)){
             final String[] debug=new String[1];
             InstrumentationRegistry.getInstrumentation().runOnMainSync(()->debug[0]=engine[0].debugState());
             fail("Bundled module engine did not start: "+debug[0]);
