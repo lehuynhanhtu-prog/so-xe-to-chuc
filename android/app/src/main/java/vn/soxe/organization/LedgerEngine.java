@@ -32,7 +32,6 @@ final class LedgerEngine {
     private int sequence;
     private boolean ready;
     private boolean injected;
-    private boolean injecting;
     private final boolean documentStartInjection;
     private final String webViewVersion;
     private volatile String trace="created";
@@ -62,8 +61,8 @@ final class LedgerEngine {
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));
             }
             @Override public void onPageFinished(WebView view,String url){
-                if(documentStartInjection||destroyed||injected||injecting)return;String host=android.net.Uri.parse(url).getHost();
-                if("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)){injecting=true;injectWhenRpcReady(view,nativeRuntime,0);}
+                if(documentStartInjection||destroyed||injected)return;String host=android.net.Uri.parse(url).getHost();
+                if("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)){injected=true;view.evaluateJavascript(nativeRuntime,null);}
             }
         });
         runtime.addJavascriptInterface(new Object() {
@@ -113,15 +112,6 @@ final class LedgerEngine {
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
         runtime.loadUrl(SERVICE_URL);
-    }
-    private void injectWhenRpcReady(WebView view,String nativeRuntime,int attempt){
-        if(destroyed||injected)return;
-        view.evaluateJavascript("!!(globalThis.google&&google.script&&google.script.run)",value->{
-            if(destroyed||injected)return;
-            if("true".equals(value)){injected=true;injecting=false;view.evaluateJavascript(nativeRuntime,null);return;}
-            if(attempt<60)main.postDelayed(()->injectWhenRpcReady(view,nativeRuntime,attempt+1),250);
-            else injecting=false;
-        });
     }
     void call(String action, JSONObject args, Callback callback) {
         if (!ready) { callback.accept(null, "Bộ xử lý đang khởi động. Hãy thử lại."); return; }

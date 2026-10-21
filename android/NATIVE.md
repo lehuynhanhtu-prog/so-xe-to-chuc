@@ -16,6 +16,7 @@ APK 4.8.4 dùng Android Views cho toàn bộ màn hình nghiệp vụ. WebView �
 - `versionCode`: 485
 - `versionName`: 4.8.4
 - Android tối thiểu: 7.0 (API 24)
+- Cần Chrome/Android System WebView đã cập nhật để dùng cầu nối Apps Script trong frame ẩn; thiết bị cũ vẫn có đường dự phòng JSON khi deployment có `doPost`.
 - Chứng thư phát hành SHA-1: `23:5B:9D:D6:4A:92:6C:F7:FC:F7:8F:79:1D:33:C7:38:E9:F7:CC:E7`
 
 Workflow `.github/workflows/build-android.yml` build, lint, chạy kiểm thử thiết bị ảo, ký và phát hành `So-Xe-To-Chuc-Android-4.8.4-Native.apk` ở tag `android-v4.8.4`.
