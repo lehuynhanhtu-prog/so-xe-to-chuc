@@ -17,10 +17,6 @@ export const categories={fuel:'Tiền xăng',charge:'Sạc xe',battery_rental:'T
 let token='',directAvailable=true;
 
 async function rpc(method,request={}){
- let directError='';
- if(directAvailable&&globalThis.Native?.httpPost){
-  try{const envelope=JSON.parse(Native.httpPost(JSON.stringify({method,request})));if(envelope.ok)return envelope.result||{};directError=envelope.error||'';directAvailable=false;}catch(error){directError=error.message||'';directAvailable=false;}
- }
  if(globalThis.google?.script?.run)return new Promise((resolve,reject)=>{
   const call=google.script.run.withSuccessHandler(resolve).withFailureHandler(error=>reject(new Error(error?.message||'Không kết nối được dịch vụ.')));
   if(method==='health')call.sxHealth();
@@ -28,6 +24,10 @@ async function rpc(method,request={}){
   else if(method==='api')call.sxApi(request);
   else reject(new Error('RPC không hợp lệ.'));
  });
+ let directError='';
+ if(directAvailable&&globalThis.Native?.httpPost){
+  try{const envelope=JSON.parse(Native.httpPost(JSON.stringify({method,request})));if(envelope.ok)return envelope.result||{};directError=envelope.error||'';directAvailable=false;}catch(error){directError=error.message||'';directAvailable=false;}
+ }
  throw new Error(directError||'Bộ kết nối Apps Script chưa sẵn sàng.');
 }
 
