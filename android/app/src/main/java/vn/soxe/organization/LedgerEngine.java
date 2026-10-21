@@ -99,7 +99,9 @@ final class LedgerEngine {
             }
         }, "Native");
         if(documentStartInjection){
-            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){"+nativeRuntime+"}";
+            // Apps Script renders the user's HTML in the inner /blank frame;
+            // google.script.run is installed there, not in userCodeAppPanel.
+            String frameRuntime="if(location.pathname==='/blank'&&location.hostname.endsWith('-script.googleusercontent.com')){"+nativeRuntime+"}";
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
         runtime.loadUrl(SERVICE_URL);
