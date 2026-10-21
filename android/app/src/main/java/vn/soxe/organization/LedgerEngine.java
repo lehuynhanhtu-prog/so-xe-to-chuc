@@ -7,6 +7,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.View;
+import android.view.ViewGroup;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 import org.json.JSONObject;
@@ -123,6 +125,11 @@ final class LedgerEngine {
             if (pending != null) pending.accept(null, "Thao tác chưa hoàn tất. Kiểm tra mạng và đồng bộ để xác nhận trước khi nhập lại.");
         }, 90000);
     }
+    void attachTo(ViewGroup parent){
+        if(runtime.getParent() instanceof ViewGroup)((ViewGroup)runtime.getParent()).removeView(runtime);
+        runtime.setAlpha(0f);runtime.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        parent.addView(runtime,new ViewGroup.LayoutParams(1,1));
+    }
     String debugState(){return "documentStart="+documentStartInjection+", webView="+webViewVersion+", url="+runtime.getUrl()+", trace="+trace+", request="+lastRequest;}
-    void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {}; runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
+    void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {};if(runtime.getParent() instanceof ViewGroup)((ViewGroup)runtime.getParent()).removeView(runtime);runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
 }

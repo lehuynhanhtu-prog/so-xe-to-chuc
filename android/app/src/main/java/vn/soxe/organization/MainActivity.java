@@ -104,6 +104,7 @@ public class MainActivity extends FragmentActivity {
         homeScreen=false;
         root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Color.rgb(244,247,251));
         root.setPadding(dp(12),0,dp(12),0);root.setFitsSystemWindows(true);setContentView(root);
+        engine.attachTo(root);
         text(root,title,23,true);status=text(root,busy?"Đang xử lý…":ready?"Sẵn sàng":"Đang khởi động…",12,false);
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,0,0,dp(20));scroll.addView(body);
