@@ -34,6 +34,9 @@ final class LedgerEngine {
     private boolean injected;
     private boolean injecting;
     private final boolean documentStartInjection;
+    private final String webViewVersion;
+    private volatile String trace="created";
+    private volatile String lastRequest="";
     private Runnable onReady;
     @SuppressLint("SetJavaScriptEnabled")
     LedgerEngine(Context context, Runnable onReady) {
@@ -48,10 +51,13 @@ final class LedgerEngine {
         try(InputStream in=context.getAssets().open("native-runtime.js")){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] block=new byte[8192];int n;while((n=in.read(block))!=-1)out.write(block,0,n);nativeRuntime=out.toString(StandardCharsets.UTF_8.name());}
         catch(Exception error){throw new IllegalStateException("Không đọc được bộ xử lý native.",error);}
         documentStartInjection=WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT);
+        android.content.pm.PackageInfo webViewPackage=WebViewCompat.getCurrentWebViewPackage(context);
+        webViewVersion=webViewPackage==null?"unknown":webViewPackage.versionName;
         runtime.setWebViewClient(new WebViewClient() {
             private boolean allowed(String scheme,String host){return "https".equals(scheme)&&host!=null&&("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)||host.endsWith("-script.googleusercontent.com")||"www.gstatic.com".equals(host)||"fonts.gstatic.com".equals(host));}
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !allowed(request.getUrl().getScheme(),request.getUrl().getHost()); }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                lastRequest=request.getUrl().toString();
                 if(allowed(request.getUrl().getScheme(),request.getUrl().getHost()))return null;
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));
             }
@@ -62,6 +68,7 @@ final class LedgerEngine {
         });
         runtime.addJavascriptInterface(new Object() {
             @JavascriptInterface public void ready() { main.post(() -> { if(destroyed)return; ready = true; LedgerEngine.this.onReady.run(); }); }
+            @JavascriptInterface public void trace(String value) { LedgerEngine.this.trace=value; }
             @JavascriptInterface public void reply(int id, String json) {
                 main.post(() -> {
                     if(destroyed)return;
@@ -102,7 +109,7 @@ final class LedgerEngine {
             // Apps Script rewrites the inner /blank document after it loads, so
             // inject from its same-origin parent once google.script.run exists.
             String source=JSONObject.quote(nativeRuntime);
-            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall)return;}}catch(e){}setTimeout(install,50);}());}";
+            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){Native.trace('panel');(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){Native.trace('rpc');var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall){Native.trace('installed');return;}}}catch(e){Native.trace('frame:'+e.message);}setTimeout(install,50);}());}";
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
         runtime.loadUrl(SERVICE_URL);
@@ -126,5 +133,6 @@ final class LedgerEngine {
             if (pending != null) pending.accept(null, "Thao tác chưa hoàn tất. Kiểm tra mạng và đồng bộ để xác nhận trước khi nhập lại.");
         }, 90000);
     }
+    String debugState(){return "documentStart="+documentStartInjection+", webView="+webViewVersion+", url="+runtime.getUrl()+", trace="+trace+", request="+lastRequest;}
     void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {}; runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
 }
