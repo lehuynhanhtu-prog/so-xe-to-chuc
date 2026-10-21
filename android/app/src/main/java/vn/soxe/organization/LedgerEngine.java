@@ -99,9 +99,10 @@ final class LedgerEngine {
             }
         }, "Native");
         if(documentStartInjection){
-            // Apps Script renders the user's HTML in the inner /blank frame;
-            // google.script.run is installed there, not in userCodeAppPanel.
-            String frameRuntime="if(location.pathname==='/blank'&&location.hostname.endsWith('-script.googleusercontent.com')){"+nativeRuntime+"}";
+            // Apps Script rewrites the inner /blank document after it loads, so
+            // inject from its same-origin parent once google.script.run exists.
+            String source=JSONObject.quote(nativeRuntime);
+            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall)return;}}catch(e){}setTimeout(install,50);}());}";
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
         runtime.loadUrl(SERVICE_URL);
