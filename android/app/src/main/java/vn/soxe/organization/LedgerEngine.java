@@ -12,13 +12,16 @@ import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 
-/** Local computation only. All visible application screens are Android Views. */
+/** Native data bridge. All visible application screens are Android Views. */
 final class LedgerEngine {
+    private static final String SERVICE_URL="https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec";
     interface Callback { void accept(JSONObject result, String error); }
     private final WebView runtime;
     private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
@@ -50,8 +53,6 @@ final class LedgerEngine {
                     }
                     return loader.shouldInterceptRequest(request.getUrl());
                 }
-                if ("www.googleapis.com".equals(request.getUrl().getHost())
-                        && "https".equals(request.getUrl().getScheme())) return null;
                 return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", new HashMap<>(), new ByteArrayInputStream(new byte[0]));
             }
         });
@@ -68,19 +69,29 @@ final class LedgerEngine {
                     } catch (Exception e) { callback.accept(null, "Không đọc được dữ liệu trả về."); }
                 });
             }
-            @JavascriptInterface public String httpGet(String url, String authorization) {
-                JSONObject response=new JSONObject();HttpsURLConnection connection=null;
+            @JavascriptInterface public String httpPost(String json) {
+                HttpsURLConnection connection=null;
                 try {
-                    URL target=new URL(url);
-                    if(!"https".equals(target.getProtocol())||!"www.googleapis.com".equals(target.getHost()))throw new SecurityException("Địa chỉ Google Drive không hợp lệ.");
-                    if(authorization==null||!authorization.startsWith("Bearer ")||authorization.length()>8192)throw new SecurityException("Phiên Google không hợp lệ.");
-                    connection=(HttpsURLConnection)target.openConnection();connection.setRequestMethod("GET");connection.setConnectTimeout(15000);connection.setReadTimeout(30000);connection.setUseCaches(false);connection.setRequestProperty("Authorization",authorization);connection.setRequestProperty("Accept","application/json, application/octet-stream");
-                    int status=connection.getResponseCode();InputStream in=status>=400?connection.getErrorStream():connection.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
-                    if(in!=null)try(InputStream source=in){byte[] block=new byte[8192];int n,total=0;while((n=source.read(block))!=-1){total+=n;if(total>40*1024*1024)throw new java.io.IOException("Phản hồi Google Drive vượt giới hạn.");out.write(block,0,n);}}
-                    response.put("status",status);response.put("contentType",connection.getContentType()==null?"application/octet-stream":connection.getContentType());response.put("etag",connection.getHeaderField("ETag"));response.put("body",android.util.Base64.encodeToString(out.toByteArray(),android.util.Base64.NO_WRAP));
-                } catch(Exception e) { try{response.put("status",0);response.put("error",e.getMessage()==null?"Không kết nối được Google Drive.":e.getMessage());}catch(Exception ignored){} }
+                    if(json==null||json.isEmpty()||json.length()>80*1024*1024)throw new java.io.IOException("Yêu cầu Apps Script vượt giới hạn.");
+                    byte[] payload=json.getBytes(StandardCharsets.UTF_8);URL target=new URL(SERVICE_URL);boolean post=true;
+                    for(int redirect=0;redirect<5;redirect++){
+                        String host=target.getHost();
+                        if(!"https".equals(target.getProtocol())||!("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)))throw new SecurityException("Địa chỉ Apps Script không hợp lệ.");
+                        connection=(HttpsURLConnection)target.openConnection();connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(15000);connection.setReadTimeout(90000);connection.setUseCaches(false);connection.setRequestProperty("Accept","application/json");
+                        if(post){connection.setRequestMethod("POST");connection.setDoOutput(true);connection.setFixedLengthStreamingMode(payload.length);connection.setRequestProperty("Content-Type","application/json; charset=utf-8");try(OutputStream out=connection.getOutputStream()){out.write(payload);}}
+                        else connection.setRequestMethod("GET");
+                        int status=connection.getResponseCode();
+                        if(status==301||status==302||status==303||status==307||status==308){String location=connection.getHeaderField("Location");connection.disconnect();connection=null;if(location==null)throw new java.io.IOException("Apps Script chuyển hướng không hợp lệ.");target=new URL(target,location);post=status==307||status==308;continue;}
+                        InputStream in=status>=400?connection.getErrorStream():connection.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
+                        if(in!=null)try(InputStream source=in){byte[] block=new byte[8192];int n,total=0;while((n=source.read(block))!=-1){total+=n;if(total>80*1024*1024)throw new java.io.IOException("Phản hồi Apps Script vượt giới hạn.");out.write(block,0,n);}}
+                        String body=out.toString(StandardCharsets.UTF_8.name());if(status<200||status>=300)throw new java.io.IOException("Apps Script trả lỗi HTTP "+status+".");return body;
+                    }
+                    throw new java.io.IOException("Apps Script chuyển hướng quá nhiều lần.");
+                } catch(Exception e) {
+                    try{return new JSONObject().put("ok",false).put("error",e.getMessage()==null?"Không kết nối được Apps Script.":e.getMessage()).toString();}
+                    catch(Exception ignored){return "{\"ok\":false,\"error\":\"Không kết nối được Apps Script.\"}";}
+                }
                 finally {if(connection!=null)connection.disconnect();}
-                return response.toString();
             }
         }, "Native");
         runtime.loadUrl("https://appassets.androidplatform.net/assets/engine.html");

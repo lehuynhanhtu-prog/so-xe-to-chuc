@@ -30,21 +30,14 @@ import org.json.JSONObject;
 import java.io.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-/** Native Views; the local JS runtime supplies only the shared ledger core. */
+/** Native Android Views backed by the single-owner Apps Script service. */
 public class MainActivity extends FragmentActivity {
     private static final int PICK_FILE=103, SAVE_FILE=104;
-    private static final String PENDING_GOOGLE_SLOT="pendingGoogleSlot";
-    private static final String BROWSER_OAUTH_STATE="browserOAuthState";
-    private static final String BROWSER_OAUTH_URL="https://lehuynhanhtu-prog.github.io/so-xe-to-chuc/android-oauth.html";
     private static final int INK=Color.rgb(24,42,62), BLUE=Color.rgb(20,95,153), GREEN=Color.rgb(43,138,102), ORANGE=Color.rgb(225,123,24), PURPLE=Color.rgb(117,82,168), TEAL=Color.rgb(20,125,145), RED=Color.rgb(181,54,48);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final ExecutorService io=Executors.newSingleThreadExecutor();
@@ -55,25 +48,19 @@ public class MainActivity extends FragmentActivity {
     private LinearLayout root,body;
     private TextView status;
     private JSONObject state,presentation;
-    private boolean ready,busy,stopped,adminMode,homeScreen;
-    private final Map<String,Long> tokenExpiry=new HashMap<>();
-    private String page="Tổng quan",primaryToken="",secondaryToken="",loginName="",loginPassword="";
-    private String selecting="",filterCar="",filterCategory="",filterFrom="",filterTo="";
-    private volatile ServerSocket browserOAuthServer;
-    private Runnable authorized;
+    private boolean ready,busy,stopped,homeScreen;
+    private String page="Tổng quan",loginName="",loginPassword="";
+    private String filterCar="",filterCategory="",filterFrom="",filterTo="";
     private Consumer<JSONObject> attachmentPicked;
     private Consumer<String> backupPicked;
     private byte[] exportBytes;
     public static final class LoginAttempt extends ViewModel {
-        String username="",password="",primaryToken="",secondaryToken="";
-        long primaryExpiry,secondaryExpiry;
-        boolean adminMode,pending;
+        String username="",password="";
+        boolean pending;
         public LoginAttempt(){}
-        void begin(String username,String password,boolean adminMode){this.username=username;this.password=password;this.adminMode=adminMode;pending=true;}
-        void rememberToken(String slot,String token,long expiry){if("primary".equals(slot)){primaryToken=token;primaryExpiry=expiry;}else{secondaryToken=token;secondaryExpiry=expiry;}}
-        void forgetToken(String slot){rememberToken(slot,"",0);}
+        void begin(String username,String password,boolean ignored){this.username=username;this.password=password;pending=true;}
         void finish(){password="";pending=false;}
-        void clear(){username=password=primaryToken=secondaryToken="";primaryExpiry=secondaryExpiry=0;pending=false;}
+        void clear(){username=password="";pending=false;}
     }
     private final Runnable automaticSync=new Runnable(){
         @Override public void run(){
@@ -86,20 +73,16 @@ public class MainActivity extends FragmentActivity {
         // Báo cáo và hướng dẫn sử dụng cần ảnh chụp màn hình; không chặn chức năng
         // chụp/quay màn hình của Android trên bất kỳ trang nào của ứng dụng.
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-        prefs=getSharedPreferences("google-storage",MODE_PRIVATE);
-        adminMode=prefs.getBoolean("adminMode",false);
+        prefs=getSharedPreferences("native-cloud",MODE_PRIVATE);
         loginAttempt=new ViewModelProvider(this).get(LoginAttempt.class);
-        if(loginAttempt.pending){loginName=loginAttempt.username;loginPassword=loginAttempt.password;adminMode=loginAttempt.adminMode;}
-        primaryToken=loginAttempt.primaryToken;secondaryToken=loginAttempt.secondaryToken;
-        if(loginAttempt.primaryExpiry>0)tokenExpiry.put("primary",loginAttempt.primaryExpiry);
-        if(loginAttempt.secondaryExpiry>0)tokenExpiry.put("secondary",loginAttempt.secondaryExpiry);
+        if(loginAttempt.pending){loginName=loginAttempt.username;loginPassword=loginAttempt.password;}
         vault=new BiometricVault(this);
         engine=new LedgerEngine(this,()->{ready=true;if(status!=null)status.setText("Sẵn sàng");resumePendingLogin();});
         login();handler.postDelayed(automaticSync,60000);
     }
     @Override protected void onStart(){super.onStart();stopped=false;}
     @Override protected void onStop(){super.onStop();stopped=true;}
-    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);closeBrowserOAuthServer();io.shutdownNow();engine.destroy();super.onDestroy();}
+    @Override protected void onDestroy(){handler.removeCallbacksAndMessages(null);io.shutdownNow();engine.destroy();super.onDestroy();}
     private static JSONObject obj(Object...values){
         JSONObject o=new JSONObject();
         try{for(int i=0;i<values.length;i+=2)o.put((String)values[i],values[i+1]);}catch(Exception e){throw new IllegalArgumentException(e);}
@@ -139,152 +122,52 @@ public class MainActivity extends FragmentActivity {
     private void message(String value){if(!isFinishing())new AlertDialog.Builder(this).setTitle("Sổ Xe Tổ Chức").setMessage(value).setPositiveButton("Đóng",null).show();}
     private void progress(boolean value){progress(value,"Đang xử lý, vui lòng chờ…");}
     private void progress(boolean value,String message){busy=value;if(status!=null)status.setText(value?message:"Sẵn sàng");}
-    private String accountName(String slot){return prefs.getString(slot,"");}
-    private boolean googleSlot(String slot){return "primary".equals(slot)||"secondary".equals(slot);}
-    private String pendingGoogleSlot(){return googleSlot(selecting)?selecting:prefs.getString(PENDING_GOOGLE_SLOT,"");}
-    private boolean saveGoogleAccount(String slot,String email){
-        if(!googleSlot(slot)||email==null||email.trim().isEmpty())return false;
-        loginAttempt.forgetToken(slot);tokenExpiry.remove(slot);if("primary".equals(slot))primaryToken="";else secondaryToken="";
-        return prefs.edit().putString(slot,email.trim().toLowerCase(Locale.ROOT)).putString(PENDING_GOOGLE_SLOT,slot).commit();
-    }
     private void login(){
         state=null;presentation=null;
-        if(!prefs.contains("adminMode")){chooseRole();return;}
-        shell(adminMode?"Đăng nhập ADMIN":"Đăng nhập NSD");
-        String pendingName=loginAttempt!=null&&loginAttempt.pending?loginAttempt.username:adminMode?"admin":"";
+        shell("Đăng nhập Sổ Xe Tổ Chức");
+        String pendingName=loginAttempt!=null&&loginAttempt.pending?loginAttempt.username:prefs.getString("lastUsername","");
         String pendingPassword=loginAttempt!=null&&loginAttempt.pending?loginAttempt.password:"";
         Form f=new Form();f.input("username","Tên đăng nhập",pendingName,false);f.password("password","Mật khẩu",pendingPassword);
         button(body,"Đăng nhập",()->doLogin(f.string("username"),f.string("password")));
         if(vault.exists()&&vault.available())button(body,"Đăng nhập bằng vân tay",()->vault.authenticate(null,(credentials,error)->{
             if(error!=null){message(error);return;}
-            if(!credentials.optString("primaryEmail").equals(accountName("primary"))||!credentials.optString("secondaryEmail").equals(accountName("secondary"))){message("Tài khoản Google đã thay đổi. Đăng nhập bằng mật khẩu rồi bật lại vân tay.");return;}
-            adminMode=credentials.optBoolean("adminMode");doLogin(credentials.optString("username"),credentials.optString("password"));
+            doLogin(credentials.optString("username"),credentials.optString("password"));
         }));
-        if(accountName("secondary").isEmpty()||adminMode&&accountName("primary").isEmpty())text(body,"Lần đầu, Android sẽ yêu cầu kết nối tài khoản Google lưu dữ liệu.",14,false);
-        button(body,"Đổi loại đăng nhập",this::chooseRole);
-        if(adminMode)button(body,"Khởi tạo tổ chức mới",this::createOrganization);
-        button(body,"Tài khoản Google đã kết nối",this::connections);
-    }
-    private void chooseRole(){
-        shell("Sổ Xe Tổ Chức");text(body,"Chọn loại đăng nhập",18,true);
-        button(body,"ADMIN / Admin bổ sung",()->{adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();login();});
-        button(body,"NSD / Admin chỉ xem",()->{adminMode=false;prefs.edit().putBoolean("adminMode",false).apply();login();});
+        text(body,"Đăng nhập bằng tài khoản do Admin cấp. Không cần tài khoản Google trên thiết bị.",14,false);
     }
     private void doLogin(String username,String password){
         if(username.trim().isEmpty()||password.isEmpty()){message("Nhập tên đăng nhập và mật khẩu.");return;}
         loginName=username.trim();loginPassword=password;
-        if(loginName.equalsIgnoreCase("admin")&&!adminMode){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();}
-        loginAttempt.begin(loginName,loginPassword,adminMode);
-        withGoogle(()->{progress(true,"Đang đăng nhập và đồng bộ dữ liệu…");engine.call("login",obj("username",loginName,"password",loginPassword,"adminMode",adminMode),(result,error)->{
+        loginAttempt.begin(loginName,loginPassword,false);
+        progress(true,"Đang đăng nhập và đồng bộ dữ liệu…");engine.call("login",obj("username",loginName,"password",loginPassword),(result,error)->{
             progress(false);
             if(error!=null){loginAttempt.clear();loginPassword="";message(error);return;}
-            if(result.optBoolean("needsPrimary")){adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();doLogin(loginName,loginPassword);return;}
             loginAttempt.finish();
+            prefs.edit().putString("lastUsername",loginName).apply();
             if(result.optBoolean("mustChange")){changePassword(true);return;}
-            if(result.optBoolean("deletionPending")){message("Tổ chức đang chờ xóa. Hoàn tất thao tác trên bản Web bằng Admin sở hữu.");return;}
             accept(result);render();
-        });});
+        });
     }
     private void resumePendingLogin(){
-        if(loginAttempt==null||!loginAttempt.pending||loginAttempt.password.isEmpty()||state!=null||!ready||!prefs.getString(PENDING_GOOGLE_SLOT,"").isEmpty())return;
-        adminMode=loginAttempt.adminMode;loginName=loginAttempt.username;loginPassword=loginAttempt.password;
+        if(loginAttempt==null||!loginAttempt.pending||loginAttempt.password.isEmpty()||state!=null||!ready)return;
+        loginName=loginAttempt.username;loginPassword=loginAttempt.password;
         handler.post(()->{if(!busy&&state==null)doLogin(loginName,loginPassword);});
-    }
-    private void connections(){
-        shell("Kết nối Google");text(body,"Google lưu dữ liệu Admin: "+accountName("primary")+"\nTK Google lưu dữ liệu NSD: "+accountName("secondary"),15,false);
-        if(adminMode)button(body,"Kết nối Google lưu dữ liệu Admin",()->chooseGoogle("primary",()->chooseGoogle("secondary",this::connections)));
-        button(body,"Kết nối TK Google lưu dữ liệu NSD",()->chooseGoogle("secondary",this::connections));
-        button(body,"Ngắt kết nối trên thiết bị",()->new AlertDialog.Builder(this).setMessage("Xóa kết nối và đăng nhập vân tay trên thiết bị này? Dữ liệu Drive được giữ nguyên.")
-            .setNegativeButton("Hủy",null).setPositiveButton("Ngắt kết nối",(d,w)->{prefs.edit().clear().apply();loginAttempt.clear();primaryToken=secondaryToken=loginPassword="";tokenExpiry.clear();vault.clear();engine.call("logout",obj(),(r,e)->{state=null;chooseRole();});}).show());
-        button(body,"Quay lại",()->{if(state==null)login();else render();});
-    }
-    private void chooseGoogle(String slot,Runnable next){
-        if(state!=null){message("Đăng xuất trước khi đổi tài khoản lưu dữ liệu.");return;}
-        selecting=slot;authorized=next;
-        if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái chọn Google trên thiết bị.");return;}
-        startBrowserAuthorization();
-    }
-    private void authorize(String slot,Runnable next){
-        selecting=slot;authorized=next;String name=accountName(slot);
-        if(!prefs.edit().putString(PENDING_GOOGLE_SLOT,slot).commit()){message("Không lưu được trạng thái kết nối Google trên thiết bị.");return;}
-        if(tokenExpiry.getOrDefault(slot,0L)>System.currentTimeMillis()&&!(slot.equals("primary")?primaryToken:secondaryToken).isEmpty()){prefs.edit().remove(PENDING_GOOGLE_SLOT).apply();authorized=null;selecting="";next.run();return;}
-        // Giống APK 4.7: OAuth chạy trong trình duyệt hệ thống. Token chỉ giữ
-        // trong bộ nhớ và được chọn lại khi hết hạn.
-        progress(false);chooseGoogle(slot,next);
-    }
-    private void startBrowserAuthorization(){
-        String slot=pendingGoogleSlot();
-        if(!googleSlot(slot)){message("Không xác định được tài khoản Google cần kết nối.");return;}
-        String oauthState=UUID.randomUUID().toString()+UUID.randomUUID().toString();
-        if(!prefs.edit().putString(BROWSER_OAUTH_STATE,oauthState).commit()){message("Không lưu được phiên kết nối Google.");return;}
-        closeBrowserOAuthServer();
-        final ServerSocket server;
-        try{server=new ServerSocket(0,1,InetAddress.getByName("127.0.0.1"));server.setSoTimeout(120000);browserOAuthServer=server;}
-        catch(Exception socketError){progress(false);message("Không tạo được kết nối an toàn với trình duyệt.");return;}
-        Uri page=Uri.parse(BROWSER_OAUTH_URL).buildUpon().appendQueryParameter("state",oauthState).appendQueryParameter("slot",slot).appendQueryParameter("port",String.valueOf(server.getLocalPort())).build();
-        io.execute(()->receiveBrowserAuthorization(server,oauthState));
-        progress(true,"Đang mở Google trong trình duyệt…");
-        try{startActivity(new Intent(Intent.ACTION_VIEW,page));}
-        catch(Exception browserError){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();closeBrowserOAuthServer();progress(false);message("Không mở được trình duyệt để kết nối Google.");}
-    }
-    private void receiveBrowserAuthorization(ServerSocket server,String oauthState){
-        try(Socket socket=server.accept()){
-            socket.setSoTimeout(5000);BufferedReader reader=new BufferedReader(new InputStreamReader(socket.getInputStream(),java.nio.charset.StandardCharsets.UTF_8));
-            String request=reader.readLine();if(request==null||request.length()>16384||!request.startsWith("GET "))throw new IOException("Yêu cầu trả về không hợp lệ.");
-            int end=request.indexOf(' ',4);if(end<5)throw new IOException("Yêu cầu trả về không hợp lệ.");
-            Uri uri=Uri.parse("http://127.0.0.1"+request.substring(4,end));
-            String returnedState=uri.getQueryParameter("state"),error=uri.getQueryParameter("error"),token=uri.getQueryParameter("access_token"),email=uri.getQueryParameter("email");
-            byte[] body=("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Đã kết nối Google</title><style>body{font:18px/1.6 system-ui;padding:32px;color:#142b43}main{max-width:520px;margin:auto}</style><main><h1>Đã trả kết quả về Sổ Xe Tổ Chức</h1><p>Hãy bấm nút Quay lại của Android để trở về ứng dụng.</p></main><script>history.replaceState(null,'','/done')</script>").getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            OutputStream out=socket.getOutputStream();out.write(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.US_ASCII));out.write(body);out.flush();
-            handler.post(()->completeBrowserAuthorization(returnedState,error,token,email));
-        }catch(SocketTimeoutException timeout){handler.post(()->{if(oauthState.equals(prefs.getString(BROWSER_OAUTH_STATE,""))){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();progress(false);message("Kết nối Google đã hết thời gian. Hãy thử lại.");}});}
-        catch(Exception error){handler.post(()->{if(oauthState.equals(prefs.getString(BROWSER_OAUTH_STATE,""))){prefs.edit().remove(BROWSER_OAUTH_STATE).apply();progress(false);message("Không nhận được kết quả Google từ trình duyệt. Hãy thử lại.");}});}
-        finally{try{server.close();}catch(Exception ignored){}if(browserOAuthServer==server)browserOAuthServer=null;}
-    }
-    private void completeBrowserAuthorization(String returnedState,String error,String token,String email){
-        String expected=prefs.getString(BROWSER_OAUTH_STATE,"");
-        prefs.edit().remove(BROWSER_OAUTH_STATE).apply();
-        progress(false);
-        if(expected.isEmpty()||!expected.equals(returnedState)){message("Phiên kết nối Google không hợp lệ hoặc đã hết hạn. Hãy thử lại.");return;}
-        if(error!=null&&!error.isEmpty()){message("Google chưa cấp quyền: "+error);return;}
-        if(token==null||token.isEmpty()||email==null||email.trim().isEmpty()){message("Trình duyệt không trả đủ thông tin Google. Hãy thử lại.");return;}
-        finishGoogleConnection(token,email.trim().toLowerCase(Locale.ROOT));
-    }
-    private void closeBrowserOAuthServer(){ServerSocket server=browserOAuthServer;browserOAuthServer=null;if(server!=null)try{server.close();}catch(Exception ignored){}}
-    private void finishGoogleConnection(String token,String email){
-        String slot=pendingGoogleSlot();
-        if(!googleSlot(slot)){progress(false);message("Không xác định được mục Google đang kết nối. Hãy chọn lại tài khoản.");return;}
-        if(email.equals(accountName(slot.equals("primary")?"secondary":"primary"))){progress(false);message("Hai tài khoản lưu dữ liệu Admin và NSD phải khác nhau.");return;}
-        if(!prefs.edit().putString(slot,email).remove(PENDING_GOOGLE_SLOT).commit()){progress(false);message("Đã cấp quyền nhưng không lưu được tài khoản Google trên thiết bị.");return;}
-        long expiry=System.currentTimeMillis()+45*60000;tokenExpiry.put(slot,expiry);loginAttempt.rememberToken(slot,token,expiry);if(slot.equals("primary"))primaryToken=token;else secondaryToken=token;
-        selecting="";Runnable next=authorized;authorized=null;progress(false);
-        if(next!=null)next.run();else if(state==null&&loginAttempt.pending){resumePendingLogin();}else {message("Đã kết nối và lưu tài khoản Google "+email+".");if(state==null)login();else connections();}
-    }
-    private void withGoogle(Runnable action){
-        if(!ready){message("Đang khởi động bộ xử lý. Hãy thử lại sau vài giây.");return;}
-        Runnable secondary=()->authorize("secondary",()->{
-            progress(true);engine.call("configure",obj("primaryToken",adminMode?primaryToken:"","primaryEmail",adminMode?accountName("primary"):"","secondaryToken",secondaryToken,"secondaryEmail",accountName("secondary")),(r,e)->{
-                if(e!=null){progress(false);message(e);}else{progress(true);action.run();}
-            });
-        });
-        if(adminMode){String previousPrimary=accountName("primary");authorize("primary",()->{if(!previousPrimary.equals(accountName("primary")))chooseGoogle("secondary",secondary);else secondary.run();});}else secondary.run();
     }
     private String processingText(String action){
         if("export".equals(action))return "Đang sao lưu giao dịch và tệp đính kèm…";
         if("inspectBackup".equals(action))return "Đang kiểm tra bản sao lưu…";
-        if("inspectTransfer".equals(action))return "Đang kiểm tra bản sao lưu đầy đủ…";
-        if("transferStorage".equals(action))return "Đang phục hồi dữ liệu và tệp sang hai Google mới…";
         if("restoreBackup".equals(action))return "Đang phục hồi dữ liệu và tệp đính kèm…";
         if("attachment".equals(action))return "Đang tải tệp đính kèm…";
         return "Đang xử lý, vui lòng chờ…";
     }
     private void operation(String action,JSONObject args,Consumer<JSONObject> next,boolean interactive){
         if(busy)return;
-        withGoogle(()->{progress(true,processingText(action));engine.call(action,args,(result,error)->{
-            progress(false);if(error!=null){if(interactive)message(error);else if(status!=null)status.setText("Chưa đồng bộ: "+error);return;}
+        if(!ready){message("Đang khởi động bộ xử lý. Hãy thử lại sau vài giây.");return;}
+        progress(true,processingText(action));engine.call(action,args,(result,error)->{
+            progress(false);if(error!=null){if(error.contains("Phiên đăng nhập")){state=presentation=null;loginPassword="";login();}if(interactive)message(error);else if(status!=null)status.setText("Chưa đồng bộ: "+error);return;}
             accept(result);next.accept(result);
             if(interactive&&result.optJSONArray("warnings")!=null&&result.optJSONArray("warnings").length()>0)message(result.optJSONArray("warnings").toString());
-        });});
+        });
     }
     private void accept(JSONObject result){if(result!=null&&result.optJSONObject("data")!=null){state=result.optJSONObject("data");presentation=result;}}
     private boolean admin(){return state!=null&&"admin".equals(me("role"));}
@@ -448,7 +331,7 @@ public class MainActivity extends FragmentActivity {
         shell(old.has("id")?"Sửa NSD":"Tạo NSD");Form f=new Form();f.input("username","Tên đăng nhập",old.optString("username"),false);f.input("name","Họ tên",old.optString("name"),false);
         if(!old.has("id")){f.options("role","Vai trò",new String[]{"driver","viewer","admin"},new String[]{"Người quản lý/lái xe","Admin chỉ xem","Admin bổ sung"},"driver");text(body,"Mật khẩu ban đầu: 000000. NSD phải đổi ở lần đăng nhập đầu.",15,false);}
         else f.password("newPassword","Mật khẩu mới (để trống nếu giữ nguyên)","");
-        button(body,"Lưu",()->{JSONObject args=f.values(obj());if(old.has("id")){put(args,"id",old.optString("id"));put(args,"version",old.optInt("editVersion"));}operation(old.has("id")?"editUser":"createUser",args,r->users(),true);});
+        button(body,"Lưu",()->{JSONObject args=f.values(obj());if(old.has("id")){put(args,"id",old.optString("id"));put(args,"version",old.optInt("editVersion"));}else put(args,"initialPassword","000000");operation(old.has("id")?"editUser":"createUser",args,r->users(),true);});
         if(old.has("id")&&!old.optString("id").equals(me("id")))button(body,"Xóa NSD",()->new AlertDialog.Builder(this).setMessage("Xóa NSD này? Tài khoản có phân công hoặc giao dịch sẽ không thể xóa.").setNegativeButton("Hủy",null).setPositiveButton("Xóa",(d,w)->operation("deleteUser",obj("id",old.optString("id"),"operationId",f.operationId),r->users(),true)).show());
         button(body,"Hủy",this::users);
     }
@@ -482,10 +365,6 @@ public class MainActivity extends FragmentActivity {
         confirmExit();
     }
     private void confirmExit(){new AlertDialog.Builder(this).setTitle("Thoát Sổ Xe Tổ Chức").setMessage("Bạn có muốn thoát khỏi chương trình không?").setNegativeButton("Ở lại",null).setPositiveButton("Thoát",(d,w)->finishAndRemoveTask()).show();}
-    private void createOrganization(){
-        shell("Tạo tổ chức mới");Form f=new Form();f.input("organizationName","Tên tổ chức","",false);f.input("adminName","Tên Admin","Admin",false);f.password("password","Mật khẩu Admin (từ 6 ký tự)","");
-        button(body,"Kết nối Google và tạo tổ chức",()->{loginName="admin";loginPassword=f.string("password");operation("createOrganization",f.values(obj()),r->render(),true);});button(body,"Hủy",this::login);
-    }
     private void changePassword(boolean first){
         shell(first?"Đặt mật khẩu mới":"Đổi mật khẩu");Form f=new Form();f.password("currentPassword","Mật khẩu hiện tại",first?loginPassword:"");f.password("password","Mật khẩu mới (từ 6 ký tự)","");f.password("repeat","Nhập lại mật khẩu mới","");
         button(body,"Lưu mật khẩu",()->{if(!f.string("password").equals(f.string("repeat"))){message("Hai mật khẩu mới không trùng nhau.");return;}
@@ -494,10 +373,9 @@ public class MainActivity extends FragmentActivity {
     }
     private void account(){
         shell("Cài đặt");text(body,me("name")+" · "+me("username")+"\nVai trò: "+me("role"),17,true);button(body,"Đổi mật khẩu",()->changePassword(false));
-        if(vault.available()&&!loginPassword.isEmpty())button(body,"Bật đăng nhập bằng vân tay",()->vault.authenticate(obj("username",loginName,"password",loginPassword,"adminMode",adminMode,"primaryEmail",accountName("primary"),"secondaryEmail",accountName("secondary")),(r,error)->{if(error!=null)message(error);else message("Đã bật đăng nhập vân tay trên thiết bị này.");}));
+        if(vault.available()&&!loginPassword.isEmpty())button(body,"Bật đăng nhập bằng vân tay",()->vault.authenticate(obj("username",loginName,"password",loginPassword),(r,error)->{if(error!=null)message(error);else message("Đã bật đăng nhập vân tay trên thiết bị này.");}));
         if(vault.exists())button(body,"Tắt đăng nhập vân tay",()->{vault.clear();account();});
         if(admin()){button(body,"Người sử dụng",this::users);button(body,"Sao lưu và phục hồi",this::backup);button(body,"Sửa tên tổ chức",this::renameOrganization);button(body,"Xóa tổ chức",this::deleteOrganization);}
-        button(body,"Kết nối Google",this::connections);
         button(body,"Đăng xuất",()->{state=presentation=null;loginAttempt.clear();loginPassword=loginName="";filterCar=filterCategory=filterFrom=filterTo="";engine.call("logout",obj(),(r,e)->login());});button(body,"Thoát chương trình",this::confirmExit);button(body,"Quay lại",this::render);
     }
     private void renameOrganization(){
@@ -514,34 +392,14 @@ public class MainActivity extends FragmentActivity {
         Form f=new Form();f.password("password","Mật khẩu sao lưu (từ 6 ký tự)","");
         button(body,"Tạo bản sao lưu",()->operation("export",obj("password",f.string("password")),r->saveDocument("So-Xe-"+today()+".json","application/json",r.optString("backup").getBytes(java.nio.charset.StandardCharsets.UTF_8)),true));
         button(body,"Chọn bản sao lưu để phục hồi",()->{attachmentPicked=null;backupPicked=this::inspectRestore;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});
-        button(body,"Phục hồi từ hai Google cũ",this::transferBackup);button(body,"Quay lại",this::account);
-    }
-    private void transferBackup(){
-        if(state==null||!admin()){message("Đăng nhập Admin và mở Tổ chức → Sao lưu và phục hồi.");return;}
-        new AlertDialog.Builder(this).setTitle("Phục hồi sang hai Google mới").setMessage("Hãy tạo và lưu bản sao lưu đầy đủ trước. Ứng dụng sẽ đăng xuất tổ chức hiện tại, sau đó yêu cầu chọn lại Google Admin mới và Google NSD mới.")
-            .setNegativeButton("Hủy",null).setPositiveButton("Tiếp tục",(d,w)->{progress(true,"Đang chuẩn bị chọn hai Google mới…");engine.call("logout",obj(),(r,e)->{state=presentation=null;loginPassword=loginName="";adminMode=true;prefs.edit().putBoolean("adminMode",true).apply();chooseGoogle("primary",()->chooseGoogle("secondary",this::openTransferBackup));});}).show();
-    }
-    private void openTransferBackup(){
-        withGoogle(()->{progress(false);shell("Phục hồi từ hai Google cũ");
-            text(body,"Đăng nhập Admin trên hai Google cũ, tạo bản sao lưu đầy đủ trong Cài đặt. Sau đó kết nối hai Google mới tại đây. Tên đăng nhập, mật khẩu, lịch sử và tệp đính kèm được giữ nguyên.",16,false);
-            text(body,"Google Admin mới: "+accountName("primary")+"\nGoogle NSD mới: "+accountName("secondary"),16,true);
-            button(body,"Chọn bản sao lưu (.json hoặc .zip)",()->{attachmentPicked=null;backupPicked=this::inspectTransferBackup;startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","application/zip","application/octet-stream"}).addCategory(Intent.CATEGORY_OPENABLE),PICK_FILE);});button(body,"Quay lại",this::login);
-        });
-    }
-    private void inspectTransferBackup(String content){
-        shell("Kiểm tra bản sao lưu");Form f=new Form();f.password("password","Mật khẩu bản sao lưu","");
-        button(body,"Kiểm tra",()->operation("inspectTransfer",obj("backup",content,"password",f.string("password")),r->{
-            shell("Xác nhận chuyển dữ liệu");JSONObject s=r.optJSONObject("summary");text(body,s.optString("organizationName")+"\n"+s.optInt("cars")+" xe · "+s.optInt("transactions")+" giao dịch · "+s.optInt("attachments")+" tệp\nGoogle cũ: "+s.optString("oldPrimaryEmail")+" / "+s.optString("oldSecondaryEmail")+"\nGoogle mới: "+s.optString("newPrimaryEmail")+" / "+s.optString("newSecondaryEmail"),16,true);
-            text(body,"Giữ nguyên tên đăng nhập và mật khẩu tại thời điểm sao lưu. Dữ liệu trên Google cũ được giữ lại.",15,false);Form confirmation=new Form();confirmation.input("confirmation","Nhập tên tổ chức để xác nhận","",false);
-            button(body,"Phục hồi sang hai Google mới",()->operation("transferStorage",obj("backup",content,"password",f.string("password"),"confirmation",confirmation.string("confirmation"),"primaryEmail",s.optString("newPrimaryEmail"),"secondaryEmail",s.optString("newSecondaryEmail")),done->{vault.clear();loginPassword="";login();message("Đã phục hồi dữ liệu và tệp đính kèm. Đăng nhập bằng tên và mật khẩu tại thời điểm sao lưu.");},true));button(body,"Hủy",this::login);
-        },true));button(body,"Hủy",this::login);
+        button(body,"Quay lại",this::account);
     }
     private void inspectRestore(String content){
         shell("Kiểm tra bản sao lưu");Form f=new Form();f.password("password","Mật khẩu bản sao lưu","");
         button(body,"Kiểm tra",()->operation("inspectBackup",obj("backup",content,"password",f.string("password")),r->{
             shell("Xác nhận phục hồi");JSONObject s=r.optJSONObject("summary");text(body,s.optString("organizationName")+"\n"+s.optInt("cars")+" xe · "+s.optInt("transactions")+" giao dịch · "+s.optInt("attachments")+" tệp\nPhục hồi sẽ thay dữ liệu hiện tại.",17,true);
             int revision=state.optInt("revision");Form confirmation=new Form();confirmation.input("confirmation","Nhập tên tổ chức hiện tại","",false);confirmation.password("adminPassword","Mật khẩu Admin hiện tại","");
-            button(body,"Phục hồi dữ liệu và tệp",()->new AlertDialog.Builder(this).setMessage("Thay thế dữ liệu hiện tại bằng bản sao lưu đã kiểm tra?").setNegativeButton("Hủy",null).setPositiveButton("Phục hồi",(d,w)->operation("restoreBackup",obj("backup",content,"password",f.string("password"),"adminPassword",confirmation.string("adminPassword"),"confirmation",confirmation.string("confirmation"),"expectedRevision",revision),restored->{vault.clear();loginPassword="";render();},true)).show());button(body,"Hủy",this::backup);
+            button(body,"Phục hồi dữ liệu và tệp",()->new AlertDialog.Builder(this).setMessage("Thay thế dữ liệu hiện tại bằng bản sao lưu đã kiểm tra?").setNegativeButton("Hủy",null).setPositiveButton("Phục hồi",(d,w)->operation("restoreBackup",obj("backup",content,"password",f.string("password"),"adminPassword",confirmation.string("adminPassword"),"confirmation",confirmation.string("confirmation"),"expectedRevision",revision),restored->{vault.clear();loginPassword="";state=presentation=null;login();message("Đã phục hồi dữ liệu. Hãy đăng nhập lại.");},true)).show());button(body,"Hủy",this::backup);
         },true));button(body,"Hủy",this::backup);
     }
     private void attachments(JSONObject record,String recordKey){

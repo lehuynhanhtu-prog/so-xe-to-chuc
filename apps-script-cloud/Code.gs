@@ -6,6 +6,19 @@ var crypto = {randomUUID:function(){return Utilities.getUuid();}};
 var structuredClone=function(value){return JSON.parse(JSON.stringify(value));};
 const CLOUD_FORMAT_='soxe-cloud-v1', CLOUD_MAX_=32*1024*1024, CLOUD_BACKUP_MAX_=64*1024*1024;
 function doGet(){return HtmlService.createHtmlOutputFromFile('Index').setTitle('Sổ Xe Tổ Chức').addMetaTag('viewport','width=device-width, initial-scale=1');}
+function doPost(e){
+  let envelope;
+  try{
+    const raw=e?.postData?.contents;
+    if(typeof raw!=='string'||!raw||raw.length>CLOUD_BACKUP_MAX_)throw new Error('Yêu cầu không hợp lệ hoặc vượt giới hạn.');
+    const request=JSON.parse(raw),method=request?.method;
+    if(method==='health')envelope={ok:true,result:sxHealth()};
+    else if(method==='login')envelope={ok:true,result:sxLogin(request.request||{})};
+    else if(method==='api')envelope={ok:true,result:sxApi(request.request||{})};
+    else throw new Error('RPC không hợp lệ.');
+  }catch(error){envelope={ok:false,error:error?.message||'Dịch vụ không xử lý được yêu cầu.'};}
+  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(ContentService.MimeType.JSON);
+}
 function initializeDeployment_(){
   const p=PropertiesService.getScriptProperties();
   if(p.getProperty('CLOUD_KEY'))throw new Error('Dịch vụ đã khởi tạo. Giữ nguyên khóa và dữ liệu hiện có.');
@@ -14,7 +27,7 @@ function initializeDeployment_(){
   console.log('Mã thiết lập một lần: '+code);
   return {ready:true};
 }
-function sxHealth(){const p=PropertiesService.getScriptProperties();return {version:'4.8.3-cloud.1',ready:!!p.getProperty('CLOUD_KEY'),initialized:!!p.getProperty('CLOUD_FILE')};}
+function sxHealth(){const p=PropertiesService.getScriptProperties();return {version:'4.8.4-native.1',ready:!!p.getProperty('CLOUD_KEY'),initialized:!!p.getProperty('CLOUD_FILE')};}
 function props_(){const p=PropertiesService.getScriptProperties();if(!p.getProperty('CLOUD_KEY'))throw new Error('Chủ app cần chạy initializeDeployment_ và cấp quyền Google trước.');return p;}
 function locked_(work){const lock=LockService.getScriptLock();if(!lock.tryLock(20000))throw new Error('Dịch vụ đang bận. Hãy thử lại.');try{return work();}finally{lock.releaseLock();}}
 function text_(value,max=120,empty=false){if(typeof value!=='string'||value.length>max||!empty&&!value.trim())throw new Error('Thông tin nhập thiếu hoặc quá dài.');return value.trim();}

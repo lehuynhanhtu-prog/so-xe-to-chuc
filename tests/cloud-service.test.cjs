@@ -4,6 +4,15 @@ function setup(){const s=cloud();s.bootstrap();const admin=s.login();return {s,a
 function create(s,admin,username,role='driver'){const r=s.api(admin.token,'createUser',{username,name:username,role,initialPassword:'initial-secret'}),first=s.login(username,'initial-secret');assert.equal(first.mustChange,true);assert.deepEqual(Object.keys(first.data).sort(),['me','organization','revision']);assert.throws(()=>s.api(first.token,'read'),/Đổi mật khẩu/);return s.api(first.token,'changePassword',{currentPassword:'initial-secret',password:username+'-secret'});}
 function car(s,a,plate='51A-12345'){const r=s.api(a.token,'saveCar',{plate,name:'Xe thử',odo:100,powerType:'hybrid',attachments:[]});return r.data.cars.find(c=>c.plate===plate);}
 function tx(carId,extras={}){return {carId,date:'2026-01-01',category:'fuel',amount:10000,odo:200,attachments:[],...extras};}
+test('anonymous JSON bridge only exposes health, login and authenticated API',()=>{
+  const s=cloud();s.bootstrap();
+  const post=payload=>JSON.parse(s.context.doPost({postData:{contents:JSON.stringify(payload)}}).value);
+  const health=post({method:'health'});assert.equal(health.ok,true);assert.equal(health.result.version,'4.8.4-native.1');
+  const login=post({method:'login',request:{username:'admin',password:'admin-secret'}});assert.equal(login.ok,true);assert.ok(login.result.token);
+  const read=post({method:'api',request:{token:login.result.token,action:'read',args:{}}});assert.equal(read.ok,true);assert.equal(read.result.data.organization.name,'Đội Xe');
+  assert.match(post({method:'bootstrap',request:{}}).error,/RPC/);
+  assert.equal(post({method:'api',request:{token:'invalid',action:'read'}}).ok,false);
+});
 test('owner-only bootstrap, credentials, session reset, logout and view-only permissions',()=>{
   const s=cloud();assert.equal(s.context.sxHealth().initialized,false);assert.throws(()=>s.context.sxBootstrap({setupCode:'bad'}),/Mã thiết lập/);s.bootstrap();assert.throws(()=>s.bootstrap(),/đã tồn tại/);assert.throws(()=>s.login('admin','wrong'),/không đúng/);
   const a=s.login(),viewer=create(s,a,'viewer','viewer'),extra=create(s,a,'admin2','admin');assert.equal(extra.data.me.role,'admin');

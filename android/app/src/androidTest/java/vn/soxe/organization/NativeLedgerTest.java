@@ -23,17 +23,17 @@ import android.widget.EditText;
 public class NativeLedgerTest {
     @Before public void clear() {
         android.content.Context c=InstrumentationRegistry.getInstrumentation().getTargetContext();
-        c.getSharedPreferences("google-storage",0).edit().clear().commit();
+        c.getSharedPreferences("native-cloud",0).edit().clear().commit();
         c.getSharedPreferences("biometric",0).edit().clear().commit();
     }
     @Test public void nativeLoginHasPasswordVisibility() {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
-            onView(withText("NSD / Admin chỉ xem")).perform(click());
-            onView(withText("Đăng nhập NSD")).check(matches(isDisplayed()));
+            onView(withText("Đăng nhập Sổ Xe Tổ Chức")).check(matches(isDisplayed()));
             activity.onActivity(a->screenshot(a,"native-login.png"));
             onView(withText("Hiện mật khẩu")).check(matches(isDisplayed()));
             onView(withText("Hiện mật khẩu")).perform(click());
             onView(withText("Đăng nhập")).check(matches(isDisplayed()));
+            onView(withText(org.hamcrest.Matchers.containsString("Không cần tài khoản Google"))).check(matches(isDisplayed()));
         }
     }
     @Test public void browserLauncherHasProfessionalLoginScreen() {
@@ -61,34 +61,11 @@ public class NativeLedgerTest {
         assertNull(error[0]);
         InstrumentationRegistry.getInstrumentation().runOnMainSync(()->engine[0].destroy());
     }
-    @Test public void googleAccountChoiceIsCommittedBeforeAuthorizationAndSurvivesRecreation() throws Exception {
+    @Test public void nativeLoginContainsNoGoogleConnectionFlow() {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)) {
-            activity.onActivity(a->{
-                try {
-                    Method save=MainActivity.class.getDeclaredMethod("saveGoogleAccount",String.class,String.class);save.setAccessible(true);
-                    assertTrue((Boolean)save.invoke(a,"primary","Admin.Storage@Example.Test"));
-                    Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
-                    MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
-                    attempt.begin("admin2","secret",true);
-                    attempt.rememberToken("primary","token-admin",Long.MAX_VALUE);
-                    attempt.rememberToken("secondary","token-nsd",Long.MAX_VALUE);
-                } catch(Exception e){throw new AssertionError(e);}
-            });
-            activity.recreate();
-            activity.onActivity(a->{
-                try {
-                    Method account=MainActivity.class.getDeclaredMethod("accountName",String.class);account.setAccessible(true);
-                    Method pending=MainActivity.class.getDeclaredMethod("pendingGoogleSlot");pending.setAccessible(true);
-                    assertEquals("admin.storage@example.test",account.invoke(a,"primary"));
-                    assertEquals("primary",pending.invoke(a));
-                    Field attemptField=MainActivity.class.getDeclaredField("loginAttempt");attemptField.setAccessible(true);
-                    MainActivity.LoginAttempt attempt=(MainActivity.LoginAttempt)attemptField.get(a);
-                    assertTrue(attempt.pending);assertEquals("admin2",attempt.username);assertEquals("secret",attempt.password);assertTrue(attempt.adminMode);
-                    Field primaryToken=MainActivity.class.getDeclaredField("primaryToken");primaryToken.setAccessible(true);
-                    Field secondaryToken=MainActivity.class.getDeclaredField("secondaryToken");secondaryToken.setAccessible(true);
-                    assertEquals("token-admin",primaryToken.get(a));assertEquals("token-nsd",secondaryToken.get(a));
-                } catch(Exception e){throw new AssertionError(e);}
-            });
+            onView(withText("Kết nối Google")).check(doesNotExist());
+            onView(withText("ADMIN / Admin bổ sung")).check(doesNotExist());
+            onView(withText("NSD / Admin chỉ xem")).check(doesNotExist());
         }
     }
     @androidx.annotation.RequiresApi(29)

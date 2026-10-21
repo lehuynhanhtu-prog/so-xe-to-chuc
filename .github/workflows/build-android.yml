@@ -8,6 +8,7 @@ permissions:
   contents: write
 jobs:
   android:
+    needs: native-smoke
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -51,30 +52,31 @@ jobs:
             --ks-key-alias "$ANDROID_KEY_ALIAS" \
             --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
             --key-pass env:ANDROID_KEY_PASSWORD \
-            --out android-dist/So-Xe-To-Chuc-Android-4.8.3.apk \
+            --out android-dist/So-Xe-To-Chuc-Android-4.8.4-Native.apk \
             android-dist/app-release-unsigned.apk
-          certificate=$(java -jar android-dist/apksigner.jar verify --print-certs android-dist/So-Xe-To-Chuc-Android-4.8.3.apk | sed -n 's/.*SHA-1 digest: //p' | head -n 1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          certificate=$(java -jar android-dist/apksigner.jar verify --print-certs android-dist/So-Xe-To-Chuc-Android-4.8.4-Native.apk | sed -n 's/.*SHA-1 digest: //p' | head -n 1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
           test "$certificate" = "235B9DD64A926CF7FCF78F791D33C738E9F7CCE7"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android-dist/So-Xe-To-Chuc-Android-4.8.3.apk | grep -F "versionName='4.8.3'"
-          java -jar android-dist/apksigner.jar verify --verbose android-dist/So-Xe-To-Chuc-Android-4.8.3.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android-dist/So-Xe-To-Chuc-Android-4.8.4-Native.apk | grep -F "versionName='4.8.4'"
+          java -jar android-dist/apksigner.jar verify --verbose android-dist/So-Xe-To-Chuc-Android-4.8.4-Native.apk
       - name: Publish signed APK and checksum
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag=platform-v4.8.3
-          apk=So-Xe-To-Chuc-Android-4.8.3.apk
+          tag=android-v4.8.4
+          apk=So-Xe-To-Chuc-Android-4.8.4-Native.apk
           mkdir -p "$RUNNER_TEMP/platform-release"
-          gh release download "$tag" --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/platform-release"
-          grep -vF "$apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" > "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
-          (cd android-dist && sha256sum "$apk") >> "$RUNNER_TEMP/platform-release/SHA256SUMS.new"
-          mv "$RUNNER_TEMP/platform-release/SHA256SUMS.new" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt"
+          (cd android-dist && sha256sum "$apk") > "$RUNNER_TEMP/platform-release/SHA256SUMS.txt"
           git tag --force "$tag" "$GITHUB_SHA"
           git push origin "refs/tags/$tag" --force
-          gh release edit "$tag" --target "${{ github.sha }}" --notes-file docs/release-4.8.3.md
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --target "${{ github.sha }}" --title 'Sổ Xe Tổ Chức 4.8.4 Native' --notes-file docs/release-4.8.4-native.md
+          else
+            gh release create "$tag" --target "${{ github.sha }}" --title 'Sổ Xe Tổ Chức 4.8.4 Native' --notes-file docs/release-4.8.4-native.md
+          fi
           gh release upload "$tag" "android-dist/$apk" "$RUNNER_TEMP/platform-release/SHA256SUMS.txt" --clobber
       - uses: actions/upload-artifact@v4
         with:
-          name: So-Xe-To-Chuc-Android-4.8.3-native
+          name: So-Xe-To-Chuc-Android-4.8.4-Native
           path: android-dist/
           retention-days: 30
           if-no-files-found: error
