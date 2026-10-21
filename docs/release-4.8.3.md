@@ -1,5 +1,12 @@
 # Sổ Xe Tổ Chức 4.8.3
 
+- Đồng bộ bản phát hành Android, Windows Portable và iPhone/iPad với mô hình một Google chủ dữ liệu.
+- Link chính mở thẳng màn hình đăng nhập NSD. Người dùng đăng nhập bằng tài khoản do Admin cấp và không cần tài khoản Google.
+- Android và Windows mở cùng dịch vụ Apps Script một Google; hồ sơ iPhone/iPad cài Web App toàn màn hình từ link NSD chính.
+- Trang chuyển đổi và sao lưu bản hai Google được chuyển riêng sang `chuyen-doi.html` dành cho Admin.
+
+## Lịch sử bản 4.8.3 hai Google trước chuyển đổi
+
 - Đồng bộ phiên bản Web, Android native, Windows Portable và iOS Web App.
 - Admin kết nối Google lưu dữ liệu Admin mới, rồi Google lưu dữ liệu NSD mới.
 - Thêm “Phục hồi từ hai Google cũ” trong **Tổ chức → Sao lưu & Phục hồi** trên Web và Android. Chọn bản sao lưu đầy đủ ZIP/JSON đã tạo bằng Admin trên hai Google cũ, kiểm tra thông tin và xác nhận hai Google đích.

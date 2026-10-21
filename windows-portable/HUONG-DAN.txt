@@ -1,10 +1,10 @@
 SỔ XE TỔ CHỨC — WINDOWS PORTABLE 4.8.3
 
 1. Giải nén ZIP, chạy SoXeLauncher.exe hoặc Chay-So-Xe.bat.
-2. Ứng dụng mở trong trình duyệt mặc định. Cần Internet để đăng nhập và lưu Drive.
-3. Kết nối Google Admin và TK Google lưu dữ liệu NSD theo vai trò.
+2. Ứng dụng mở trong trình duyệt mặc định. Cần Internet để đăng nhập và đồng bộ dữ liệu.
+3. Đăng nhập bằng tên và mật khẩu do Admin cấp; NSD không cần đăng nhập Google.
 
 Không cần cài đặt, không cần quyền Administrator, không cần thêm OAuth localhost.
-Dùng chung bản Web và dữ liệu Google Drive; bản Web mới tự áp dụng khi mở app.
+Dùng chung dịch vụ Apps Script một Google với Web, Android và iOS; bản Web mới tự áp dụng khi mở app.
 Dữ liệu không nằm trong thư mục giải nén. Không xóa dữ liệu trình duyệt nếu muốn giữ gợi ý tài khoản Google.
 Bản này không chạy máy chủ localhost. Nếu đang chạy bản cũ, có thể đóng SoXeLauncher.exe cũ trong Task Manager trước khi mở bản mới.
