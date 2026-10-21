@@ -110,7 +110,7 @@ final class LedgerEngine {
             // Apps Script rewrites the inner /blank document after it loads, so
             // inject from its same-origin parent once google.script.run exists.
             String source=JSONObject.quote(nativeRuntime);
-            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){Native.trace('panel');(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){Native.trace('rpc');var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall){Native.trace('installed');return;}}}catch(e){Native.trace('frame:'+e.message);}setTimeout(install,50);}());}";
+            String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){Native.trace('panel');addEventListener('message',function(e){var d=e.data,f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(e.origin==='https://script.google.com'&&e.source===parent&&d&&d.type==='sx-native-call'&&w&&w.nativeCall)w.nativeCall(d.id,d.action,d.args||{});});(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){Native.trace('rpc');var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall){Native.trace('installed');return;}}}catch(e){Native.trace('frame:'+e.message);}setTimeout(install,50);}());}";
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
         runtime.loadUrl(SERVICE_URL);
@@ -119,7 +119,7 @@ final class LedgerEngine {
         if (!ready) { callback.accept(null, "Bộ xử lý đang khởi động. Hãy thử lại."); return; }
         int id = ++sequence;
         callbacks.put(id, callback);
-        runtime.evaluateJavascript("nativeCall(" + id + "," + JSONObject.quote(action) + "," + args + ")", null);
+        runtime.evaluateJavascript("(function(){var f=document.getElementById('sandboxFrame');if(f)f.contentWindow.postMessage({type:'sx-native-call',id:"+id+",action:"+JSONObject.quote(action)+",args:"+args+"},'*');}())", null);
         main.postDelayed(() -> {
             Callback pending = callbacks.remove(id);
             if (pending != null) pending.accept(null, "Thao tác chưa hoàn tất. Kiểm tra mạng và đồng bộ để xác nhận trước khi nhập lại.");
