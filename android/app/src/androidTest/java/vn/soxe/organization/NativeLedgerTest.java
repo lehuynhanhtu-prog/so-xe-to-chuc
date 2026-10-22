@@ -105,7 +105,7 @@ public class NativeLedgerTest {
     @Test public void driverCannotEditAnotherAuthorsTransaction() {
         try(ActivityScenario<MainActivity> activity=ActivityScenario.launch(MainActivity.class)){
             activity.onActivity(a->fixture(a,"driver","driver2"));
-            onView(withText(org.hamcrest.Matchers.containsString("· 123.456.789"))).perform(click());
+            onView(withText(org.hamcrest.Matchers.containsString("· 123.456.789"))).perform(scrollTo(),click());
             onView(withText("Sửa giao dịch")).check(doesNotExist());
             onView(withText("Xóa giao dịch")).check(doesNotExist());
         }
@@ -115,7 +115,7 @@ public class NativeLedgerTest {
             activity.onActivity(a->fixture(a,"admin","driver2"));
             onView(withText("Tổ chức kiểm thử")).check(matches(isDisplayed()));
             activity.onActivity(a->screenshot(a,"native-overview.png"));
-            onView(withText(org.hamcrest.Matchers.containsString("· 123.456.789"))).perform(click());
+            onView(withText(org.hamcrest.Matchers.containsString("· 123.456.789"))).perform(scrollTo(),click());
             onView(withText("Sửa giao dịch")).perform(scrollTo(),click());
             onView(withText("123.456.789")).perform(scrollTo(),replaceText("987654321"));
             androidx.test.espresso.Espresso.closeSoftKeyboard();
