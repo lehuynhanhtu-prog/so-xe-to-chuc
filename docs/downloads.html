@@ -1,8 +1,85 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tải Sổ Xe Tổ Chức</title><style>body{font:16px/1.6 system-ui;max-width:1000px;margin:28px auto;padding:0 18px;color:#142b43}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}article{border:1px solid #dce6ee;border-radius:14px;padding:18px}.button{display:inline-block;background:#176a65;color:white;padding:10px 14px;border-radius:9px;text-decoration:none}small{color:#526579}</style></head>
-<body><main><a href="./">← Mở Sổ Xe Tổ Chức</a><h1>Tải Sổ Xe Tổ Chức</h1><p>Các bản dùng chung dịch vụ Apps Script một Google. NSD đăng nhập bằng tài khoản do Admin cấp, không cần đăng nhập Google.</p><div class="grid">
-<article><h2>Android 4.8.4 Native</h2><p>APK Android 7+, chạy giao diện native và đồng bộ trực tiếp với Apps Script.</p><a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/android-v4.8.4/So-Xe-To-Chuc-Android-4.8.4-Native.apk">Tải APK 4.8.4 Native</a><p><small>Dùng cùng package và khóa ký để cập nhật cài đè bản trước.</small></p><p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/tag/platform-v4.8.3">Bản Android 4.8.3 dự phòng</a></p></article>
-<article><h2>Windows Portable 4.8.3</h2><p>Windows 10/11, không cần cài đặt; mở đăng nhập trong trình duyệt mặc định.</p><a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/platform-v4.8.3/So-Xe-To-Chuc-Windows-4.8.3.zip">Tải Windows ZIP</a></article>
-<article><h2>iPhone / iPad 4.8.3</h2><p>Hồ sơ Web App toàn màn hình, cài trực tiếp trên iPhone hoặc iPad.</p><a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/platform-v4.8.3/So-Xe-To-Chuc-iOS-4.8.3.mobileconfig">Tải hồ sơ iOS</a></article>
-<article><h2>Web</h2><p>Dùng trực tiếp trong Chrome, Edge hoặc Safari.</p><a class="button" href="./">Mở bản Web</a><p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/platform-v4.8.3/So-Xe-To-Chuc-Web-4.8.3.zip">Tải gói Web 4.8.3</a></p></article>
-</div><footer><p><a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/tag/android-v4.8.4">Release Android 4.8.4 và SHA-256</a> · <a href="chuyen-doi.html">Chuyển đổi dữ liệu dành cho Admin</a></p></footer></main></body></html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#176a65">
+  <title>Cài đặt Sổ Xe Tổ Chức</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#142b43;background:#f4f7fb;line-height:1.6}
+    *{box-sizing:border-box}body{margin:0}header,main,footer{max-width:1000px;margin:auto;padding:24px}header{padding-top:44px}
+    .brand{display:flex;align-items:center;gap:14px}.logo{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:#176a65;color:#fff;font-size:24px}
+    h1{font-size:clamp(28px,5vw,42px);line-height:1.2;margin:24px 0 8px}.lead{font-size:18px;color:#52697b;max-width:760px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}.card{display:flex;flex-direction:column;background:#fff;border:1px solid #dce6ee;border-radius:16px;padding:22px;box-shadow:0 8px 26px #142b4308}.card h2{margin:0 0 8px}.card p{margin:6px 0}.card ol{padding-left:22px}.card .button{margin-top:auto}
+    .tag{align-self:flex-start;background:#e5f2ef;color:#176a65;border-radius:20px;padding:4px 9px;font-size:13px;font-weight:700;margin-bottom:12px}
+    .button{display:inline-block;background:#176a65;color:#fff;padding:11px 15px;border-radius:10px;text-align:center;text-decoration:none;font-weight:700;margin-top:16px}.button.secondary{background:#e5f2ef;color:#176a65}
+    .help{background:#fff;border:1px solid #dce6ee;border-radius:16px;padding:20px;margin-top:22px}.help a{color:#176a65;text-underline-offset:3px}small{color:#60758a}footer{text-align:center;color:#60758a;padding-bottom:48px}
+    @media(max-width:600px){header,main,footer{padding:18px}header{padding-top:28px}.card{padding:18px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="logo">▤</div><strong>Sổ Xe Tổ Chức</strong></div>
+    <h1>Tải và cài đặt ứng dụng</h1>
+    <p class="lead">Chọn đúng thiết bị đang sử dụng. Sau khi cài, đăng nhập bằng tên đăng nhập và mật khẩu do Admin cấp.</p>
+  </header>
+  <main>
+    <div class="grid">
+      <article class="card">
+        <span class="tag">Android</span>
+        <h2>Điện thoại và máy tính bảng Android</h2>
+        <p>Phiên bản 4.8.4 Native, dùng cho Android 7 trở lên.</p>
+        <ol>
+          <li>Tải tệp APK.</li>
+          <li>Mở tệp vừa tải và chọn cài đặt.</li>
+          <li>Nếu điện thoại hỏi, chỉ cho phép cài từ trình duyệt đang dùng.</li>
+        </ol>
+        <a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/android-v4.8.4/So-Xe-To-Chuc-Android-4.8.4-Native.apk">Tải bản Android</a>
+      </article>
+
+      <article class="card">
+        <span class="tag">Windows</span>
+        <h2>Máy tính Windows 10 và 11</h2>
+        <p>Bản Portable 4.8.3, không cần cài đặt vào hệ thống.</p>
+        <ol>
+          <li>Tải tệp ZIP.</li>
+          <li>Giải nén toàn bộ tệp.</li>
+          <li>Mở ứng dụng Sổ Xe Tổ Chức trong thư mục vừa giải nén.</li>
+        </ol>
+        <a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/platform-v4.8.3/So-Xe-To-Chuc-Windows-4.8.3.zip">Tải bản Windows</a>
+      </article>
+
+      <article class="card">
+        <span class="tag">iPhone và iPad</span>
+        <h2>Ứng dụng Web toàn màn hình</h2>
+        <p>Hồ sơ cài đặt 4.8.3 tạo biểu tượng Sổ Xe Tổ Chức trên màn hình chính.</p>
+        <ol>
+          <li>Tải hồ sơ cài đặt.</li>
+          <li>Mở Cài đặt và chọn Hồ sơ đã tải về.</li>
+          <li>Chọn Cài đặt rồi mở biểu tượng trên màn hình chính.</li>
+        </ol>
+        <a class="button" href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/releases/download/platform-v4.8.3/So-Xe-To-Chuc-iOS-4.8.3.mobileconfig">Tải bản iPhone và iPad</a>
+      </article>
+
+      <article class="card">
+        <span class="tag">Web</span>
+        <h2>Dùng ngay trong trình duyệt</h2>
+        <p>Không cần tải hoặc cài đặt. Dùng Chrome, Edge hoặc Safari.</p>
+        <ol>
+          <li>Mở trang đăng nhập.</li>
+          <li>Có thể thêm trang vào màn hình chính hoặc tạo lối tắt.</li>
+          <li>Đăng nhập bằng tài khoản do Admin cấp.</li>
+        </ol>
+        <a class="button secondary" href="./">Mở bản Web</a>
+      </article>
+    </div>
+
+    <section class="help">
+      <strong>Cần hướng dẫn?</strong>
+      <p><a href="huong-dan-su-dung.html">Mở hướng dẫn sử dụng dành cho NSD, Admin và Admin xem</a>.</p>
+      <small>Chỉ tải ứng dụng từ các nút trên trang này. Nếu thiết bị báo lỗi, liên hệ Admin của đơn vị.</small>
+    </section>
+  </main>
+  <footer>Trang cài đặt dành cho người dùng cuối</footer>
+</body>
+</html>

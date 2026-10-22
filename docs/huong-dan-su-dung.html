@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#176a65">
+  <title>Hướng dẫn sử dụng Sổ Xe Tổ Chức</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#142b43;background:#f4f7fb;line-height:1.65}
+    *{box-sizing:border-box}body{margin:0}a{color:#176a65;text-underline-offset:3px}header,main,footer{max-width:920px;margin:auto;padding:24px}
+    header{padding-top:44px}.brand{display:flex;align-items:center;gap:14px}.logo{display:grid;place-items:center;width:46px;height:46px;border-radius:13px;background:#176a65;color:#fff;font-size:24px}
+    h1{font-size:clamp(28px,5vw,42px);line-height:1.2;margin:24px 0 8px}h2{margin-top:42px;font-size:26px}h3{margin-top:28px;font-size:19px}
+    .lead{font-size:18px;color:#52697b;max-width:760px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.button{display:inline-block;padding:11px 16px;border-radius:10px;background:#176a65;color:#fff;text-decoration:none;font-weight:700}.button.secondary{background:#e5f2ef;color:#176a65}
+    nav{display:flex;gap:8px;overflow:auto;padding:14px 0}nav a{white-space:nowrap;padding:7px 11px;border-radius:20px;background:#e8f0f5;text-decoration:none}
+    section{background:#fff;border:1px solid #dfe7ef;border-radius:16px;padding:24px;margin:18px 0}ol,ul{padding-left:24px}li+li{margin-top:7px}
+    table{width:100%;border-collapse:collapse;margin:18px 0}th,td{padding:12px;border:1px solid #d9e2e8;text-align:left;vertical-align:top}th{background:#174f73;color:#fff}tbody tr:nth-child(even){background:#edf5f9}
+    .note{font-weight:700;color:#176a65}.warning{font-weight:700;color:#b42318}.table-wrap{overflow:auto}footer{text-align:center;color:#60758a;padding-bottom:50px}
+    @media(max-width:600px){header,main,footer{padding:18px}header{padding-top:28px}section{padding:18px}table{font-size:14px}th,td{padding:9px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="logo">▤</div><strong>Sổ Xe Tổ Chức</strong></div>
+    <h1>Hướng dẫn sử dụng</h1>
+    <p class="lead">Dành cho NSD, Admin và Admin xem trên Android hoặc Web. Bạn chỉ cần tên đăng nhập và mật khẩu do Admin cấp.</p>
+    <div class="actions">
+      <a class="button" href="./">Mở Sổ Xe Tổ Chức</a>
+      <a class="button secondary" href="downloads.html">Tải các bản cài đặt</a>
+    </div>
+  </header>
+  <main>
+    <nav aria-label="Mục lục">
+      <a href="#bat-dau">Bắt đầu</a><a href="#nsd">NSD</a><a href="#admin">Admin</a><a href="#admin-xem">Admin xem</a><a href="#loi">Xử lý lỗi</a>
+    </nav>
+
+    <section id="bat-dau">
+      <h2>Bắt đầu sử dụng</h2>
+      <h3>Đăng nhập</h3>
+      <ol>
+        <li>Mở ứng dụng Android hoặc trang Web chính.</li>
+        <li>Nhập đúng tên đăng nhập và mật khẩu tạm thời do Admin cung cấp.</li>
+        <li>Chọn <strong>Đăng nhập</strong> một lần và chờ đồng bộ hoàn tất.</li>
+        <li>Nếu ứng dụng yêu cầu đổi mật khẩu, nhập mật khẩu hiện tại rồi đặt mật khẩu mới từ 6 đến 128 ký tự.</li>
+      </ol>
+      <p class="note">Không dùng chung tài khoản và không gửi mật khẩu trong nhóm chat.</p>
+      <h3>Đồng bộ và đăng xuất</h3>
+      <ul>
+        <li>Bấm <strong>Đồng bộ</strong> trước khi nhập hoặc sửa dữ liệu quan trọng.</li>
+        <li>Sau khi lưu, chờ thông báo thành công rồi mới rời màn hình.</li>
+        <li>Trên thiết bị dùng chung, chọn <strong>Đăng xuất</strong> khi hoàn tất.</li>
+      </ul>
+      <h3>Đăng nhập bằng vân tay trên Android</h3>
+      <ol>
+        <li>Đăng nhập bằng mật khẩu ít nhất một lần.</li>
+        <li>Mở <strong>Cài đặt</strong>, chọn bật đăng nhập bằng vân tay và xác nhận trên điện thoại.</li>
+        <li>Sau khi đổi mật khẩu, đăng nhập lại bằng mật khẩu mới rồi bật lại vân tay nếu cần.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Vai trò và quyền</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Vai trò</th><th>Được xem</th><th>Được thay đổi</th></tr></thead>
+        <tbody>
+          <tr><td>Admin</td><td>Toàn bộ tổ chức</td><td>Toàn quyền quản trị và dữ liệu</td></tr>
+          <tr><td>Admin bổ sung</td><td>Toàn bộ tổ chức</td><td>Tương đương Admin trong vận hành</td></tr>
+          <tr><td>Admin xem</td><td>Toàn bộ dữ liệu cần giám sát</td><td>Chỉ xem và xuất báo cáo</td></tr>
+          <tr><td>NSD</td><td>Xe đang quản lý và lịch sử liên quan</td><td>Theo xe đang quản lý và bản ghi do mình nhập</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="nsd">
+      <h2>Hướng dẫn dành cho NSD</h2>
+      <h3>Xem cảnh báo</h3>
+      <ol>
+        <li>Mở <strong>Tổng quan</strong> để xem cảnh báo đến hạn.</li>
+        <li>Chọn cảnh báo để xem xe, loại chi phí, ngày hoặc số ODO đến hạn.</li>
+        <li>Mở <strong>Xe</strong> và chọn xe đang quản lý để xem đầy đủ cảnh báo riêng của xe.</li>
+      </ol>
+      <h3>Nhập chi phí</h3>
+      <ol>
+        <li>Mở <strong>Chi phí</strong>, chọn <strong>Nhập chi phí</strong> và chọn đúng xe.</li>
+        <li>Nhập ngày, loại chi phí, tổng tiền, ODO và nội dung.</li>
+        <li>Với bảo hiểm, đăng kiểm hoặc phí đường bộ, nhập ngày hiệu lực và ngày hết hạn.</li>
+        <li>Với bảo dưỡng hoặc phụ tùng, nhập chu kỳ km hoặc tháng nếu cần nhắc.</li>
+        <li>Nếu có chứng từ, chọn <strong>Thêm tệp</strong>. Mỗi tệp tối đa 2 MB, mỗi giao dịch tối đa 5 tệp.</li>
+        <li>Chọn <strong>Lưu</strong> một lần và chờ thông báo thành công.</li>
+      </ol>
+      <h3>Sửa, xóa và bàn giao</h3>
+      <ul>
+        <li>NSD chỉ sửa hoặc xóa giao dịch do chính mình nhập khi vẫn đang quản lý xe.</li>
+        <li>Sau khi bàn giao, NSD vẫn xem được giao dịch mình đã nhập nhưng không thể sửa, xóa hoặc tiếp tục bàn giao xe.</li>
+        <li>Nếu xe được bàn giao lại, quyền của NSD được khôi phục theo trạng thái quản lý mới.</li>
+      </ul>
+    </section>
+
+    <section id="admin">
+      <h2>Hướng dẫn dành cho Admin</h2>
+      <h3>Công việc đầu ngày</h3>
+      <ul>
+        <li>Đăng nhập bằng tài khoản Admin cá nhân và bấm <strong>Đồng bộ</strong>.</li>
+        <li>Kiểm tra cảnh báo, giao dịch mới, bàn giao mới và ODO bất thường.</li>
+        <li>Tạo bản sao lưu trước thay đổi lớn hoặc theo lịch của đơn vị.</li>
+      </ul>
+      <h3>Quản lý người dùng</h3>
+      <ol>
+        <li>Mở <strong>Người sử dụng</strong> và chọn tạo tài khoản.</li>
+        <li>Nhập họ tên, tên đăng nhập duy nhất và chọn đúng vai trò.</li>
+        <li>Gửi tên đăng nhập và mật khẩu tạm thời cho người dùng bằng kênh riêng.</li>
+        <li>Khi đặt lại mật khẩu, người dùng phải đăng nhập bằng mật khẩu mới và đổi mật khẩu trước khi tiếp tục.</li>
+      </ol>
+      <h3>Quản lý xe và dữ liệu</h3>
+      <ul>
+        <li>Thêm xe, cập nhật thông tin và phân công đúng người quản lý.</li>
+        <li>Admin có thể nhập, sửa hoặc xóa giao dịch và bàn giao trong toàn tổ chức.</li>
+        <li>Chỉ xóa xe hoặc tài khoản khi đã kiểm tra lịch sử liên quan và có lý do nghiệp vụ rõ ràng.</li>
+      </ul>
+      <h3>Sao lưu và phục hồi</h3>
+      <ol>
+        <li>Yêu cầu mọi người ngừng nhập dữ liệu và bấm <strong>Đồng bộ</strong>.</li>
+        <li>Mở <strong>Cài đặt</strong> rồi <strong>Sao lưu và phục hồi</strong>.</li>
+        <li>Tạo bản sao lưu với mật khẩu riêng và lưu mật khẩu ở nơi an toàn.</li>
+        <li>Khi phục hồi, chọn <strong>Kiểm tra</strong> trước, đối chiếu số tài khoản, xe, giao dịch, bàn giao và tệp đính kèm.</li>
+      </ol>
+    </section>
+
+    <section id="admin-xem">
+      <h2>Hướng dẫn dành cho Admin xem</h2>
+      <p>Admin xem dùng để giám sát và lập báo cáo, không làm thay đổi dữ liệu.</p>
+      <ul>
+        <li>Được xem tổng quan, cảnh báo, xe, giao dịch, bàn giao và tệp đính kèm.</li>
+        <li>Được lọc dữ liệu và xuất CSV hoặc Excel.</li>
+        <li>Không được thêm, sửa, xóa, phân công, bàn giao, quản lý tài khoản hoặc phục hồi dữ liệu.</li>
+      </ul>
+    </section>
+
+    <section id="loi">
+      <h2>Xử lý lỗi thường gặp</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Hiện tượng</th><th>Cách xử lý</th></tr></thead>
+        <tbody>
+          <tr><td>Sai tên đăng nhập hoặc mật khẩu</td><td>Kiểm tra tên; chờ 15 phút nếu đã thử sai nhiều lần; nhờ Admin đặt lại mật khẩu.</td></tr>
+          <tr><td>Android dừng ở “Đang xử lý”</td><td>Kiểm tra mạng, cập nhật Chrome và Android System WebView rồi mở lại ứng dụng.</td></tr>
+          <tr><td>Không thấy cảnh báo</td><td>Bấm Đồng bộ; kiểm tra xe đang quản lý; nhờ Admin kiểm tra thông tin đến hạn.</td></tr>
+          <tr><td>Không sửa được giao dịch</td><td>Kiểm tra người nhập và trạng thái bàn giao. Đây có thể là giới hạn quyền đúng.</td></tr>
+          <tr><td>Tệp không tải lên</td><td>Giảm kích thước dưới 2 MB hoặc bỏ bớt nếu đã đủ 5 tệp.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="warning">Khi báo lỗi, chỉ gửi vai trò, tên đăng nhập, nền tảng, thời điểm, thông báo lỗi và ảnh chụp không chứa mật khẩu.</p>
+    </section>
+  </main>
+  <footer>Hướng dẫn người dùng cuối · Phiên bản 4.8.4 Native</footer>
+</body>
+</html>
