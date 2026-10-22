@@ -172,7 +172,7 @@ public class MainActivity extends FragmentActivity {
     }
     private void accept(JSONObject result){if(result!=null&&result.optJSONObject("data")!=null){state=result.optJSONObject("data");presentation=result;}}
     private boolean admin(){return state!=null&&"admin".equals(me("role"));}
-    private boolean editable(JSONObject record){return admin()||!"viewer".equals(me("role"))&&me("id").equals(record.optString("enteredBy"))&&me("id").equals(find("carChoices",record.optString("carId")).optString("assignedUserId"));}
+    private boolean editable(JSONObject record){return admin()||!"viewer".equals(me("role"))&&me("id").equals(record.optString("enteredBy"))&&(record.has("category")&&record.optBoolean("onBehalf")||me("id").equals(find("carChoices",record.optString("carId")).optString("assignedUserId")));}
     private String me(String field){return state.optJSONObject("me").optString(field);}
     private JSONArray list(String key){return state.optJSONArray(key)==null?new JSONArray():state.optJSONArray(key);}
     private JSONArray drivers(){JSONArray a=new JSONArray();for(int i=0;i<list("users").length();i++){JSONObject u=list("users").optJSONObject(i);if("driver".equals(u.optString("role")))a.put(u);}return a;}
@@ -181,10 +181,10 @@ public class MainActivity extends FragmentActivity {
     private String car(String id){return find("carChoices",id).optString("plate","—");}
     private static String money(double value){return NumberFormat.getNumberInstance(new Locale("vi","VN")).format(value);}
     private static String date(String v){return v.length()>=10?v.substring(8,10)+"/"+v.substring(5,7)+"/"+v.substring(0,4):v;}
-    private static final String[] CATEGORY_KEYS={"fuel","charge","battery_rental","maintenance","parts","insurance","inspection","road_fee","other"};
-    private static final String[] CATEGORY_NAMES={"Tiền xăng","Sạc xe","Thuê pin","Bảo dưỡng","Phụ tùng","Bảo hiểm TNDS","Đăng kiểm","Phí đường bộ","Khác"};
+    private static final String[] CATEGORY_KEYS={"fuel","charge","battery_rental","maintenance","major_maintenance","parts","insurance","inspection","road_fee","other"};
+    private static final String[] CATEGORY_NAMES={"Tiền xăng","Sạc xe","Thuê pin","Bảo dưỡng","Bảo dưỡng cấp lớn","Phụ tùng","Bảo hiểm TNDS","Đăng kiểm","Phí đường bộ","Khác"};
     private static String category(String key){for(int i=0;i<CATEGORY_KEYS.length;i++)if(CATEGORY_KEYS[i].equals(key))return CATEGORY_NAMES[i];return key;}
-    private static int categoryAccent(String key){switch(key){case "insurance":return TEAL;case "inspection":return ORANGE;case "road_fee":return PURPLE;case "maintenance":case "parts":return GREEN;default:return BLUE;}}
+    private static int categoryAccent(String key){switch(key){case "insurance":return TEAL;case "inspection":return ORANGE;case "road_fee":return PURPLE;case "maintenance":case "major_maintenance":case "parts":return GREEN;default:return BLUE;}}
     private static int reminderBackground(String level){if("expired".equals(level)||"due".equals(level))return Color.rgb(255,240,239);if("warning".equals(level))return Color.rgb(255,248,233);return Color.WHITE;}
     private void render(){
         if(state==null){login();return;}
@@ -201,6 +201,7 @@ public class MainActivity extends FragmentActivity {
     private void overview(){
         double total=0;for(int i=0;i<list("transactions").length();i++)total+=list("transactions").optJSONObject(i).optDouble("amount");
         card("Tổng quan đội xe",list("cars").length()+" xe · "+list("transactions").length()+" giao dịch\nTổng chi phí: "+money(total)+" ₫",null,BLUE,Color.rgb(242,248,253));
+        text(body,"Xe đang và đã quản lý",18,true);for(int i=0;i<list("cars").length();i++){JSONObject c=list("cars").optJSONObject(i);String assigned=find("carChoices",c.optString("id")).optString("assignedUserId");boolean managed=admin()||assigned.equals(me("id"));LinearLayout vehicle=card(c.optString("plate")+" · "+c.optString("name"),(managed?"ĐANG QUẢN LÝ":"ĐÃ BÀN GIAO")+" · ODO "+money(c.optDouble("odo"))+" km",()->viewCar(c),managed?BLUE:Color.rgb(115,130,145),managed?Color.WHITE:Color.rgb(245,247,249));if(!managed)vehicle.setAlpha(0.65f);}
         text(body,"Cảnh báo đến hạn",18,true);JSONArray reminders=presentation.optJSONArray("reminders");int count=0;
         if(reminders!=null)for(int i=0;i<reminders.length();i++){
             JSONObject r=reminders.optJSONObject(i);if("valid".equals(r.optString("level")))continue;
@@ -259,7 +260,7 @@ public class MainActivity extends FragmentActivity {
     private void editCar(JSONObject old){
         shell(old.has("id")?"Sửa xe":"Thêm xe");Form f=new Form();
         f.input("plate","Biển số",old.optString("plate"),false);f.input("name","Tên xe",old.optString("name"),false);
-        f.input("year","Năm sản xuất",old.optString("year"),true);f.number("odo","ODO (km)",old.optDouble("odo"));
+        f.input("year","Năm sản xuất",old.optString("year"),true);f.number("odo","ODO (km)",old.optDouble("odo"));f.moneyFormatting("odo");
         f.options("powerType","Loại xe",new String[]{"fuel","electric","hybrid"},new String[]{"Xăng/dầu","Điện","Điện–xăng"},old.optString("powerType","fuel"));
         f.attachments(old);button(body,"Lưu xe",()->operation("saveCar",f.values(old,"odo"),r->render(),true));button(body,"Hủy",this::render);
     }
@@ -294,19 +295,15 @@ public class MainActivity extends FragmentActivity {
         }
     }
     private void editTransaction(JSONObject old){
-        shell(old.has("id")?"Sửa giao dịch":"Nhập chi phí");Form f=new Form();JSONArray choices=list("carChoices");String selected=old.optString("carId");
+        shell(old.has("id")?"Sửa giao dịch":"Nhập chi phí");Form f=new Form();JSONArray choices=new JSONArray();for(int i=0;i<list("carChoices").length();i++){JSONObject c=list("carChoices").optJSONObject(i);if(admin()||old.optString("carId").equals(c.optString("id"))||!c.optString("assignedUserId").isEmpty())choices.put(c);}String selected=old.optString("carId");
         if(selected.isEmpty())for(int i=0;i<choices.length();i++)if(me("id").equals(choices.optJSONObject(i).optString("assignedUserId"))){selected=choices.optJSONObject(i).optString("id");break;}
         f.select("carId","Xe",choices,"plate",selected,false);
-        CheckBox behalf=new CheckBox(this);behalf.setText("Nhập hộ");behalf.setChecked(old.optBoolean("onBehalf"));body.addView(behalf);f.checks.put("onBehalf",behalf);
-        if("driver".equals(me("role"))&&!old.has("id"))f.views.get("carId").setEnabled(behalf.isChecked());
+        CheckBox behalf=new CheckBox(this);behalf.setText("Nhập hộ cho xe của NSD khác");behalf.setChecked(old.optBoolean("onBehalf"));body.addView(behalf);f.checks.put("onBehalf",behalf);
         f.select("enteredFor","Người được ghi nhận",list("users"),"name",old.optString("enteredFor",me("id")),false);f.views.get("enteredFor").setEnabled(behalf.isChecked()||admin());
-        behalf.setOnCheckedChangeListener((v,checked)->{
-            f.views.get("enteredFor").setEnabled(checked||admin());if("driver".equals(me("role"))&&!old.has("id"))f.views.get("carId").setEnabled(checked);
-            if(!checked){f.setChoice("enteredFor",me("id"));if(!old.has("id"))for(int i=0;i<choices.length();i++){JSONObject c=choices.optJSONObject(i);if(me("id").equals(c.optString("assignedUserId"))){f.setChoice("carId",c.optString("id"));break;}}}
-        });
+        if("driver".equals(me("role"))){behalf.setEnabled(false);f.views.get("enteredFor").setEnabled(false);if(old.has("id"))f.views.get("carId").setEnabled(false);else ((Spinner)f.views.get("carId")).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){String owner=find("carChoices",f.string("carId")).optString("assignedUserId"),target=owner.isEmpty()?me("id"):owner;behalf.setChecked(!target.equals(me("id")));f.setChoice("enteredFor",target);}public void onNothingSelected(AdapterView<?> p){}});}
         f.options("category","Loại chi phí",CATEGORY_KEYS,CATEGORY_NAMES,old.optString("category","fuel"));f.date("date","Ngày giao dịch",old.optString("date",today()),false);
-        f.number("amount","Tổng số tiền (₫)",old.optDouble("amount"));f.moneyFormatting("amount");f.number("odo","ODO (km)",old.optDouble("odo"));f.input("description","Nội dung",old.optString("description"),false);
-        for(String k:new String[]{"fuelPrice","liters","batteryFrom","batteryTo","repeatKm","repeatMonths"})f.number(k,fieldLabel(k),old.optDouble(k));f.fuelCalculation();
+        f.number("amount","Tổng số tiền (₫)",old.optDouble("amount"));f.moneyFormatting("amount");f.number("odo","ODO (km)",old.optDouble("odo"));f.moneyFormatting("odo");f.input("description","Nội dung",old.optString("description"),false);
+        for(String k:new String[]{"fuelPrice","liters","batteryFrom","batteryTo","repeatKm","repeatMonths"})f.number(k,fieldLabel(k),old.optDouble(k));f.moneyFormatting("repeatKm");f.fuelCalculation();
         f.input("insuranceProvider","Đơn vị",old.optString("insuranceProvider"),false);f.input("insurancePolicy","Số hợp đồng",old.optString("insurancePolicy"),false);
         f.date("insuranceStart","Ngày hiệu lực",old.optString("insuranceStart"),true);f.date("insuranceExpiry","Ngày hết hạn",old.optString("insuranceExpiry"),true);f.input("note","Ghi chú",old.optString("note"),false);f.categoryVisibility();f.attachments(old);
         button(body,"Lưu giao dịch",()->operation("saveTransaction",f.values(old,"amount","odo","fuelPrice","liters","batteryFrom","batteryTo","repeatKm","repeatMonths"),r->render(),true));button(body,"Hủy",this::render);
@@ -348,7 +345,7 @@ public class MainActivity extends FragmentActivity {
         f.select("fromUserId","Người giao",drivers(),"name",old.optString("fromUserId",me("id")),false);f.select("toUserId","Người nhận",drivers(),"name",old.optString("toUserId"),false);
         Calendar initial=Calendar.getInstance();try{if(old.has("at"))initial.setTime(isoFormat().parse(old.optString("at")));}catch(Exception ignored){}
         f.date("date","Ngày bàn giao",new SimpleDateFormat("yyyy-MM-dd",Locale.ROOT).format(initial.getTime()),false);f.time("time","Giờ bàn giao",initial.get(Calendar.HOUR_OF_DAY),initial.get(Calendar.MINUTE));
-        f.number("odo","ODO (km)",old.optDouble("odo"));f.input("note","Ghi chú",old.optString("note"),false);
+        f.number("odo","ODO (km)",old.optDouble("odo"));f.moneyFormatting("odo");f.input("note","Ghi chú",old.optString("note"),false);
         button(body,"Lưu bàn giao",()->{try{
             Calendar at=Calendar.getInstance();String[] d=f.string("date").split("-"),t=f.string("time").split(":");at.set(Integer.parseInt(d[0]),Integer.parseInt(d[1])-1,Integer.parseInt(d[2]),Integer.parseInt(t[0]),Integer.parseInt(t[1]),0);at.set(Calendar.MILLISECOND,0);
             JSONObject args=f.values(old,"odo");put(args,"at",isoFormat().format(at.getTime()));operation("saveHandover",args,r->handovers(),true);
@@ -469,6 +466,7 @@ public class MainActivity extends FragmentActivity {
         final Map<String,CheckBox> checks=new HashMap<>();
         final Map<String,LinearLayout> groups=new HashMap<>();
         final Set<String> secrets=new HashSet<>();
+        final Set<String> groupedNumbers=new HashSet<>();
         JSONArray files;
         boolean calculating;
         EditText input(String key,String label,String initial,boolean numeric){
@@ -509,7 +507,7 @@ public class MainActivity extends FragmentActivity {
             View v=views.get(key);if(!(v instanceof EditText))return "";String value=((EditText)v).getText().toString();return secrets.contains(key)?value:value.trim();
         }
         double numeric(String key){
-            String s=string(key);if(key.equals("amount"))s=s.replace(".","").replace(",",".");else s=s.replace(",",".");
+            String s=string(key);if(groupedNumbers.contains(key))s=s.replace(".","").replace(",",".");else s=s.replace(",",".");
             try{return s.isEmpty()?0:Double.parseDouble(s);}catch(Exception e){return Double.NaN;}
         }
         JSONObject values(JSONObject old,String...numericKeys){
@@ -519,16 +517,16 @@ public class MainActivity extends FragmentActivity {
             if(files!=null)put(o,"attachments",files);return o;
         }
         void moneyFormatting(String key){
-            EditText e=(EditText)views.get(key);String original=e.getText().toString();e.setInputType(InputType.TYPE_CLASS_NUMBER);if(!original.isEmpty())e.setText(money(Double.parseDouble(original)));
+            groupedNumbers.add(key);EditText e=(EditText)views.get(key);String original=e.getText().toString();e.setInputType(InputType.TYPE_CLASS_NUMBER);if(!original.isEmpty())e.setText(money(Double.parseDouble(original)));
             e.addTextChangedListener(new TextWatcher(){boolean changing;public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence s,int st,int before,int count){}
                 public void afterTextChanged(Editable s){if(changing)return;String digits=s.toString().replaceAll("[^0-9]","");if(digits.length()>13)digits=digits.substring(0,13);changing=true;String formatted=digits.isEmpty()?"":money(Double.parseDouble(digits));if(!s.toString().equals(formatted)){e.setText(formatted);e.setSelection(formatted.length());}changing=false;}
             });
         }
         void categoryVisibility(){
             Runnable update=()->{String c=string("category");for(String k:new String[]{"fuelPrice","liters","batteryFrom","batteryTo","repeatKm","repeatMonths","insuranceProvider","insurancePolicy","insuranceStart","insuranceExpiry"}){
-                boolean show=k.equals("fuelPrice")||k.equals("liters")?c.equals("fuel"):k.equals("batteryFrom")||k.equals("batteryTo")?c.equals("charge"):k.startsWith("repeat")?c.equals("maintenance")||c.equals("parts"):k.equals("insuranceProvider")||k.equals("insurancePolicy")?c.equals("insurance"):c.equals("insurance")||c.equals("inspection")||c.equals("road_fee");
+                boolean show=k.equals("fuelPrice")||k.equals("liters")?c.equals("fuel"):k.equals("batteryFrom")||k.equals("batteryTo")?c.equals("charge"):k.startsWith("repeat")?c.equals("maintenance")||c.equals("major_maintenance")||c.equals("parts"):k.equals("insuranceProvider")||k.equals("insurancePolicy")?c.equals("insurance"):c.equals("insurance")||c.equals("inspection")||c.equals("road_fee");
                 groups.get(k).setVisibility(show?View.VISIBLE:View.GONE);
-            }};
+            }if(c.equals("major_maintenance")&&numeric("repeatKm")==0)((EditText)views.get("repeatKm")).setText(money(20000));};
             ((Spinner)views.get("category")).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int pos,long id){update.run();}public void onNothingSelected(AdapterView<?> p){}});update.run();
         }
         void fuelCalculation(){

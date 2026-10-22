@@ -1,4 +1,4 @@
-import {attachmentToday,attachmentStem,uniqueAttachmentName} from './attachment-names.mjs?v=3aed45752cdb';
+import {attachmentToday,attachmentStem,uniqueAttachmentName} from './attachment-names.mjs?v=931a57c102ee';
 import {lock,unlock,open,plain,b64,unb64} from './crypto.mjs?v=c7db6486b392';
 const fail=m=>{throw new Error(m);},clone=x=>structuredClone(x),MAX=200*1024*1024;
 function summary(db,createdAt,files=[]){return {organizationName:db.name,createdAt,cars:db.cars.length,transactions:db.transactions.length,users:db.users.filter(u=>!u.deletedAt).length,attachments:[...db.cars,...db.transactions].reduce((n,r)=>n+(r.attachments||[]).length,0),complete:files.length>0};}

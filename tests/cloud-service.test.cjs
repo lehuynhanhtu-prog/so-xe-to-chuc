@@ -37,6 +37,16 @@ test('NSD own transactions, handover revokes rights immediately, return restores
   s.api(a.token,'assign',{carId:c.id,userId:one.data.me.id});const returned=s.api(one.token,'saveTransaction',tx(c.id,{id:own.id,version:own.version,amount:20000}));assert.equal(returned.data.transactions[0].amount,20000);assert.equal(returned.data.reminderTransactions.length,1);
   assert.throws(()=>s.api(one.token,'saveTransaction',tx(c.id,{id:own.id,version:own.version})),/thay đổi/);
 });
+test('NSD entering on behalf keeps edit/delete rights while the vehicle manager has read-only access',()=>{
+  const {s,admin:a}=setup(),one=create(s,a,'driver1'),two=create(s,a,'driver2'),ownCar=car(s,a,'51A-11111'),otherCar=car(s,a,'51A-22222');
+  s.api(a.token,'assign',{carId:ownCar.id,userId:one.data.me.id});s.api(a.token,'assign',{carId:otherCar.id,userId:two.data.me.id});
+  assert.throws(()=>s.api(one.token,'saveTransaction',tx(otherCar.id)),/Nhập hộ|đang do NSD khác/);
+  const created=s.api(one.token,'saveTransaction',tx(otherCar.id,{category:'major_maintenance',description:'Bảo dưỡng cấp lớn',repeatKm:20000,onBehalf:true,enteredFor:two.data.me.id})),record=created.data.transactions[0];
+  assert.equal(record.enteredBy,one.data.me.id);assert.equal(record.enteredFor,two.data.me.id);assert.equal(record.onBehalf,true);assert.equal(record.repeatKm,20000);
+  const managerView=s.api(two.token,'read').data;assert.equal(managerView.transactions.length,1);assert.equal(managerView.transactions[0].id,record.id);assert.throws(()=>s.api(two.token,'saveTransaction',{...record,amount:1}),/mình nhập/);assert.throws(()=>s.api(two.token,'deleteTransaction',{id:record.id,version:record.version}),/mình nhập/);
+  s.api(a.token,'assign',{carId:otherCar.id,userId:''});assert.equal(s.api(two.token,'read').data.transactions.length,0);
+  const edited=s.api(one.token,'saveTransaction',{...record,amount:25000,attachments:[]}).data.transactions[0];assert.equal(edited.amount,25000);s.api(one.token,'deleteTransaction',{id:edited.id,version:edited.version});assert.equal(s.api(one.token,'read').data.transactions.length,0);
+});
 test('attachment authorization, retries and before/after commit failures preserve references',()=>{
   const {s,admin:a}=setup(),one=create(s,a,'driver1'),two=create(s,a,'driver2'),c=car(s,a);s.api(a.token,'assign',{carId:c.id,userId:one.data.me.id});
   const input=tx(c.id,{operationId:crypto.randomUUID(),attachments:[{name:'hóa đơn.png',type:'image/png',base64:Buffer.from('ảnh UTF-8').toString('base64')}]});

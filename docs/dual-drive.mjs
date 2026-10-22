@@ -1,4 +1,4 @@
-import {attachmentStem,uniqueAttachmentName} from './attachment-names.mjs?v=3aed45752cdb';
+import {attachmentStem,uniqueAttachmentName} from './attachment-names.mjs?v=931a57c102ee';
 export const MODEL='two-google-v2';
 const fail=m=>{throw new Error(m);};
 // Tokens stay on the two GoogleConnection instances, never in a file or localStorage.

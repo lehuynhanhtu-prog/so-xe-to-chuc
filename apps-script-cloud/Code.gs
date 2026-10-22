@@ -152,9 +152,12 @@ function requireRecord_(db,u,action,a){
   if(u.role==='admin')return;
   if(!['saveTransaction','deleteTransaction','saveHandover','deleteHandover'].includes(action))throw new Error('Không có quyền thực hiện.');
   const old=action.includes('Transaction')?db.transactions.find(t=>t.id===a.id):db.handovers.find(h=>h.id===a.id),carId=old?.carId||a.carId;
-  if(!manages_(db,u,carId))throw new Error('Chỉ được thao tác khi đang quản lý xe.');
   if(old&&old.enteredBy!==u.id)throw new Error('Chỉ được sửa/xóa bản ghi do mình nhập.');
   if(old&&a.carId&&a.carId!==old.carId)throw new Error('Không chuyển bản ghi sang xe khác.');
+  if(action.includes('Transaction')){
+    if(old&&!old.onBehalf&&!manages_(db,u,carId))throw new Error('Chỉ được thao tác khi đang quản lý xe.');
+    if(!old&&!manages_(db,u,carId)&&!a.onBehalf)throw new Error('Chỉ được nhập khi đang quản lý xe; bật Nhập hộ để ghi chi phí cho xe của NSD khác.');
+  }else if(!manages_(db,u,carId))throw new Error('Chỉ được thao tác khi đang quản lý xe.');
 }
 function attachments_(db,input,old,record,isCar,created){
   if(!Array.isArray(input)||input.length>5)throw new Error('Tối đa 5 tệp mỗi bản ghi.');

@@ -150,8 +150,9 @@ var LedgerCore = (() => {
   var version = (old, v) => {
     if (old && old.version !== v) fail2("B\u1EA3n ghi \u0111\xE3 thay \u0111\u1ED5i. \u0110\u1ED3ng b\u1ED9 l\u1EA1i tr\u01B0\u1EDBc khi s\u1EEDa.");
   };
-  var canSee = (db, u, t) => u.role !== "driver" || t.enteredBy === u.id;
-  var isReminderTransaction = (t) => ["maintenance", "parts"].includes(t.category) && (t.repeatKm || t.repeatMonths) || ["insurance", "inspection", "road_fee"].includes(t.category) && t.insuranceExpiry;
+  var canSee = (db, u, t) => u.role !== "driver" || t.enteredBy === u.id || t.onBehalf && t.enteredFor === u.id && assigned(db, t.carId) === u.id;
+  var canChangeTransaction = (db, u, t) => u.role === "admin" || t.enteredBy === u.id && (t.onBehalf || manages(db, u, t.carId));
+  var isReminderTransaction = (t) => ["maintenance", "major_maintenance", "parts"].includes(t.category) && (t.repeatKm || t.repeatMonths) || ["insurance", "inspection", "road_fee"].includes(t.category) && t.insuranceExpiry;
   var reminderTransaction = (t) => ({ id: t.id, carId: t.carId, date: t.date, category: t.category, odo: t.odo, description: t.description || "", repeatKm: t.repeatKm || 0, repeatMonths: t.repeatMonths || 0, insuranceProvider: t.insuranceProvider || "", insurancePolicy: t.insurancePolicy || "", insuranceStart: t.insuranceStart || "", insuranceExpiry: t.insuranceExpiry || "", updatedAt: t.updatedAt || "" });
   function attachments(input, old = []) {
     if (!Array.isArray(input) || input.length > 5) fail2("T\u1ED1i \u0111a 5 t\u1EC7p.");
@@ -173,16 +174,20 @@ var LedgerCore = (() => {
     if (u.role === "viewer") fail2("T\xE0i kho\u1EA3n ch\u1EC9 xem kh\xF4ng \u0111\u01B0\u1EE3c ghi d\u1EEF li\u1EC7u.");
     const old = a.id ? db.transactions.find((t) => t.id === a.id) : null;
     if (a.id && !old) fail2("Ch\u1EC9 \u0111\u01B0\u1EE3c s\u1EEDa giao d\u1ECBch do m\xECnh nh\u1EADp ho\u1EB7c giao d\u1ECBch \u0111\xE3 b\u1ECB x\xF3a.");
-    if (old && u.role !== "admin" && old.enteredBy !== u.id) fail2("Ch\u1EC9 \u0111\u01B0\u1EE3c s\u1EEDa giao d\u1ECBch do m\xECnh nh\u1EADp.");
+    if (old && !canChangeTransaction(db, u, old)) fail2(old.enteredBy !== u.id ? "Ch\u1EC9 \u0111\u01B0\u1EE3c s\u1EEDa giao d\u1ECBch do m\xECnh nh\u1EADp." : "Ch\u1EC9 \u0111\u01B0\u1EE3c s\u1EEDa giao d\u1ECBch khi \u0111ang qu\u1EA3n l\xFD xe.");
     version(old, a.version);
-    if (u.role === "driver" && !manages(db, u, (old || a).carId)) fail2("Ch\u1EC9 \u0111\u01B0\u1EE3c nh\u1EADp, s\u1EEDa ho\u1EB7c x\xF3a giao d\u1ECBch khi \u0111ang qu\u1EA3n l\xFD xe.");
     const selectedCar = db.cars.find((c) => c.id === a.carId);
     if (!selectedCar) fail2("Xe kh\xF4ng t\u1ED3n t\u1EA1i ho\u1EB7c \u0111\xE3 x\xF3a.");
+    const manager = assigned(db, a.carId), enteredFor = a.enteredFor || u.id;
+    if (u.role === "driver") {
+      if (old && (a.carId !== old.carId || enteredFor !== old.enteredFor || !!a.onBehalf !== !!old.onBehalf)) fail2("Kh\xF4ng \u0111\u01B0\u1EE3c \u0111\u1ED5i xe ho\u1EB7c ch\u1EBF \u0111\u1ED9 nh\u1EADp h\u1ED9 c\u1EE7a giao d\u1ECBch \u0111\xE3 l\u01B0u.");
+      if (!old && manager === u.id && (a.onBehalf || enteredFor !== u.id)) fail2("Giao d\u1ECBch xe \u0111ang qu\u1EA3n l\xFD kh\xF4ng ph\u1EA3i l\xE0 nh\u1EADp h\u1ED9.");
+      if (!old && manager !== u.id && (!manager || !a.onBehalf || enteredFor !== manager)) fail2("Ch\u1EC9 \u0111\u01B0\u1EE3c nh\u1EADp khi \u0111ang qu\u1EA3n l\xFD xe; Nh\u1EADp h\u1ED9 ch\u1EC9 \xE1p d\u1EE5ng cho xe \u0111ang do NSD kh\xE1c qu\u1EA3n l\xFD.");
+    }
     if (selectedCar.powerType === "electric" && a.category === "fuel") fail2("Xe \u0111i\u1EC7n kh\xF4ng c\xF3 chi ph\xED \u0111\u1ED5 x\u0103ng.");
     if ((!selectedCar.powerType || selectedCar.powerType === "fuel") && ["charge", "battery_rental"].includes(a.category)) fail2("Chi ph\xED s\u1EA1c xe/thu\xEA pin ch\u1EC9 \xE1p d\u1EE5ng cho xe \u0111i\u1EC7n ho\u1EB7c \u0111i\u1EC7n\u2013x\u0103ng.");
-    if (!["fuel", "charge", "battery_rental", "maintenance", "parts", "insurance", "inspection", "road_fee", "other"].includes(a.category)) fail2("Lo\u1EA1i chi ph\xED kh\xF4ng h\u1EE3p l\u1EC7.");
+    if (!["fuel", "charge", "battery_rental", "maintenance", "major_maintenance", "parts", "insurance", "inspection", "road_fee", "other"].includes(a.category)) fail2("Lo\u1EA1i chi ph\xED kh\xF4ng h\u1EE3p l\u1EC7.");
     if (typeof a.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(a.date) || !Number.isFinite(Date.parse(a.date)) || new Date(a.date).toISOString().slice(0, 10) !== a.date) fail2("Ng\xE0y kh\xF4ng h\u1EE3p l\u1EC7.");
-    const enteredFor = a.enteredFor || u.id;
     user(db, enteredFor);
     const insuranceStart = a.insuranceStart || "", insuranceExpiry = a.insuranceExpiry || "";
     for (const date of [insuranceStart, insuranceExpiry]) if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date)) fail2("Ng\xE0y hi\u1EC7u l\u1EF1c/h\u1EBFt h\u1EA1n kh\xF4ng h\u1EE3p l\u1EC7.");
@@ -212,7 +217,7 @@ var LedgerCore = (() => {
   }
 
   // web/attachment-names.mjs
-  var expenseCategories = Object.freeze({ fuel: "\u0110\u1ED5 x\u0103ng", charge: "S\u1EA1c xe", battery_rental: "Thu\xEA pin", maintenance: "B\u1EA3o d\u01B0\u1EE1ng", parts: "Ph\u1EE5 t\xF9ng", insurance: "B\u1EA3o hi\u1EC3m TNDS", inspection: "\u0110\u0103ng ki\u1EC3m", road_fee: "Ph\xED \u0111\u01B0\u1EDDng b\u1ED9", other: "Chi ph\xED kh\xE1c" });
+  var expenseCategories = Object.freeze({ fuel: "\u0110\u1ED5 x\u0103ng", charge: "S\u1EA1c xe", battery_rental: "Thu\xEA pin", maintenance: "B\u1EA3o d\u01B0\u1EE1ng", major_maintenance: "B\u1EA3o d\u01B0\u1EE1ng c\u1EA5p l\u1EDBn", parts: "Ph\u1EE5 t\xF9ng", insurance: "B\u1EA3o hi\u1EC3m TNDS", inspection: "\u0110\u0103ng ki\u1EC3m", road_fee: "Ph\xED \u0111\u01B0\u1EDDng b\u1ED9", other: "Chi ph\xED kh\xE1c" });
   var clean = (s) => String(s || "").normalize("NFC").replace(/[\\/:*?"<>|\x00-\x1f\x7f]/g, "-").replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
   function attachmentToday(now2 = /* @__PURE__ */ new Date()) {
     const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now2), get = (k) => parts.find((p) => p.type === k).value;
