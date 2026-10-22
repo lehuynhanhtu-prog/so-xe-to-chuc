@@ -172,7 +172,7 @@ public class MainActivity extends FragmentActivity {
     }
     private void accept(JSONObject result){if(result!=null&&result.optJSONObject("data")!=null){state=result.optJSONObject("data");presentation=result;}}
     private boolean admin(){return state!=null&&"admin".equals(me("role"));}
-    private boolean editable(JSONObject record){return admin()||!"viewer".equals(me("role"))&&me("id").equals(record.optString("enteredBy"))&&(record.has("category")&&record.optBoolean("onBehalf")||me("id").equals(find("carChoices",record.optString("carId")).optString("assignedUserId")));}
+    private boolean editable(JSONObject record){return admin()||!"viewer".equals(me("role"))&&me("id").equals(record.optString("enteredBy"))&&(record.has("category")&&(record.optBoolean("onBehalf")||!record.optString("enteredBy").equals(record.optString("enteredFor")))||me("id").equals(find("carChoices",record.optString("carId")).optString("assignedUserId")));}
     private String me(String field){return state.optJSONObject("me").optString(field);}
     private JSONArray list(String key){return state.optJSONArray(key)==null?new JSONArray():state.optJSONArray(key);}
     private JSONArray drivers(){JSONArray a=new JSONArray();for(int i=0;i<list("users").length();i++){JSONObject u=list("users").optJSONObject(i);if("driver".equals(u.optString("role")))a.put(u);}return a;}

@@ -150,8 +150,8 @@ var LedgerCore = (() => {
   var version = (old, v) => {
     if (old && old.version !== v) fail2("B\u1EA3n ghi \u0111\xE3 thay \u0111\u1ED5i. \u0110\u1ED3ng b\u1ED9 l\u1EA1i tr\u01B0\u1EDBc khi s\u1EEDa.");
   };
-  var canSee = (db, u, t) => u.role !== "driver" || t.enteredBy === u.id || t.onBehalf && t.enteredFor === u.id && assigned(db, t.carId) === u.id;
-  var canChangeTransaction = (db, u, t) => u.role === "admin" || t.enteredBy === u.id && (t.onBehalf || manages(db, u, t.carId));
+  var canSee = (db, u, t) => u.role !== "driver" || t.enteredBy === u.id || (t.onBehalf || t.enteredBy !== t.enteredFor) && t.enteredFor === u.id && assigned(db, t.carId) === u.id;
+  var canChangeTransaction = (db, u, t) => u.role === "admin" || t.enteredBy === u.id && (t.onBehalf || t.enteredBy !== t.enteredFor || manages(db, u, t.carId));
   var isReminderTransaction = (t) => ["maintenance", "major_maintenance", "parts"].includes(t.category) && (t.repeatKm || t.repeatMonths) || ["insurance", "inspection", "road_fee"].includes(t.category) && t.insuranceExpiry;
   var reminderTransaction = (t) => ({ id: t.id, carId: t.carId, date: t.date, category: t.category, odo: t.odo, description: t.description || "", repeatKm: t.repeatKm || 0, repeatMonths: t.repeatMonths || 0, insuranceProvider: t.insuranceProvider || "", insurancePolicy: t.insurancePolicy || "", insuranceStart: t.insuranceStart || "", insuranceExpiry: t.insuranceExpiry || "", updatedAt: t.updatedAt || "" });
   function attachments(input, old = []) {

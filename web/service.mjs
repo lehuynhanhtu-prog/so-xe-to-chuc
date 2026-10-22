@@ -12,8 +12,8 @@ const user=(db,uid)=>db.users.find(u=>u.id===uid&&!u.deletedAt)||fail('Tài kho�
 const version=(old,v)=>{if(old&&old.version!==v)fail('Bản ghi đã thay đổi. Đồng bộ lại trước khi sửa.');};
 // Drivers keep read access to records they created. The current manager can also
 // read (but never modify) a transaction explicitly entered on their behalf.
-const canSee=(db,u,t)=>u.role!=='driver'||t.enteredBy===u.id||t.onBehalf&&t.enteredFor===u.id&&assigned(db,t.carId)===u.id;
-const canChangeTransaction=(db,u,t)=>u.role==='admin'||t.enteredBy===u.id&&(t.onBehalf||manages(db,u,t.carId));
+const canSee=(db,u,t)=>u.role!=='driver'||t.enteredBy===u.id||(t.onBehalf||t.enteredBy!==t.enteredFor)&&t.enteredFor===u.id&&assigned(db,t.carId)===u.id;
+const canChangeTransaction=(db,u,t)=>u.role==='admin'||t.enteredBy===u.id&&(t.onBehalf||t.enteredBy!==t.enteredFor||manages(db,u,t.carId));
 const isReminderTransaction=t=>['maintenance','major_maintenance','parts'].includes(t.category)&&(t.repeatKm||t.repeatMonths)||['insurance','inspection','road_fee'].includes(t.category)&&t.insuranceExpiry;
 const reminderTransaction=t=>({id:t.id,carId:t.carId,date:t.date,category:t.category,odo:t.odo,description:t.description||'',repeatKm:t.repeatKm||0,repeatMonths:t.repeatMonths||0,insuranceProvider:t.insuranceProvider||'',insurancePolicy:t.insurancePolicy||'',insuranceStart:t.insuranceStart||'',insuranceExpiry:t.insuranceExpiry||'',updatedAt:t.updatedAt||''});
 // The complete assignment timeline is used only while validating journal events.

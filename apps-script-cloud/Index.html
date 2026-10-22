@@ -294,7 +294,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // web/reports.mjs
   function visibleTransactions(state2) {
     if (state2.me?.role !== "driver") return state2.transactions;
-    return state2.transactions.filter((t) => t.enteredBy === state2.me.id || t.onBehalf && t.enteredFor === state2.me.id && state2.carChoices.some((c) => c.id === t.carId && c.assignedUserId === state2.me.id));
+    return state2.transactions.filter((t) => t.enteredBy === state2.me.id || (t.onBehalf || t.enteredBy !== t.enteredFor) && t.enteredFor === state2.me.id && state2.carChoices.some((c) => c.id === t.carId && c.assignedUserId === state2.me.id));
   }
   function selectTransactions(state2, filters2 = {}) {
     return visibleTransactions(state2).filter((t) => (!filters2.carId || t.carId === filters2.carId) && (!filters2.category || t.category === filters2.category) && (!filters2.from || t.date >= filters2.from) && (!filters2.to || t.date <= filters2.to)).sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
@@ -1114,7 +1114,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     });
   }
   function canEditTransaction(t) {
-    return admin() || state.me.role === "driver" && t.enteredBy === state.me.id && (t.onBehalf || state.carChoices.some((c) => c.id === t.carId && c.assignedUserId === state.me.id));
+    return admin() || state.me.role === "driver" && t.enteredBy === state.me.id && (t.onBehalf || t.enteredBy !== t.enteredFor || state.carChoices.some((c) => c.id === t.carId && c.assignedUserId === state.me.id));
   }
   function bindVehicleEntry(t, selected) {
     const car = $("#modalBody [name=carId]"), who = $("#modalBody [name=enteredFor]"), check = $("#onBehalfCheck");
