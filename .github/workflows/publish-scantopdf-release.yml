@@ -1,0 +1,124 @@
+name: Publish ScantoPDF Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-scantopdf-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lehuynhanhtu-prog/ScantoPDF-Android
+          ref: main
+          path: scantopdf
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Locate sdkmanager
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          test -x "$SDKMANAGER"
+      - name: Install Android API 36
+        shell: bash
+        run: |
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+      - name: Build unsigned release
+        working-directory: scantopdf
+        run: gradle --no-daemon assembleRelease
+      - name: Sign APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/scantopdf-release.jks"
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" sign \
+            --ks "$RUNNER_TEMP/scantopdf-release.jks" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --out "$RUNNER_TEMP/ScantoPDF-Android.apk" \
+            scantopdf/app/build/outputs/apk/release/app-release-unsigned.apk
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --verbose --print-certs "$RUNNER_TEMP/ScantoPDF-Android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScantoPDF-Android-release
+          path: ${{ runner.temp }}/ScantoPDF-Android.apk
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lehuynhanhtu-prog/ScantoPDF-Android
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: windows-portable/requirements.txt
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r windows-portable/requirements.txt
+      - name: Build portable EXE
+        working-directory: windows-portable
+        shell: pwsh
+        run: |
+          python make_icon.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name ScantoPDF-Windows-Portable --icon ScantoPDF.ico --collect-all cv2 ScantoPDF.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScantoPDF-Windows-release
+          path: windows-portable/dist/ScantoPDF-Windows-Portable.exe
+          if-no-files-found: error
+
+  release:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ScantoPDF-Android-release
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: ScantoPDF-Windows-release
+          path: release
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="scantopdf-v1.0.0"
+          TITLE="ScantoPDF v1.0.0"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/ScantoPDF-Android.apk release/ScantoPDF-Windows-Portable.exe --clobber
+          else
+            gh release create "$TAG" release/ScantoPDF-Android.apk release/ScantoPDF-Windows-Portable.exe \
+              --title "$TITLE" \
+              --notes "ScantoPDF cho Android và Windows Portable. Android dùng APK release đã ký; Windows là một file EXE portable."
+          fi
