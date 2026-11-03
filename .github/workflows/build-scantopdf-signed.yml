@@ -1,5 +1,5 @@
 name: Build signed ScantoPDF APK
-# ScantoPDF source: 413e9fb3cd31777748fabd91deecb93814ca11c6
+# ScantoPDF source: f557e0c5336959abf5a0170deed3950867d62d11
 
 on:
   push:
