@@ -113,8 +113,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          TAG="scantopdf-v1.0.0"
-          TITLE="ScantoPDF v1.0.0"
+          TAG="scantopdf-v1.1.0"
+          TITLE="ScantoPDF v1.1.0"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" release/ScantoPDF-Android.apk release/ScantoPDF-Windows-Portable.exe --clobber
           else
