@@ -1,0 +1,31 @@
+name: Prepare encrypted LUX signing transfer
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/prepare-lux-signing-transfer.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Generate temporary transfer certificate
+        env:
+          TRANSFER_PASSWORD: ${{ secrets.SIGNING_BACKUP_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          : "${TRANSFER_PASSWORD:?Missing backup passphrase}"
+          umask 077
+          mkdir -p transfer
+          openssl req -x509 -newkey rsa:3072 -sha256 -days 2 -subj '/CN=LUX APK Encrypted Transfer' -passout env:TRANSFER_PASSWORD -keyout transfer/transfer-private.pem -out transfer/transfer-certificate.pem
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LUX-encrypted-transfer-key
+          path: transfer/
+          retention-days: 1
+          if-no-files-found: error
