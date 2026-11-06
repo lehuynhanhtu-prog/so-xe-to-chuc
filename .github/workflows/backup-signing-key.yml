@@ -1,0 +1,63 @@
+name: Encrypted backup of Android signing key
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup:
+    if: github.actor == github.repository_owner && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify, encrypt and test backup
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.SIGNING_BACKUP_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          : "${ANDROID_KEYSTORE_BASE64:?Missing keystore secret}"
+          : "${ANDROID_KEYSTORE_PASSWORD:?Missing keystore password}"
+          : "${ANDROID_KEY_ALIAS:?Missing alias}"
+          : "${ANDROID_KEY_PASSWORD:?Missing key password}"
+          : "${BACKUP_PASSPHRASE:?Set SIGNING_BACKUP_PASSPHRASE first}"
+          if [ "${#BACKUP_PASSPHRASE}" -lt 20 ]; then echo 'Backup passphrase must contain at least 20 characters.'; exit 1; fi
+          work="$RUNNER_TEMP/signing-backup"
+          mkdir -m 700 "$work" "$work/plain" "$work/gpg"
+          trap 'rm -rf "$RUNNER_TEMP/signing-backup"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$work/plain/so-xe-release.jks"
+          keytool -exportcert -keystore "$work/plain/so-xe-release.jks" -alias "$ANDROID_KEY_ALIAS" -storepass:env ANDROID_KEYSTORE_PASSWORD -file "$work/certificate.der" >/dev/null
+          fingerprint=$(openssl x509 -inform DER -in "$work/certificate.der" -noout -fingerprint -sha1 | cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          test "$fingerprint" = '235B9DD64A926CF7FCF78F791D33C738E9F7CCE7' || { echo 'Certificate does not match the expected So Xe 4.7 signing key.'; exit 1; }
+          export BACKUP_PLAIN_DIR="$work/plain"
+          python3 - <<'PY'
+          import os, json, pathlib
+          p = pathlib.Path(os.environ['BACKUP_PLAIN_DIR'])
+          values = {k: os.environ[k] for k in ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']}
+          (p / 'signing-credentials.json').write_text(json.dumps(values, ensure_ascii=False, indent=2), encoding='utf-8')
+          (p / 'README.txt').write_text('Backup of So Xe 4.7 signing key.\nExpected SHA-1: 235B9DD64A926CF7FCF78F791D33C738E9F7CCE7\nKeep the keystore and credentials private.\n', encoding='utf-8')
+          PY
+          tar -C "$work/plain" -cf "$work/backup.tar" so-xe-release.jks signing-credentials.json README.txt
+          mkdir -p "$GITHUB_WORKSPACE/encrypted-backup"
+          output="$GITHUB_WORKSPACE/encrypted-backup/So-Xe-signing-backup.tar.gpg"
+          gpg --homedir "$work/gpg" --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 --s2k-mode 3 --s2k-digest-algo SHA256 --s2k-count 65011712 --output "$output" "$work/backup.tar" 3<<<"$BACKUP_PASSPHRASE"
+          gpg --homedir "$work/gpg" --batch --yes --pinentry-mode loopback --passphrase-fd 3 --output "$work/test.tar" --decrypt "$output" 3<<<"$BACKUP_PASSPHRASE"
+          cmp "$work/backup.tar" "$work/test.tar"
+          (cd "$GITHUB_WORKSPACE/encrypted-backup" && sha256sum So-Xe-signing-backup.tar.gpg > SHA256SUMS.txt)
+          echo 'Encrypted backup verified by successful decryption and byte comparison.'
+      - name: Upload encrypted backup only
+        uses: actions/upload-artifact@v4
+        with:
+          name: So-Xe-encrypted-signing-backup-${{ github.run_id }}
+          path: encrypted-backup/
+          if-no-files-found: error
+          retention-days: 7
