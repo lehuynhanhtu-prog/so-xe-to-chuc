@@ -1,0 +1,65 @@
+name: Sign LUX OBD with So Xe release key
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/sign-lux-obd-05.yml', 'signing-transfer/LUX-OBD-0.5.0.p7m']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sign:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: LUX-encrypted-transfer-key
+          run-id: 42327016688
+          github-token: ${{ github.token }}
+          path: transfer-key
+      - name: Decrypt verified APK and sign
+        env:
+          TRANSFER_PASSWORD: ${{ secrets.SIGNING_BACKUP_PASSPHRASE }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          work="$RUNNER_TEMP/lux-sign"
+          mkdir -m 700 "$work"
+          trap 'rm -rf "$RUNNER_TEMP/lux-sign"' EXIT
+          : "${TRANSFER_PASSWORD:?Missing transfer password}"
+          : "${ANDROID_KEYSTORE_BASE64:?Missing signing key}"
+          sdkmanager="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          "$sdkmanager" "build-tools;35.0.0"
+          echo 'c950c1cdd151a8c3ae90c011cf9a587fcc48d2775fd11f25e5e17f9c38080357  signing-transfer/LUX-OBD-0.5.0.p7m' | sha256sum -c -
+          openssl cms -decrypt -binary -inform DER -in signing-transfer/LUX-OBD-0.5.0.p7m -recip transfer-key/transfer-certificate.pem -inkey transfer-key/transfer-private.pem -passin env:TRANSFER_PASSWORD -out "$work/input.apk"
+          echo "97cdc89ce76ebba95ca191b849b11e7d52504e2967a95c51b7bb978fd75d2ed5  $work/input.apk" | sha256sum -c -
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$work/release.jks"
+          signer="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          mkdir -p signed-lux
+          apk=signed-lux/LUX-OBD-0.5.0-signed.apk
+          "$signer" sign --ks "$work/release.jks" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --out "$apk" "$work/input.apk"
+          "$signer" verify --verbose --print-certs "$apk" > signed-lux/SIGNATURE.txt
+          certificate=$("$signer" verify --print-certs "$apk" | sed -n 's/.*SHA-1 digest: //p' | head -n 1 | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          test "$certificate" = '235B9DD64A926CF7FCF78F791D33C738E9F7CCE7'
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" | grep -F "package: name='vn.anhtu.luxobd'" | grep -F "versionName='0.5.0'"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c 4 "$apk"
+          (cd signed-lux && sha256sum LUX-OBD-0.5.0-signed.apk > SHA256SUMS.txt)
+          echo 'Verified signing certificate matches So Xe 4.7.'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LUX-OBD-0.5.0-signed
+          path: signed-lux/
+          retention-days: 30
+          if-no-files-found: error
