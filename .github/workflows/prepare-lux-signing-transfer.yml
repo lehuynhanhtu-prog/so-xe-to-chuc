@@ -29,3 +29,5 @@ jobs:
           path: transfer/
           retention-days: 1
           if-no-files-found: error
+
+# Transfer for LUX 0.5.0
