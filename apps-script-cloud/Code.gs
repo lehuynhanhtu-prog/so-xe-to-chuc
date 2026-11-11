@@ -27,7 +27,11 @@ function initializeDeployment_(){
   console.log('Mã thiết lập một lần: '+code);
   return {ready:true};
 }
-function sxHealth(){const p=PropertiesService.getScriptProperties();return {version:'4.8.4-native.1',ready:!!p.getProperty('CLOUD_KEY'),initialized:!!p.getProperty('CLOUD_FILE')};}
+function sxHealth(){
+  const p=PropertiesService.getScriptProperties(),fileId=p.getProperty('CLOUD_FILE');let deleted=false;
+  if(fileId)try{const file=DriveApp.getFileById(fileId);if(!file.isTrashed()){const db=JSON.parse(file.getBlob().getDataAsString());deleted=db.format===CLOUD_FORMAT_&&!!db.deletedAt;}}catch{/* Login/API will report damaged or missing storage without exposing details publicly. */}
+  return {version:'4.8.4-native.1',ready:!!p.getProperty('CLOUD_KEY'),initialized:!!fileId&&!deleted,deleted};
+}
 function props_(){const p=PropertiesService.getScriptProperties();if(!p.getProperty('CLOUD_KEY'))throw new Error('Chủ app cần chạy initializeDeployment_ và cấp quyền Google trước.');return p;}
 function locked_(work){const lock=LockService.getScriptLock();if(!lock.tryLock(20000))throw new Error('Dịch vụ đang bận. Hãy thử lại.');try{return work();}finally{lock.releaseLock();}}
 function text_(value,max=120,empty=false){if(typeof value!=='string'||value.length>max||!empty&&!value.trim())throw new Error('Thông tin nhập thiếu hoặc quá dài.');return value.trim();}
@@ -60,7 +64,7 @@ function unlock_(box,password,purpose,depth=0){
 }
 function lockBackup_(value,p){const salt=base64_(random_(16)),iv=random_(12),key=kdf_(p,salt,100000),purpose='backup';return {format:'so-xe-drive-v3',cipher:'AES-256-GCM',purpose,iv:base64_(iv),ciphertext:base64_(DriveCrypto.gcm(key,iv,bytes_(purpose)).encrypt(bytes_(JSON.stringify(value)))),kdf:'PBKDF2-SHA256',salt,iterations:100000};}
 function throttle_(name,failed=false){const c=CacheService.getScriptCache(),key='cloud-login:'+hash_(name);if(Number(c.get(key)||0)>=5)throw new Error('Đăng nhập sai nhiều lần. Thử lại sau 15 phút.');if(failed)c.put(key,String(Number(c.get(key)||0)+1),900);}
-function load_(){const f=props_().getProperty('CLOUD_FILE');if(!f)throw new Error('Tổ chức chưa được thiết lập.');const file=DriveApp.getFileById(f);if(file.isTrashed())throw new Error('Dữ liệu đã bị xóa.');const db=JSON.parse(file.getBlob().getDataAsString());if(db.format!==CLOUD_FORMAT_)throw new Error('Sai định dạng dữ liệu.');if(db.deletedAt)throw new Error('Tổ chức đã bị xóa.');return db;}
+function load_(allowDeleted=false){const f=props_().getProperty('CLOUD_FILE');if(!f)throw new Error('Tổ chức chưa được thiết lập.');const file=DriveApp.getFileById(f);if(file.isTrashed())throw new Error('Dữ liệu đã bị xóa.');const db=JSON.parse(file.getBlob().getDataAsString());if(db.format!==CLOUD_FORMAT_)throw new Error('Sai định dạng dữ liệu.');if(db.deletedAt&&!allowDeleted)throw new Error('Tổ chức đã bị xóa.');return db;}
 function save_(db){db.updatedAt=new Date().toISOString();const value=JSON.stringify(db);if(bytes_(value).length>CLOUD_MAX_)throw new Error('Dữ liệu vượt 32 MB. Cần lưu trữ bớt lịch sử.');const file=DriveApp.getFileById(props_().getProperty('CLOUD_FILE'));try{file.setContent(value);}catch(e){try{if(file.getBlob().getDataAsString()===value)return;}catch{e.uncertain=true;}throw e;}}
 function user_(db,id){const u=db.users.find(x=>x.id===id&&!x.deletedAt);if(!u)throw new Error('Tài khoản đã bị thu hồi.');return u;}
 function admin_(u){if(u.role!=='admin')throw new Error('Chỉ Admin có quyền thực hiện.');}
@@ -94,6 +98,7 @@ function sxLogin(request){return locked_(()=>{
 function setup_(code){const p=props_();if(p.getProperty('CLOUD_FILE'))throw new Error('Tổ chức đã tồn tại. Không ghi đè qua thiết lập.');throttle_('setup');if(!equal_(hash_(text_(code,120)),p.getProperty('CLOUD_SETUP'))){throttle_('setup',true);throw new Error('Mã thiết lập không đúng.');}}
 function emptyDb_(a){return {format:CLOUD_FORMAT_,id:Utilities.getUuid(),name:text_(a.organizationName),revision:1,sessionEpoch:Utilities.getUuid(),users:[],cars:[],transactions:[],handovers:[],assignments:[],assignmentEvents:[],audit:[],operations:[],receipts:{},tombstones:[]};}
 function sxBootstrap(a){return locked_(()=>{
+  if(a.action==='resetDeleted')return resetDeleted_(a);
   setup_(a.setupCode);
   if(a.action==='inspectImport'){const b=decodeBackup_(a);return {summary:summary_(b.db,b.createdAt)};}
   let db;
@@ -104,6 +109,17 @@ function sxBootstrap(a){return locked_(()=>{
   passwordPolicy_(a.password);db=emptyDb_(a);db.users.push({id:Utilities.getUuid(),username:'admin',name:text_(a.adminName,80),role:'admin',password:password_(a.password),sessionVersion:1,mustChange:false,active:true,editVersion:0,sessions:[]});
   install_(db,[],false);return {created:true};
 });}
+function resetDeleted_(a){
+  const db=load_(true);if(!db.deletedAt)throw new Error('Tổ chức chưa bị xóa.');
+  const username=LedgerCore.normalizeUsername(text_(a.username,80));throttle_('deleted:'+username);
+  const u=db.users.find(x=>!x.deletedAt&&x.username===username);
+  if(!u||u.role!=='admin'||!verify_(u,a.password)){throttle_('deleted:'+username,true);throw new Error('Tài khoản Admin hoặc mật khẩu không đúng.');}
+  const code=base64_(random_(24)),p=props_();
+  p.setProperties({CLOUD_KEY:base64_(random_(32)),CLOUD_SETUP:hash_(code),CLOUD_EPOCH:Utilities.getUuid()});
+  p.deleteProperty('CLOUD_FILE');p.deleteProperty('CLOUD_FOLDER');
+  CacheService.getScriptCache().remove('cloud-login:'+hash_('deleted:'+username));
+  return {reset:true,setupCode:code};
+}
 function install_(db,binaries,imported){
   const p=props_(),folder=DriveApp.createFolder('Sổ Xe Tổ Chức · một Google'),created=[];
   try{const next=prepareDb_(db);materialize_(next,binaries,folder,created);const file=folder.createFile('so-xe-cloud.json',JSON.stringify(next),MimeType.PLAIN_TEXT);created.push(file.getId());p.setProperties({CLOUD_FILE:file.getId(),CLOUD_FOLDER:folder.getId()});p.deleteProperty('CLOUD_SETUP');return {imported,created:!imported,summary:summary_(next)};}

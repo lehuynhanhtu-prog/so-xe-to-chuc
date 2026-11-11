@@ -22,6 +22,17 @@ test('owner-only bootstrap, credentials, session reset, logout and view-only per
   const serialized=JSON.stringify(r);for(const secret of ['driveFileId','rootKey','memberKey','legacyCredential','"password"','sessions','ownerEmail'])assert.equal(serialized.includes(secret),false,secret);
   s.api(a.token,'logout');assert.throws(()=>s.api(a.token,'read'),/thu hồi/);assert.equal(s.locked,false);
 });
+test('deleted organization shows a recoverable state and can be replaced after Admin verification',()=>{
+  const {s,admin}=setup(),viewer=create(s,admin,'viewer1','viewer'),oldFile=s.props.get('CLOUD_FILE');
+  const result=s.api(admin.token,'deleteOrganization',{confirmation:'Đội Xe',password:'admin-secret'});assert.equal(result.deleted,true);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.context.sxHealth())),{version:'4.8.4-native.1',ready:true,initialized:false,deleted:true});
+  assert.throws(()=>s.login(),/đã bị xóa/);assert.throws(()=>s.context.sxBootstrap({action:'resetDeleted',username:'viewer1',password:'viewer1-secret'}),/Admin|mật khẩu/);
+  assert.throws(()=>s.context.sxBootstrap({action:'resetDeleted',username:'admin',password:'wrong'}),/Admin|mật khẩu/);
+  const reset=s.context.sxBootstrap({action:'resetDeleted',username:'admin',password:'admin-secret'});assert.equal(reset.reset,true);assert.ok(reset.setupCode);
+  assert.equal(s.props.get('CLOUD_FILE'),undefined);assert.equal(s.files.get(oldFile).trashed,false);assert.equal(s.context.sxHealth().initialized,false);assert.equal(s.context.sxHealth().deleted,false);
+  s.context.sxBootstrap({setupCode:reset.setupCode,organizationName:'Đội Xe Mới',adminName:'Admin mới',password:'new-admin-secret'});
+  const fresh=s.login('admin','new-admin-secret');assert.equal(fresh.data.organization.name,'Đội Xe Mới');assert.equal(fresh.data.cars.length,0);assert.throws(()=>s.api(admin.token,'read'),/thu hồi/);
+});
 test('NSD own transactions, handover revokes rights immediately, return restores rights and reminders',()=>{
   const {s,admin:a}=setup(),one=create(s,a,'driver1'),two=create(s,a,'driver2'),c=car(s,a);
   s.api(a.token,'assign',{carId:c.id,userId:one.data.me.id});
