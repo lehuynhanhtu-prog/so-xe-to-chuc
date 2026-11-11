@@ -7,6 +7,12 @@ on:
         description: 'URL /exec của Apps Script thuộc Google chủ mới'
         required: true
         type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-android-endpoint.yml'
+      - 'tools/SignAndroidConfig.java'
+      - 'android/service-config-public-key.b64'
 
 permissions:
   contents: write
@@ -34,7 +40,7 @@ jobs:
           java-version: '17'
       - name: Validate official Apps Script URL
         env:
-          SERVICE_URL: ${{ inputs.service_url }}
+          SERVICE_URL: ${{ inputs.service_url || 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec' }}
         run: '[[ "$SERVICE_URL" =~ ^https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec$ ]]'
       - id: revision
         name: Allocate the next configuration revision
@@ -48,7 +54,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          SERVICE_URL: ${{ inputs.service_url }}
+          SERVICE_URL: ${{ inputs.service_url || 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec' }}
           REVISION: ${{ steps.revision.outputs.value }}
         run: |
           test -n "$ANDROID_KEYSTORE_BASE64"
