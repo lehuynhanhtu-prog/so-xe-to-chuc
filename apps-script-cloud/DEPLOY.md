@@ -53,7 +53,10 @@ APK 4.8.3 hiện tại mở trang Pages bằng trình duyệt hệ thống; Wind
 - Tệp tối đa 2 MB, 5 tệp/bản ghi. JSON tối đa 32 MB; gói nhập tối đa 64 MB. Gói backup mã hóa có giới hạn riêng để phù hợp bộ nhớ Apps Script; dịch vụ báo lỗi trước khi thay dữ liệu nếu vượt giới hạn. Cần Internet, không có hàng đợi ngoại tuyến.
 - Thư mục dữ liệu chỉ do Google chủ sở hữu. Đừng sửa JSON thủ công trong lúc có người dùng. Sao lưu thường xuyên, trước khi triển khai hoặc phục hồi.
 - Xóa tổ chức khóa dữ liệu và mọi phiên; tệp riêng tư được giữ lại để chủ Google có thể phục hồi qua deployment mới từ backup. Không xóa tệp khác của chủ Google.
-- Đổi Google chủ: xuất backup đầy đủ, tạo deployment mới bằng Google mới, nhập backup tại màn hình thiết lập rồi cập nhật URL. Không chuyển khóa dịch vụ hay token Google qua thiết bị NSD.
+- Đổi Google chủ với dữ liệu nhỏ: vẫn có thể xuất/nhập gói sao lưu đầy đủ tối đa 64 MB.
+- Đổi Google chủ với dữ liệu hoặc tệp lớn: trên Google mới, triển khai cùng mã Apps Script, chạy `initializeDeployment_`, lấy mã thiết lập và URL `/exec`. Trên ứng dụng cũ vào **Tổ chức → Sao lưu & Phục hồi → Chuyển Google chủ**, nhập URL mới, mã thiết lập, tên tổ chức và mật khẩu Admin. Công cụ chuyển dữ liệu nền trước, sau đó chia từng tệp thành các phần 384 KB, xác nhận từng tệp ở Google mới và chỉ kích hoạt dữ liệu khi đã nhận đủ. Không đóng trang trong lúc chuyển; Google cũ được giữ nguyên để dự phòng.
+- Sau khi chuyển thành công, cập nhật `web/cloud-config.js` và build lại APK bằng workflow **Build So Xe Android** với input `service_url` là URL `/exec` mới. APK được ký bằng khóa 4.7 hiện có và nhúng cố định đúng dịch vụ của Google chủ mới; không cấp APK cũ cho NSD sau khi đổi chủ.
+- Không chuyển khóa dịch vụ, token Google hoặc mật khẩu Google qua thiết bị NSD. Mã thiết lập một lần chỉ nhập trong công cụ chuyển và không ghi vào dữ liệu tổ chức.
 - `apps-script/` là dịch vụ lịch sử khác, được giữ để kiểm thử/tương thích; deployment mới chỉ dùng `apps-script-cloud/`.
 
 Tài liệu Google: [Web apps](https://developers.google.com/apps-script/guides/web), [manifest access/executeAs](https://developers.google.com/apps-script/manifest/web-app-api-executable), [hạn mức](https://developers.google.com/apps-script/guides/services/quotas).

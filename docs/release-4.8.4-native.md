@@ -3,6 +3,9 @@
 - Android 7+; giao diện nghiệp vụ chạy bằng Android Views, không mở trình duyệt khi sử dụng.
 - Đăng nhập bằng tên đăng nhập và mật khẩu do Admin cấp; NSD không cần tài khoản Google.
 - Dữ liệu đi qua API HTTPS của Apps Script và được thực thi dưới tài khoản Google chủ dữ liệu.
+- Cho phép xóa NSD sau khi Admin đã xóa toàn bộ xe và dữ liệu nghiệp vụ liên quan; nhật ký kiểm toán vẫn được giữ để truy vết nhưng không còn chặn thu hồi tài khoản.
+- Thêm công cụ chuyển Google chủ theo từng phần, không phụ thuộc giới hạn gói sao lưu 64 MB; dữ liệu mới chỉ được kích hoạt sau khi tất cả tệp đã xác nhận đủ.
+- Workflow Android nhận URL Apps Script mới và build lại APK đã ký, nhúng đúng Google chủ mới.
 - Giữ nguyên package `vn.soxe.organization` và khóa ký từ 4.7/4.8.3 để cài cập nhật đè.
 - Phiên đăng nhập chỉ giữ trong bộ nhớ ứng dụng; thông tin đăng nhập sinh trắc học được bảo vệ bằng Android Keystore.
 - Có xe, chi phí, bàn giao, phân công, cảnh báo, báo cáo, tệp đính kèm, sao lưu/phục hồi và quản lý NSD theo phân quyền phía máy chủ.

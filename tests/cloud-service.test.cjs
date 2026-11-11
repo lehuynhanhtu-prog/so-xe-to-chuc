@@ -22,6 +22,17 @@ test('owner-only bootstrap, credentials, session reset, logout and view-only per
   const serialized=JSON.stringify(r);for(const secret of ['driveFileId','rootKey','memberKey','legacyCredential','"password"','sessions','ownerEmail'])assert.equal(serialized.includes(secret),false,secret);
   s.api(a.token,'logout');assert.throws(()=>s.api(a.token,'read'),/thu hồi/);assert.equal(s.locked,false);
 });
+test('Admin can delete an NSD after every related vehicle and business record is deleted',()=>{
+  const {s,admin}=setup(),driver=create(s,admin,'driver-delete'),c=car(s,admin);
+  s.api(admin.token,'assign',{carId:c.id,userId:driver.data.me.id});
+  s.api(driver.token,'saveTransaction',tx(c.id));
+  assert.throws(()=>s.api(admin.token,'deleteUser',{id:driver.data.me.id}),/phân công|giao dịch|bàn giao/);
+  s.api(admin.token,'deleteCar',{id:c.id,version:c.version,confirmation:c.plate});
+  const removed=s.api(admin.token,'deleteUser',{id:driver.data.me.id});
+  assert.equal(removed.data.users.some(u=>u.id===driver.data.me.id),false);
+  assert.ok(s.db().audit.some(entry=>entry.actor===driver.data.me.id),'audit history remains intact');
+  assert.throws(()=>s.login('driver-delete','driver-delete-secret'),/không đúng/);
+});
 test('deleted organization shows a recoverable state and can be replaced after Admin verification',()=>{
   const {s,admin}=setup(),viewer=create(s,admin,'viewer1','viewer'),oldFile=s.props.get('CLOUD_FILE');
   const result=s.api(admin.token,'deleteOrganization',{confirmation:'Đội Xe',password:'admin-secret'});assert.equal(result.deleted,true);
@@ -79,6 +90,19 @@ test('encrypted cloud backup restores attachments, versions and credentials and 
   const restored=s.api(a.token,'restoreBackup',{backup:b.backup,password:'backup-secret',confirmation:'Đội Xe',adminPassword:'admin-secret',expectedRevision:rev});assert.equal(restored.restored,true);assert.throws(()=>s.api(a.token,'read'),/thu hồi/);assert.throws(()=>s.api(d.token,'read'),/thu hồi/);
   const fresh=s.login('driver1','driver1-secret'),t=fresh.data.transactions[0];assert.ok(t.version>old.version);assert.equal(s.api(fresh.token,'attachment',{transactionId:t.id,id:t.attachments[0].id}).file.base64,'YWJj');
   const destination=cloud();destination.context.sxBootstrap({setupCode:destination.setup,action:'import',backup:b.backup,password:'backup-secret',confirmation:'Đội Xe'});assert.equal(destination.login().data.cars.length,1);
+});
+test('owner transfer streams attachments in parts and activates the new Google only after completion',()=>{
+  const source=cloud();source.bootstrap();const admin=source.login(),driver=create(source,admin,'driver-transfer'),c=car(source,admin);
+  source.api(admin.token,'assign',{carId:c.id,userId:driver.data.me.id});
+  const binary=Buffer.alloc(900000);for(let i=0;i<binary.length;i++)binary[i]=i%251;
+  source.api(driver.token,'saveTransaction',tx(c.id,{attachments:[{name:'large.bin',type:'application/octet-stream',base64:binary.toString('base64')}]}));
+  const destination=cloud(),targetUrl='https://script.google.com/macros/s/target-transfer-test/exec';
+  source.context.UrlFetchApp={fetch(url,options){assert.equal(url,targetUrl);const output=destination.context.doPost({postData:{contents:options.payload}});return {getResponseCode:()=>200,getContentText:()=>output.value};}};
+  const start=source.api(admin.token,'ownerTransferStart',{targetUrl,setupCode:destination.setup,confirmation:'Đội Xe',adminPassword:'admin-secret'});assert.equal(start.totalFiles,1);assert.equal(destination.context.sxHealth().initialized,false);
+  const next=source.api(admin.token,'ownerTransferNext',start);assert.equal(next.done,true);assert.equal(destination.context.sxHealth().initialized,false,'partial transfer is never activated');
+  const finished=source.api(admin.token,'ownerTransferFinish',next);assert.equal(finished.transferred,true);assert.equal(finished.requiresApkBuild,true);assert.equal(destination.context.sxHealth().initialized,true);
+  const moved=destination.login('driver-transfer','driver-transfer-secret'),record=moved.data.transactions[0],downloaded=destination.api(moved.token,'attachment',{transactionId:record.id,id:record.attachments[0].id}).file;
+  assert.deepEqual(Buffer.from(downloaded.base64,'base64'),binary);assert.equal(source.db().transactions.length,1,'source data remains untouched');
 });
 test('full 4.8.3 backup migration retains passwords and history without reading or modifying source Google',async()=>{
   const {MemoryDrive}=await import('./memory-drive.mjs'),{DualDrive}=await import('../web/dual-drive.mjs'),{DualService}=await import('../web/dual-service.mjs');

@@ -1,4 +1,9 @@
 plugins { id 'com.android.application' }
+def defaultServiceUrl = 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec'
+def serviceUrl = providers.gradleProperty('soxeServiceUrl').getOrElse(defaultServiceUrl)
+if (!(serviceUrl ==~ /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/)) {
+    throw new GradleException('soxeServiceUrl must be an official Apps Script /exec URL')
+}
 android {
     namespace 'vn.soxe.organization'
     compileSdk 35
@@ -8,8 +13,10 @@ android {
         targetSdk 35
         versionCode 485
         versionName '4.8.4'
+        buildConfigField 'String', 'SO_XE_SERVICE_URL', '"' + serviceUrl + '"'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+    buildFeatures { buildConfig true }
     buildTypes { release { minifyEnabled false } }
 }
 

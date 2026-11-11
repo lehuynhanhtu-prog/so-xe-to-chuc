@@ -10,6 +10,16 @@ APK 4.8.4 dùng Android Views cho toàn bộ màn hình nghiệp vụ. WebView �
 - Token phiên chỉ nằm trong bộ nhớ tiến trình. Nếu bật sinh trắc học, tên đăng nhập và mật khẩu được mã hóa bằng Android Keystore qua `BiometricVault`.
 - Chỉ cho phép HTTPS tới `script.google.com` và `script.googleusercontent.com`; WebView cục bộ chặn mọi yêu cầu mạng.
 
+### Build lại sau khi đổi Google chủ
+
+APK nhúng cố định URL Apps Script của Google chủ để NSD không phải cấu hình kỹ thuật. Sau khi công cụ **Chuyển Google chủ** hoàn tất, bắt buộc build lại bằng URL `/exec` mới:
+
+```bash
+gradle -PsoxeServiceUrl="https://script.google.com/macros/s/DEPLOYMENT_ID_MOI/exec" :app:assembleRelease
+```
+
+Trên GitHub, chạy workflow **Build So Xe Android** và nhập URL vào trường `service_url`. Workflow kiểm tra URL, build, ký bằng khóa phát hành 4.7 và cập nhật APK 4.8.4 Native. Không tiếp tục cấp APK đã nhúng URL Google chủ cũ.
+
 ## Phiên bản và ký APK
 
 - package: `vn.soxe.organization`

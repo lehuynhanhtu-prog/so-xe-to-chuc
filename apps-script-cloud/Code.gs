@@ -4,7 +4,7 @@
  */
 var crypto = {randomUUID:function(){return Utilities.getUuid();}};
 var structuredClone=function(value){return JSON.parse(JSON.stringify(value));};
-const CLOUD_FORMAT_='soxe-cloud-v1', CLOUD_MAX_=32*1024*1024, CLOUD_BACKUP_MAX_=64*1024*1024;
+const CLOUD_FORMAT_='soxe-cloud-v1', CLOUD_MAX_=32*1024*1024, CLOUD_BACKUP_MAX_=64*1024*1024, CLOUD_TRANSFER_PART_=384*1024;
 function doGet(){return HtmlService.createHtmlOutputFromFile('Index').setTitle('Sổ Xe Tổ Chức').addMetaTag('viewport','width=device-width, initial-scale=1');}
 function doPost(e){
   let envelope;
@@ -15,6 +15,7 @@ function doPost(e){
     if(method==='health')envelope={ok:true,result:sxHealth()};
     else if(method==='login')envelope={ok:true,result:sxLogin(request.request||{})};
     else if(method==='api')envelope={ok:true,result:sxApi(request.request||{})};
+    else if(method==='ownerTransfer')envelope={ok:true,result:ownerTransfer_(request.request||{})};
     else throw new Error('RPC không hợp lệ.');
   }catch(error){envelope={ok:false,error:error?.message||'Dịch vụ không xử lý được yêu cầu.'};}
   return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(ContentService.MimeType.JSON);
@@ -161,6 +162,32 @@ function decodeBackup_(a){
   }
   return {db,files:b.files,createdAt:b.createdAt};
 }
+function transferStateFile_(){const id=props_().getProperty('OWNER_TRANSFER_FILE');if(!id)throw new Error('Chưa bắt đầu chuyển dữ liệu sang Google chủ này.');return DriveApp.getFileById(id);}
+function transferState_(){const file=transferStateFile_();const state=JSON.parse(file.getBlob().getDataAsString());if(state?.format!=='soxe-owner-transfer-v1')throw new Error('Trạng thái chuyển dữ liệu không hợp lệ.');return {file,state};}
+function transferAuth_(state,a){if(a.transferId!==state.transferId||!equal_(hash_(String(a.secret||'')),state.secretHash))throw new Error('Phiên chuyển dữ liệu không hợp lệ hoặc đã hết hạn.');}
+function saveTransferState_(file,state){file.setContent(JSON.stringify(state));}
+function ownerTransfer_(a){return locked_(()=>{
+  const p=props_();
+  if(a.action==='start'){
+    setup_(a.setupCode);if(!/^[0-9a-f-]{36}$/i.test(a.transferId||'')||typeof a.secret!=='string'||a.secret.length<32)throw new Error('Mã phiên chuyển dữ liệu không hợp lệ.');
+    const existing=p.getProperty('OWNER_TRANSFER_FILE');if(existing){const current=JSON.parse(DriveApp.getFileById(existing).getBlob().getDataAsString());if(current.transferId===a.transferId&&equal_(current.secretHash,hash_(a.secret)))return {started:true,totalFiles:Object.keys(current.expected||{}).length,resumed:true};try{DriveApp.getFolderById(p.getProperty('OWNER_TRANSFER_FOLDER')).setTrashed(true);}catch{}p.deleteProperty('OWNER_TRANSFER_FILE');p.deleteProperty('OWNER_TRANSFER_FOLDER');}
+    const db=structuredClone(a.db);validateDb_(db);if(bytes_(JSON.stringify(db)).length>CLOUD_MAX_)throw new Error('Dữ liệu nghiệp vụ vượt 32 MB.');if(!Array.isArray(a.files)||a.files.length>10000)throw new Error('Danh sách tệp chuyển không hợp lệ.');
+    const expected={};for(const f of a.files){if(!f||typeof f.id!=='string'||expected[f.id]||typeof f.name!=='string'||typeof f.type!=='string'||!Number.isSafeInteger(f.size)||f.size<0||f.size>2*1024*1024)throw new Error('Thông tin tệp chuyển không hợp lệ.');expected[f.id]={name:f.name,type:f.type,size:f.size};}
+    for(const ref of attachmentRefs_(db))if(!ref.driveFileId||!expected[ref.driveFileId])throw new Error('Thiếu tệp đính kèm trong danh sách chuyển: '+ref.name);
+    const folder=DriveApp.createFolder('Sổ Xe Tổ Chức · đang chuyển Google chủ'),created=[];try{const dbFile=folder.createFile('owner-transfer-db.json',JSON.stringify(db),MimeType.PLAIN_TEXT);created.push(dbFile.getId());const state={format:'soxe-owner-transfer-v1',transferId:a.transferId,secretHash:hash_(a.secret),dbFileId:dbFile.getId(),expected,parts:{},completed:{},createdAt:new Date().toISOString()};const stateFile=folder.createFile('owner-transfer-state.json',JSON.stringify(state),MimeType.PLAIN_TEXT);created.push(stateFile.getId());p.setProperties({OWNER_TRANSFER_FILE:stateFile.getId(),OWNER_TRANSFER_FOLDER:folder.getId()});return {started:true,totalFiles:Object.keys(expected).length};}catch(e){for(const id of created)try{DriveApp.getFileById(id).setTrashed(true);}catch{}try{folder.setTrashed(true);}catch{}throw e;}
+  }
+  const loaded=transferState_(),state=loaded.state;transferAuth_(state,a);const folder=DriveApp.getFolderById(p.getProperty('OWNER_TRANSFER_FOLDER'));
+  if(a.action==='part'){
+    const meta=state.expected[a.fileId];if(!meta)throw new Error('Tệp không nằm trong danh sách chuyển.');const part=Number(a.part),total=Number(a.total);if(!Number.isSafeInteger(part)||!Number.isSafeInteger(total)||part<0||part>=total||total<1||total>16)throw new Error('Thứ tự phần tệp không hợp lệ.');const bytes=unbase64_(a.data);if(bytes.length>CLOUD_TRANSFER_PART_)throw new Error('Một phần tệp vượt giới hạn.');const entry=state.parts[a.fileId]||{total,ids:{},hashes:{}};if(entry.total!==total)throw new Error('Số phần tệp không khớp.');const digest=hash_(a.data);if(entry.ids[part]){if(entry.hashes[part]!==digest)throw new Error('Phần tệp đã nhận có nội dung khác.');return {received:true,part,resumed:true};}const file=folder.createFile(Utilities.newBlob(Array.from(bytes),MimeType.PLAIN_TEXT,'owner-transfer-part'));entry.ids[part]=file.getId();entry.hashes[part]=digest;state.parts[a.fileId]=entry;saveTransferState_(loaded.file,state);return {received:true,part};
+  }
+  if(a.action==='commitFile'){
+    const meta=state.expected[a.fileId];if(!meta)throw new Error('Tệp không nằm trong danh sách chuyển.');if(state.completed[a.fileId])return {committed:true,resumed:true};const entry=state.parts[a.fileId];if(!entry)throw new Error('Chưa nhận phần dữ liệu của tệp '+meta.name+'.');const bytes=[];for(let i=0;i<entry.total;i++){const id=entry.ids[i];if(!id)throw new Error('Thiếu phần '+(i+1)+' của tệp '+meta.name+'.');for(const b of DriveApp.getFileById(id).getBlob().getBytes())bytes.push(b&255);}if(bytes.length!==meta.size||bytes.length>2*1024*1024)throw new Error('Kích thước tệp '+meta.name+' không khớp.');const finalFile=folder.createFile(Utilities.newBlob(bytes,meta.type,meta.name));state.completed[a.fileId]=finalFile.getId();for(const id of Object.values(entry.ids))try{DriveApp.getFileById(id).setTrashed(true);}catch{}delete state.parts[a.fileId];saveTransferState_(loaded.file,state);return {committed:true,fileName:meta.name};
+  }
+  if(a.action==='finish'){
+    const ids=Object.keys(state.expected);if(ids.some(id=>!state.completed[id]))throw new Error('Chưa nhận đủ '+(ids.length-Object.keys(state.completed).length)+' tệp.');const db=JSON.parse(DriveApp.getFileById(state.dbFileId).getBlob().getDataAsString());for(const ref of attachmentRefs_(db))ref.driveFileId=state.completed[ref.driveFileId];const next=prepareDb_(db);const dataFile=folder.createFile('so-xe-cloud.json',JSON.stringify(next),MimeType.PLAIN_TEXT);p.setProperties({CLOUD_FILE:dataFile.getId(),CLOUD_FOLDER:folder.getId()});p.deleteProperty('CLOUD_SETUP');p.deleteProperty('OWNER_TRANSFER_FILE');p.deleteProperty('OWNER_TRANSFER_FOLDER');try{DriveApp.getFileById(state.dbFileId).setTrashed(true);}catch{}try{loaded.file.setTrashed(true);}catch{}return {finished:true,summary:summary_(next,state.createdAt)};
+  }
+  throw new Error('Thao tác chuyển Google chủ không hợp lệ.');
+});}
 function materialize_(db,files,folder,created){const map=new Map(files.map(f=>[f.id,f])),names=new Set();for(const r of [...db.cars,...db.transactions])for(const f of r.attachments||[]){const old=f.driveFileId,saved=map.get(old),base64=saved?.binary||f.base64,type=f.type||saved?.type||'application/octet-stream';const car=db.cars.includes(r)?r:db.cars.find(c=>c.id===r.carId),isCar=db.cars.includes(r),date=isCar?(f.namingDate||LedgerCore.attachmentToday()):r.date,stem=LedgerCore.attachmentStem({plate:car.plate,category:isCar?'ownership':r.category,date}),original=f.originalName||f.name;f.name=LedgerCore.uniqueAttachmentName(stem,original,names,f.name);names.add(f.name.toLocaleLowerCase('vi-VN'));const file=folder.createFile(Utilities.newBlob(Array.from(unbase64_(base64)),type,f.name));created.push(file.getId());f.driveFileId=file.getId();f.size=unbase64_(base64).length;f.type=type;f.namingDate=date;f.originalName=original;delete f.base64;}}
 function file_(db,u,a){const p=view_(db,u),r=a.transactionId?p.transactions.find(t=>t.id===a.transactionId):p.cars.find(c=>c.id===a.carId);if(!r?.attachments?.some(f=>f.id===a.id))throw new Error('Không có quyền xem tệp.');const full=a.transactionId?db.transactions.find(t=>t.id===a.transactionId):db.cars.find(c=>c.id===a.carId),f=full.attachments.find(f=>f.id===a.id);return {file:{id:f.id,name:f.name,type:f.type,size:f.size,base64:base64_(DriveApp.getFileById(f.driveFileId).getBlob().getBytes().map(x=>x&255))}};}
 function requireRecord_(db,u,action,a){
@@ -201,7 +228,7 @@ function mutate_(db,u,action,a,created){
     }
     case 'deleteUser':{
       admin_(u);const t=user_(db,a.id);if(t.id===u.id||t.id===db.users.find(x=>!x.deletedAt&&x.role==='admin')?.id)throw new Error('Không xóa Admin chính hoặc tài khoản hiện tại.');
-      if(t.hasAssignments||db.assignments.some(x=>x.userId===t.id)||db.transactions.some(x=>x.enteredBy===t.id||x.enteredFor===t.id)||db.handovers.some(x=>[x.enteredBy,x.fromUserId,x.toUserId].includes(t.id))||db.audit.some(x=>x.actor===t.id))throw new Error('NSD đã có lịch sử. Không xóa để bảo toàn dữ liệu.');t.deletedAt=new Date().toISOString();t.sessionVersion++;t.sessions=[];break;
+      if(db.assignments.some(x=>x.userId===t.id)||db.transactions.some(x=>x.enteredBy===t.id||x.enteredFor===t.id)||db.handovers.some(x=>[x.enteredBy,x.fromUserId,x.toUserId].includes(t.id)))throw new Error('NSD vẫn còn phân công, giao dịch hoặc bàn giao. Xóa dữ liệu liên quan trước khi xóa NSD.');t.deletedAt=new Date().toISOString();t.sessionVersion++;t.sessions=[];break;
     }
     case 'saveCar':{
       admin_(u);const old=a.id?db.cars.find(x=>x.id===a.id):null;if(a.id&&!old)throw new Error('Xe đã xóa.');version_(old,a.version);const plate=text_(a.plate,30).toUpperCase();if(db.cars.some(c=>c.plate===plate&&c.id!==a.id))throw new Error('Biển số đã tồn tại.');
@@ -225,6 +252,12 @@ function mutate_(db,u,action,a,created){
 }
 function syncFileNames_(db,before,warnings){const prior=new Map(before.map(f=>[f.driveFileId,f.name]));for(const f of attachmentRefs_(db).filter(f=>prior.get(f.driveFileId)!==f.name))try{const file=DriveApp.getFileById(f.driveFileId);if(file.getName()!==f.name)file.setName(f.name);}catch{warnings.push('Đã lưu dữ liệu nhưng chưa đồng bộ được tên tệp '+f.name);}}
 function export_(db,a){admin_(a.u);const files=[];for(const f of attachmentRefs_(db))if(!files.some(x=>x.id===f.driveFileId))files.push({id:f.driveFileId,attachmentId:f.id,name:f.name,type:f.type,binary:base64_(DriveApp.getFileById(f.driveFileId).getBlob().getBytes().map(x=>x&255))});const copy=structuredClone(db);for(const u of copy.users)u.sessions=[];const value={format:'soxe-cloud-backup',version:1,createdAt:new Date().toISOString(),db:copy,files};if(JSON.stringify(value).length>CLOUD_BACKUP_MAX_/2)throw new Error('Bản sao lưu quá lớn cho dịch vụ này.');return {backup:JSON.stringify(lockBackup_(value,a.password)),summary:summary_(db,value.createdAt)};}
+function ownerUrl_(value){const url=text_(value,500);if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url))throw new Error('Địa chỉ Apps Script mới phải là URL /exec chính thức.');return url;}
+function ownerFiles_(db){const files=[],seen=new Set();for(const ref of attachmentRefs_(db)){if(!ref.driveFileId||seen.has(ref.driveFileId))continue;const file=DriveApp.getFileById(ref.driveFileId);if(file.isTrashed())throw new Error('Tệp đã bị xóa trên Drive: '+ref.name);const size=typeof file.getSize==='function'?file.getSize():file.getBlob().getBytes().length;if(size>2*1024*1024)throw new Error('Tệp vượt 2 MB: '+ref.name);seen.add(ref.driveFileId);files.push({id:ref.driveFileId,name:ref.name,type:ref.type||'application/octet-stream',size});}return files;}
+function ownerPost_(url,request){const response=UrlFetchApp.fetch(ownerUrl_(url),{method:'post',contentType:'application/json; charset=utf-8',payload:JSON.stringify({method:'ownerTransfer',request}),followRedirects:true,muteHttpExceptions:true});let envelope;try{envelope=JSON.parse(response.getContentText());}catch{throw new Error('Google chủ mới không trả dữ liệu hợp lệ.');}if(response.getResponseCode()<200||response.getResponseCode()>=300||!envelope?.ok)throw new Error(envelope?.error||'Không chuyển được dữ liệu sang Google chủ mới.');return envelope.result||{};}
+function ownerTransferStart_(db,u,a){admin_(u);if(a.confirmation!==db.name||!verify_(u,a.adminPassword))throw new Error('Tên tổ chức hoặc mật khẩu Admin không đúng.');const targetUrl=ownerUrl_(a.targetUrl),files=ownerFiles_(db),copy=structuredClone(db);for(const account of copy.users)account.sessions=[];const transferId=Utilities.getUuid(),secret=base64_(random_(32));ownerPost_(targetUrl,{action:'start',setupCode:text_(a.setupCode,120),transferId,secret,db:copy,files});return {transferId,secret,targetUrl,revision:db.revision,index:0,totalFiles:files.length,summary:summary_(db),requiresApkBuild:true};}
+function ownerTransferNext_(db,u,a){admin_(u);if(a.revision!==db.revision)throw new Error('Dữ liệu đã thay đổi trong lúc chuyển. Bắt đầu lại để bảo đảm đầy đủ.');const targetUrl=ownerUrl_(a.targetUrl),files=ownerFiles_(db),index=Number(a.index);if(!Number.isSafeInteger(index)||index<0||index>=files.length)throw new Error('Vị trí tệp chuyển không hợp lệ.');const descriptor=files[index],bytes=DriveApp.getFileById(descriptor.id).getBlob().getBytes().map(x=>x&255),total=Math.max(1,Math.ceil(bytes.length/CLOUD_TRANSFER_PART_));for(let part=0;part<total;part++){const block=new Uint8Array(bytes.slice(part*CLOUD_TRANSFER_PART_,Math.min(bytes.length,(part+1)*CLOUD_TRANSFER_PART_)));ownerPost_(targetUrl,{action:'part',transferId:a.transferId,secret:a.secret,fileId:descriptor.id,part,total,data:base64_(block)});}ownerPost_(targetUrl,{action:'commitFile',transferId:a.transferId,secret:a.secret,fileId:descriptor.id});return {transferId:a.transferId,secret:a.secret,targetUrl,revision:a.revision,index:index+1,totalFiles:files.length,fileName:descriptor.name,done:index+1===files.length,requiresApkBuild:true};}
+function ownerTransferFinish_(db,u,a){admin_(u);if(a.revision!==db.revision)throw new Error('Dữ liệu đã thay đổi trong lúc chuyển. Chưa kích hoạt dữ liệu ở Google mới.');const targetUrl=ownerUrl_(a.targetUrl),result=ownerPost_(targetUrl,{action:'finish',transferId:a.transferId,secret:a.secret});return Object.assign({},result,{transferred:true,newServiceUrl:targetUrl,requiresApkBuild:true});}
 function sxApi(request){return locked_(()=>{
   const db=load_(),auth=auth_(db,request.token),u=auth.u,action=request.action,a=request.args||{};
   if(action==='logout'){u.sessions=u.sessions.filter(s=>s.nonce!==auth.t.nonce);save_(db);return {loggedOut:true};}
@@ -236,6 +269,9 @@ function sxApi(request){return locked_(()=>{
   if(action==='read')return response_(db,u);
   if(action==='attachment')return file_(db,u,a);
   if(action==='export')return export_(db,Object.assign({},a,{u}));
+  if(action==='ownerTransferStart')return ownerTransferStart_(db,u,a);
+  if(action==='ownerTransferNext')return ownerTransferNext_(db,u,a);
+  if(action==='ownerTransferFinish')return ownerTransferFinish_(db,u,a);
   if(action==='inspectBackup'){admin_(u);const b=decodeBackup_(a);if(b.db.id!==db.id)throw new Error('Bản sao lưu thuộc tổ chức khác.');return {summary:summary_(b.db,b.createdAt)};}
   if(action==='restoreBackup'){
     admin_(u);if(a.confirmation!==db.name||!verify_(u,a.adminPassword))throw new Error('Tên tổ chức hoặc mật khẩu Admin không đúng.');if(a.expectedRevision!==db.revision)throw new Error('Dữ liệu đã thay đổi. Kiểm tra lại trước khi phục hồi.');const b=decodeBackup_(a);if(b.db.id!==db.id)throw new Error('Bản sao lưu thuộc tổ chức khác.');

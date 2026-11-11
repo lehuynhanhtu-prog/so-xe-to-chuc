@@ -25,7 +25,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Native data bridge. All visible application screens are Android Views. */
 final class LedgerEngine {
-    private static final String SERVICE_URL="https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec";
+    private static final String SERVICE_URL=BuildConfig.SO_XE_SERVICE_URL;
     interface Callback { void accept(JSONObject result, String error); }
     private final WebView runtime;
     private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());

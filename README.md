@@ -10,7 +10,7 @@ Bản một Google dùng Apps Script chạy dưới tài khoản chủ dữ li�
 - `web/chuyen-doi.html` / `docs/chuyen-doi.html` là trang riêng cho Admin mở dịch vụ hoặc mở **bản 4.8.3 hai Google** để sao lưu; không chuyển dữ liệu tự động.
 - Bản cũ giữ tại `web/legacy-two-google.html` / `docs/legacy-two-google.html`. Chỉ tiếp tục nhập ở một bản sau khi chuyển.
 - JSON nghiệp vụ lưu riêng tư trên Drive chủ; mật khẩu dùng PBKDF2-SHA256 có salt. Backup đầy đủ mã hóa AES-GCM. NSD chỉ nhận dữ liệu đã lọc, không nhận token Google, đường dẫn Drive hay thông tin kiểm tra mật khẩu.
-- Giới hạn triển khai ban đầu: dữ liệu JSON 32 MB, mỗi tệp 2 MB, 5 tệp/bản ghi, gói nhập 64 MB. Cần kiểm thử tải và quyền Google trên deployment thật trước khi chuyển sản xuất.
+- Giới hạn dữ liệu nghiệp vụ JSON là 32 MB; mỗi tệp 2 MB và 5 tệp/bản ghi. Gói sao lưu tải về/nhập thủ công vẫn giới hạn 64 MB. Công cụ **Chuyển Google chủ** không gom toàn bộ tệp vào một gói: tệp được chuyển và xác nhận theo từng phần 384 KB nên tổng tệp đính kèm có thể lớn hơn 64 MB.
 
 Kiểm tra: `npm test`, `npm run check`, `npm run test:cloud-ui` (cần Chromium), `npm run test:ui` cho bản hai Google được giữ lại.
 
