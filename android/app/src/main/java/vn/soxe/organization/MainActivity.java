@@ -143,6 +143,7 @@ public class MainActivity extends FragmentActivity {
         text(body,"Đăng nhập bằng tài khoản do Admin cấp. Không cần tài khoản Google trên thiết bị.",14,false);
     }
     private void doLogin(String username,String password){
+        if(engine==null||!ready){message("Ứng dụng đang kiểm tra cấu hình máy chủ. Hãy thử lại sau vài giây.");return;}
         if(username.trim().isEmpty()||password.isEmpty()){message("Nhập tên đăng nhập và mật khẩu.");return;}
         loginName=username.trim();loginPassword=password;
         loginAttempt.begin(loginName,loginPassword,false);
