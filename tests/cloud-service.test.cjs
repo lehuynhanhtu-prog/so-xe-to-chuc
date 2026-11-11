@@ -100,7 +100,7 @@ test('owner transfer streams attachments in parts and activates the new Google o
   source.context.UrlFetchApp={fetch(url,options){assert.equal(url,targetUrl);const output=destination.context.doPost({postData:{contents:options.payload}});return {getResponseCode:()=>200,getContentText:()=>output.value};}};
   const start=source.api(admin.token,'ownerTransferStart',{targetUrl,setupCode:destination.setup,confirmation:'Đội Xe',adminPassword:'admin-secret'});assert.equal(start.totalFiles,1);assert.equal(destination.context.sxHealth().initialized,false);
   const next=source.api(admin.token,'ownerTransferNext',start);assert.equal(next.done,true);assert.equal(destination.context.sxHealth().initialized,false,'partial transfer is never activated');
-  const finished=source.api(admin.token,'ownerTransferFinish',next);assert.equal(finished.transferred,true);assert.equal(finished.requiresApkBuild,true);assert.equal(destination.context.sxHealth().initialized,true);
+  const finished=source.api(admin.token,'ownerTransferFinish',next);assert.equal(finished.transferred,true);assert.equal(finished.requiresConfigUpdate,true);assert.equal(finished.requiresApkBuild,undefined);assert.equal(destination.context.sxHealth().initialized,true);
   const moved=destination.login('driver-transfer','driver-transfer-secret'),record=moved.data.transactions[0],downloaded=destination.api(moved.token,'attachment',{transactionId:record.id,id:record.attachments[0].id}).file;
   assert.deepEqual(Buffer.from(downloaded.base64,'base64'),binary);assert.equal(source.db().transactions.length,1,'source data remains untouched');
 });

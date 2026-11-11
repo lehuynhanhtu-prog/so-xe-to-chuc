@@ -76,6 +76,18 @@ public class NativeLedgerTest {
             onView(withText("NSD / Admin chỉ xem")).check(doesNotExist());
         }
     }
+    @Test public void dynamicEndpointAcceptsOnlyOfficialAppsScriptUrls() {
+        assertTrue(ServiceEndpointResolver.isOfficialServiceUrl("https://script.google.com/macros/s/Abc_123-xYz/exec"));
+        assertFalse(ServiceEndpointResolver.isOfficialServiceUrl("http://script.google.com/macros/s/Abc/exec"));
+        assertFalse(ServiceEndpointResolver.isOfficialServiceUrl("https://script.google.com.evil.example/macros/s/Abc/exec"));
+        assertFalse(ServiceEndpointResolver.isOfficialServiceUrl("https://user@script.google.com/macros/s/Abc/exec"));
+        assertFalse(ServiceEndpointResolver.isOfficialServiceUrl("https://script.google.com/macros/s/Abc/exec?redirect=evil"));
+    }
+    @Test public void dynamicEndpointRejectsUnsignedConfiguration() throws Exception {
+        String invalid="{\"schema\":1,\"revision\":1,\"serviceUrl\":\""+BuildConfig.SO_XE_SERVICE_URL+"\",\"signatureAlgorithm\":\"SHA256withRSA\",\"signature\":\"AA==\"}";
+        try { ServiceEndpointResolver.verifyConfiguration(invalid,BuildConfig.SO_XE_CONFIG_PUBLIC_KEY);fail("Unsigned config was accepted"); }
+        catch(java.security.SignatureException|SecurityException expected) { assertNotNull(expected); }
+    }
     @androidx.annotation.RequiresApi(29)
     private static void screenshot(MainActivity a,String name) {
         try {

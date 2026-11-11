@@ -25,7 +25,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Native data bridge. All visible application screens are Android Views. */
 final class LedgerEngine {
-    private static final String SERVICE_URL=BuildConfig.SO_XE_SERVICE_URL;
+    private final String serviceUrl;
     interface Callback { void accept(JSONObject result, String error); }
     private final WebView runtime;
     private final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
@@ -39,8 +39,11 @@ final class LedgerEngine {
     private volatile String trace="created";
     private volatile String lastRequest="";
     private Runnable onReady;
+    LedgerEngine(Context context, Runnable onReady) { this(context,BuildConfig.SO_XE_SERVICE_URL,onReady); }
     @SuppressLint("SetJavaScriptEnabled")
-    LedgerEngine(Context context, Runnable onReady) {
+    LedgerEngine(Context context, String serviceUrl, Runnable onReady) {
+        if(!ServiceEndpointResolver.isOfficialServiceUrl(serviceUrl))throw new SecurityException("Địa chỉ Apps Script không hợp lệ.");
+        this.serviceUrl=serviceUrl;
         this.onReady = onReady;
         runtime = new WebView(context);
         runtime.getSettings().setJavaScriptEnabled(true);
@@ -85,7 +88,7 @@ final class LedgerEngine {
                 HttpsURLConnection connection=null;
                 try {
                     if(json==null||json.isEmpty()||json.length()>80*1024*1024)throw new java.io.IOException("Yêu cầu Apps Script vượt giới hạn.");
-                    byte[] payload=json.getBytes(StandardCharsets.UTF_8);URL target=new URL(SERVICE_URL);boolean post=true;
+                    byte[] payload=json.getBytes(StandardCharsets.UTF_8);URL target=new URL(LedgerEngine.this.serviceUrl);boolean post=true;
                     for(int redirect=0;redirect<5;redirect++){
                         String host=target.getHost();
                         if(!"https".equals(target.getProtocol())||!("script.google.com".equals(host)||"script.googleusercontent.com".equals(host)))throw new SecurityException("Địa chỉ Apps Script không hợp lệ.");
@@ -113,7 +116,7 @@ final class LedgerEngine {
             String frameRuntime="if(location.pathname==='/userCodeAppPanel'&&location.hostname.endsWith('-script.googleusercontent.com')){Native.trace('panel');addEventListener('message',function(e){var d=e.data,f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(e.origin==='https://script.google.com'&&e.source===parent&&d&&d.type==='sx-native-call'&&w&&w.nativeCall)w.nativeCall(d.id,d.action,d.args||{});});(function install(){try{var f=document.getElementById('userHtmlFrame'),w=f&&f.contentWindow;if(w&&w.google&&w.google.script&&w.google.script.run&&!w.nativeCall){Native.trace('rpc');var s=w.document.createElement('script');s.text="+source+";w.document.documentElement.appendChild(s);s.remove();if(w.nativeCall){Native.trace('installed');return;}}}catch(e){Native.trace('frame:'+e.message);}setTimeout(install,50);}());}";
             WebViewCompat.addDocumentStartJavaScript(runtime,frameRuntime,Collections.singleton("https://*.googleusercontent.com"));
         }
-        runtime.loadUrl(SERVICE_URL);
+        runtime.loadUrl(serviceUrl);
     }
     void call(String action, JSONObject args, Callback callback) {
         if (!ready) { callback.accept(null, "Bộ xử lý đang khởi động. Hãy thử lại."); return; }
@@ -130,6 +133,6 @@ final class LedgerEngine {
         runtime.setAlpha(0f);runtime.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         parent.addView(runtime,new ViewGroup.LayoutParams(1,1));
     }
-    String debugState(){return "documentStart="+documentStartInjection+", webView="+webViewVersion+", url="+runtime.getUrl()+", trace="+trace+", request="+lastRequest;}
+    String debugState(){return "documentStart="+documentStartInjection+", webView="+webViewVersion+", service="+serviceUrl+", url="+runtime.getUrl()+", trace="+trace+", request="+lastRequest;}
     void destroy() { destroyed=true;main.removeCallbacksAndMessages(null);callbacks.clear(); onReady = () -> {};if(runtime.getParent() instanceof ViewGroup)((ViewGroup)runtime.getParent()).removeView(runtime);runtime.removeJavascriptInterface("Native"); runtime.destroy(); }
 }

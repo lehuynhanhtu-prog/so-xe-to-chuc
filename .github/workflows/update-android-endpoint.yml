@@ -1,0 +1,75 @@
+name: Update Android service endpoint
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_url:
+        description: 'URL /exec của Apps Script thuộc Google chủ mới'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  sign-and-publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate official Apps Script URL
+        env:
+          SERVICE_URL: ${{ inputs.service_url }}
+        run: '[[ "$SERVICE_URL" =~ ^https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec$ ]]'
+      - id: revision
+        name: Allocate the next configuration revision
+        run: |
+          current=$(node -e "try{console.log(require('./docs/android-service-config.json').revision||0)}catch(e){console.log(0)}")
+          test "$current" -ge 0
+          echo "value=$((current + 1))" >> "$GITHUB_OUTPUT"
+      - name: Sign endpoint configuration with the Android release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SERVICE_URL: ${{ inputs.service_url }}
+          REVISION: ${{ steps.revision.outputs.value }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/so-xe-release.jks"
+          javac -d "$RUNNER_TEMP/config-signer" tools/SignAndroidConfig.java
+          java -cp "$RUNNER_TEMP/config-signer" SignAndroidConfig \
+            "$RUNNER_TEMP/so-xe-release.jks" "$ANDROID_KEY_ALIAS" "$REVISION" "$SERVICE_URL" \
+            android/service-config-public-key.b64 docs/android-service-config.json
+      - name: Commit the signed configuration
+        env:
+          REVISION: ${{ steps.revision.outputs.value }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/android-service-config.json
+          git diff --cached --quiet && exit 0
+          git commit -m "config: update Android endpoint revision $REVISION"
+          git push origin HEAD:main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4

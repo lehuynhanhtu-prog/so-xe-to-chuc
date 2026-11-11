@@ -1,11 +1,6 @@
 name: Build So Xe Android
 on:
   workflow_dispatch:
-    inputs:
-      service_url:
-        description: 'URL /exec của Apps Script thuộc Google chủ dữ liệu'
-        required: true
-        default: 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec'
   push:
     branches: [main]
     paths: ['android/**', '.github/workflows/build-android.yml', 'web/*.mjs', 'tools/build-native-core.mjs']
@@ -32,15 +27,9 @@ jobs:
           gradle-version: '8.9'
       - name: Install Android SDK
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"'
-      - name: Validate embedded Apps Script URL
-        env:
-          SOXE_SERVICE_URL: ${{ inputs.service_url || 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec' }}
-        run: '[[ "$SOXE_SERVICE_URL" =~ ^https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec$ ]]'
       - name: Build unsigned release for private signing
         working-directory: android
-        env:
-          SOXE_SERVICE_URL: ${{ inputs.service_url || 'https://script.google.com/macros/s/AKfycbx7PPZGfl9VTevOHnWhoYchI2UMAiqP_8gUcmxbIdkPPZ_gQNKoKEbnIF5ON8XotM_j/exec' }}
-        run: gradle --no-daemon -PsoxeServiceUrl="$SOXE_SERVICE_URL" :app:assembleRelease :app:lintRelease
+        run: gradle --no-daemon :app:assembleRelease :app:lintRelease
       - name: Prepare signing tools
         run: |
           mkdir -p android-dist
