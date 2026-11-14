@@ -12,6 +12,7 @@ Bản một Google dùng Apps Script chạy dưới tài khoản chủ dữ li�
 - JSON nghiệp vụ lưu riêng tư trên Drive chủ; mật khẩu dùng PBKDF2-SHA256 có salt. Backup đầy đủ mã hóa AES-GCM. NSD chỉ nhận dữ liệu đã lọc, không nhận token Google, đường dẫn Drive hay thông tin kiểm tra mật khẩu.
 - Giới hạn dữ liệu nghiệp vụ JSON là 32 MB; mỗi tệp 2 MB và 5 tệp/bản ghi. Gói sao lưu tải về/nhập thủ công vẫn giới hạn 64 MB. Công cụ **Chuyển Google chủ** không gom toàn bộ tệp vào một gói: tệp được chuyển và xác nhận theo từng phần 384 KB nên tổng tệp đính kèm có thể lớn hơn 64 MB.
 - APK 4.8.4 Native dùng cấu hình URL Apps Script có chữ ký trên GitHub Pages. Khi đổi Google chủ, chạy workflow **Update Android service endpoint** với URL `/exec` mới; người dùng chỉ mở lại app, không phải cài lại APK. APK chỉ nhận URL HTTPS chính thức của `script.google.com` và tự dùng URL hợp lệ gần nhất nếu cấu hình hoặc dịch vụ mới lỗi.
+- Hướng dẫn chi tiết đổi Google chủ cho người vận hành: [docs/huong-dan-doi-google-chu.html](docs/huong-dan-doi-google-chu.html).
 
 Kiểm tra: `npm test`, `npm run check`, `npm run test:cloud-ui` (cần Chromium), `npm run test:ui` cho bản hai Google được giữ lại.
 

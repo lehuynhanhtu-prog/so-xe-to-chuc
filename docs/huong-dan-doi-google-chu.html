@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Hướng dẫn chuyển Google chủ dữ liệu · Sổ Xe Tổ Chức</title>
+  <meta name="description" content="Hướng dẫn từng bước chuyển Sổ Xe Tổ Chức sang tài khoản Google chủ mới mà người dùng không phải cài lại APK.">
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#183047;background:#f3f7fa;line-height:1.58;--primary:#176a65;--primary2:#0d4f4b;--blue:#155f99;--danger:#a4312b;--border:#d7e2ea;--soft:#eaf5f3}
+    *{box-sizing:border-box}body{margin:0}a{color:#155f99;font-weight:650}header{background:linear-gradient(135deg,#0d4f4b,#1a7c75);color:#fff;padding:38px 20px}header>div,main,footer>div{max-width:980px;margin:auto}header p{max-width:780px;margin:10px 0 0;color:#e5f5f2;font-size:1.05rem}h1{font-size:clamp(1.8rem,5vw,2.65rem);line-height:1.15;margin:8px 0}h2{color:var(--primary2);margin-top:0}h3{color:#173e5a;margin:0 0 8px}.tag{display:inline-block;border:1px solid #8dd1c9;border-radius:999px;padding:4px 10px;font-size:.82rem;font-weight:750;letter-spacing:.02em}.topnav{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.topnav a{color:#fff;border:1px solid #85c8c1;border-radius:9px;padding:8px 12px;text-decoration:none}.topnav a:hover{background:#ffffff18}main{padding:24px 16px 48px}.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;margin:16px 0;box-shadow:0 7px 22px #173e5a0d}.notice,.warning,.success{border-left:5px solid var(--blue);background:#eef6fc;border-radius:10px;padding:13px 15px;margin:14px 0}.warning{border-color:#d28822;background:#fff7e8}.success{border-color:#2c8a66;background:#edf8f3}.danger{border-left-color:var(--danger);background:#fff0ef}.steps{counter-reset:step;display:grid;gap:14px}.step{position:relative;padding:16px 16px 16px 62px;border:1px solid var(--border);border-radius:13px;background:#fff}.step:before{counter-increment:step;content:counter(step);position:absolute;left:16px;top:16px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:#fff;font-weight:800}.step p{margin:7px 0}.step ul{margin:8px 0 0;padding-left:20px}.checklist{list-style:none;padding:0;margin:10px 0}.checklist li{position:relative;padding:6px 0 6px 28px}.checklist li:before{content:"✓";position:absolute;left:0;color:#26815f;font-weight:900}.field{display:grid;grid-template-columns:minmax(160px,230px) 1fr;border-top:1px solid var(--border);padding:9px 0;gap:12px}.field:first-child{border-top:0}.field strong{color:#173e5a}code{background:#edf2f5;border-radius:5px;padding:2px 5px;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;font-size:.94rem}th,td{border:1px solid var(--border);text-align:left;vertical-align:top;padding:10px}th{background:#eaf5f3;color:#173e5a}.scroll{overflow-x:auto}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.flow div{background:var(--soft);border:1px solid #cce2df;border-radius:12px;padding:12px;text-align:center;font-weight:750}.muted{color:#5d6f7e;font-size:.93rem}.button{display:inline-block;background:var(--primary);color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;margin:5px 6px 5px 0}.button.secondary{background:#fff;color:var(--primary2);border:1px solid #9fc8c4}footer{background:#173e5a;color:#deebf2;padding:24px 16px}footer a{color:#fff}@media(max-width:720px){.flow{grid-template-columns:1fr 1fr}.field{grid-template-columns:1fr;gap:2px}.card{padding:16px}.step{padding-left:56px}}@media(max-width:430px){.flow{grid-template-columns:1fr}header{padding:28px 16px}}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="tag">DÀNH CHO NGƯỜI VẬN HÀNH / ADMIN</span>
+    <h1>Hướng dẫn chuyển sang tài khoản Google chủ mới</h1>
+    <p>Làm lần lượt theo tài liệu này để chuyển toàn bộ dữ liệu và tệp đính kèm sang Google mới, đổi địa chỉ Web và chuyển APK sang dịch vụ mới mà người dùng không phải cài lại ứng dụng.</p>
+    <nav class="topnav" aria-label="Mục lục nhanh">
+      <a href="#chuan-bi">1. Chuẩn bị</a><a href="#google-moi">2. Tạo dịch vụ mới</a><a href="#chuyen-du-lieu">3. Chuyển dữ liệu</a><a href="#cap-nhat">4. Đổi địa chỉ</a><a href="#kiem-tra">5. Kiểm tra</a><a href="#xu-ly-loi">Xử lý lỗi</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <h2>Hiểu đúng trước khi thực hiện</h2>
+    <div class="flow"><div>Google chủ cũ</div><div>Chuyển theo từng phần</div><div>Google chủ mới</div><div>Cập nhật Web và APK</div></div>
+    <div class="notice"><strong>“Google chủ”</strong> là tài khoản Google sở hữu dữ liệu Drive và project Apps Script. Đây không phải tài khoản đăng nhập của NSD. NSD vẫn đăng nhập bằng tên đăng nhập và mật khẩu do Admin cấp, không cần biết tài khoản Google chủ.</div>
+    <div class="warning"><strong>Không nhập dữ liệu song song.</strong> Từ lúc bắt đầu chuyển đến khi kiểm tra xong, yêu cầu mọi người ngừng nhập/sửa/xóa giao dịch. Dữ liệu phát sinh ở Google cũ sau khi chuyển sẽ không tự đồng bộ sang Google mới.</div>
+    <p><strong>Thời gian dự kiến:</strong> 20–45 phút với dữ liệu nhỏ; lâu hơn nếu có nhiều tệp đính kèm. Tổng tệp có thể lớn hơn 64 MB vì công cụ chuyển từng tệp theo các phần 384 KB.</p>
+  </section>
+
+  <section id="chuan-bi" class="card">
+    <h2>Phần 1 · Chuẩn bị trước khi chuyển</h2>
+    <ul class="checklist">
+      <li>Có quyền đăng nhập <strong>Admin</strong> của tổ chức đang sử dụng.</li>
+      <li>Có mật khẩu Admin hiện tại và biết chính xác tên tổ chức.</li>
+      <li>Có quyền sử dụng tài khoản Google mới sẽ làm chủ dữ liệu.</li>
+      <li>Có quyền chạy GitHub Actions trong repo <code>lehuynhanhtu-prog/so-xe-to-chuc</code>.</li>
+      <li>Đường truyền Internet ổn định; máy không tự ngủ trong lúc chuyển.</li>
+      <li>Người dùng Android đã cài APK 4.8.4 Native có <code>versionCode 486</code> ít nhất một lần. Các lần đổi chủ sau không cần cài lại.</li>
+    </ul>
+    <h3>Sao lưu bắt buộc</h3>
+    <ol>
+      <li>Mở ứng dụng hiện tại và đăng nhập bằng Admin.</li>
+      <li>Vào <strong>Tổ chức → Sao lưu &amp; Phục hồi</strong>.</li>
+      <li>Chọn <strong>Tải bản sao lưu (.zip)</strong>, đặt mật khẩu bảo vệ và lưu tệp ở nơi an toàn.</li>
+      <li>Ghi lại URL Apps Script cũ. URL này dùng để quay lui khi cần.</li>
+    </ol>
+    <div class="warning danger"><strong>Không xóa Google chủ cũ, project Apps Script cũ hoặc thư mục dữ liệu cũ.</strong> Giữ nguyên tối thiểu 30 ngày sau khi chuyển thành công.</div>
+  </section>
+
+  <section id="google-moi" class="card">
+    <h2>Phần 2 · Tạo Apps Script trên Google chủ mới</h2>
+    <div class="steps">
+      <article class="step"><h3>Đăng nhập Google mới</h3><p>Mở cửa sổ trình duyệt riêng hoặc hồ sơ Chrome riêng và đăng nhập đúng tài khoản Google sẽ làm chủ dữ liệu. Kiểm tra ảnh đại diện/email ở góc phải trước khi tiếp tục.</p></article>
+      <article class="step"><h3>Tạo project Apps Script mới</h3><p>Truy cập <a href="https://script.google.com/" target="_blank" rel="noopener">script.google.com</a>, chọn <strong>Dự án mới</strong> và đặt tên dễ nhận biết, ví dụ <em>Sổ Xe Tổ Chức – Google chủ mới</em>.</p><p>Không dùng lại project cũ và không tạo tổ chức thủ công trước khi nhận dữ liệu.</p></article>
+      <article class="step"><h3>Đưa mã nguồn vào project</h3><p>Lấy đúng bộ triển khai trong thư mục <code>apps-script-cloud</code> của repo. Project phải có:</p><ul><li><code>appsscript.json</code></li><li><code>Code.gs</code> (hoặc tệp Mã.gs chứa Code + Core + Crypto theo gói triển khai)</li><li><code>Core.gs</code></li><li><code>Crypto.gs</code></li><li><code>Index.html</code></li></ul><p>Nhấn <strong>Lưu</strong> và chờ hiện “Đã lưu vào Drive”.</p></article>
+      <article class="step"><h3>Khởi tạo và cấp quyền</h3><p>Trong danh sách hàm, chọn <code>initializeDeployment_</code> → <strong>Chạy</strong>. Chọn đúng Google mới và cấp các quyền Drive/Apps Script được yêu cầu.</p><p>Sau khi chạy xong, mở <strong>Nhật ký thực thi</strong> và sao chép <strong>mã thiết lập một lần</strong>. Giữ kín mã này; không gửi qua nhóm chat và không lưu vào tài liệu công khai.</p></article>
+      <article class="step"><h3>Triển khai Web App</h3><p>Chọn <strong>Triển khai → Tùy chọn triển khai mới → Ứng dụng web</strong>:</p><div class="field"><strong>Thực thi bằng tên</strong><span>Tôi / tài khoản Google chủ mới</span></div><div class="field"><strong>Người có quyền truy cập</strong><span>Bất kỳ ai</span></div><p>Nhấn <strong>Triển khai</strong> và cấp quyền nếu Google hỏi lại.</p></article>
+      <article class="step"><h3>Sao chép URL chính thức</h3><p>URL phải có đúng dạng:</p><p><code>https://script.google.com/macros/s/DEPLOYMENT_ID/exec</code></p><p>Không dùng URL <code>/dev</code>, URL có <code>/u/...</code>, tham số sau dấu <code>?</code>, hoặc tên miền khác.</p></article>
+      <article class="step"><h3>Kiểm tra dịch vụ mới</h3><p>Mở URL <code>/exec</code> trong cửa sổ ẩn danh. Trang phải hiện màn hình thiết lập/đăng nhập của Sổ Xe Tổ Chức, không yêu cầu NSD đăng nhập Google và không báo “không thể mở tệp”.</p></article>
+    </div>
+  </section>
+
+  <section id="chuyen-du-lieu" class="card">
+    <h2>Phần 3 · Chuyển dữ liệu từ Google cũ sang Google mới</h2>
+    <div class="steps">
+      <article class="step"><h3>Dừng nhập liệu</h3><p>Thông báo cho NSD/Admin ngừng sử dụng. Trên máy chuyển đổi, mở lại ứng dụng cũ, đồng bộ và tải thêm một bản sao lưu cuối cùng nếu có dữ liệu vừa phát sinh.</p></article>
+      <article class="step"><h3>Mở công cụ chuyển</h3><p>Đăng nhập ứng dụng cũ bằng Admin → vào <strong>Tổ chức → Sao lưu &amp; Phục hồi → Chuyển Google chủ → Bắt đầu chuyển Google chủ</strong>.</p></article>
+      <article class="step"><h3>Điền bốn thông tin</h3><div class="field"><strong>URL Web App Google mới</strong><span>Dán URL <code>https://script.google.com/macros/s/.../exec</code></span></div><div class="field"><strong>Mã thiết lập một lần</strong><span>Mã lấy từ lần chạy <code>initializeDeployment_</code> trên Google mới</span></div><div class="field"><strong>Tên tổ chức hiện tại</strong><span>Nhập đúng từng ký tự như đang hiển thị</span></div><div class="field"><strong>Mật khẩu Admin</strong><span>Mật khẩu của Admin đang đăng nhập ứng dụng cũ</span></div></article>
+      <article class="step"><h3>Bắt đầu chuyển</h3><p>Nhấn <strong>Chuyển dữ liệu theo từng phần</strong>. Không đóng tab, không tải lại trang, không đổi mạng và không để máy ngủ.</p><p>Ứng dụng chuyển dữ liệu nền trước, sau đó chuyển từng tệp đính kèm theo các phần nhỏ. Google mới chỉ kích hoạt tổ chức sau khi nhận và kiểm tra đủ tất cả tệp.</p></article>
+      <article class="step"><h3>Ghi lại kết quả</h3><p>Khi hiện “Đã chuyển sang Google chủ mới”, sao chép lại URL mới. Google cũ vẫn còn nguyên để dự phòng.</p></article>
+    </div>
+    <div class="notice"><strong>Nếu bị mất mạng hoặc đóng nhầm trang:</strong> đăng nhập lại Google cũ và chạy lại từ đầu. Lần bắt đầu mới sẽ thay phần chuyển dở trên Google mới; không làm thay đổi dữ liệu nguồn.</div>
+  </section>
+
+  <section id="cap-nhat" class="card">
+    <h2>Phần 4 · Chuyển Web và APK sang Google mới</h2>
+    <h3>A. Cập nhật APK Android — không build lại</h3>
+    <div class="steps">
+      <article class="step"><h3>Mở workflow cấu hình Android</h3><p>Vào <a href="https://github.com/lehuynhanhtu-prog/so-xe-to-chuc/actions/workflows/update-android-endpoint.yml" target="_blank" rel="noopener">GitHub Actions → Update Android service endpoint</a>.</p></article>
+      <article class="step"><h3>Chạy workflow</h3><p>Chọn <strong>Run workflow</strong>, dán URL <code>/exec</code> của Google mới vào ô <strong>service_url</strong>, sau đó xác nhận chạy.</p></article>
+      <article class="step"><h3>Chờ dấu kiểm màu xanh</h3><p>Workflow sẽ tự tăng số revision, ký cấu hình bằng khóa phát hành Android và đưa cấu hình lên GitHub Pages. Không sửa trực tiếp tệp JSON vì chữ ký sẽ không còn hợp lệ.</p></article>
+      <article class="step"><h3>Cho người dùng mở lại app</h3><p>Yêu cầu người dùng đóng hẳn rồi mở lại APK. APK sẽ kiểm tra chữ ký, chỉ nhận URL chính thức thuộc <code>script.google.com</code>, kiểm tra dịch vụ mới hoạt động rồi mới lưu URL.</p><p><strong>Không cần tải và không cần cài lại APK.</strong></p></article>
+    </div>
+    <p>Kiểm tra cấu hình đang phát hành: <a href="android-service-config.json" target="_blank" rel="noopener">android-service-config.json</a>. Chỉ cần kiểm tra <code>revision</code> đã tăng và <code>serviceUrl</code> đúng; không chỉnh tay chữ ký.</p>
+
+    <h3 style="margin-top:28px">B. Cập nhật trang Web</h3>
+    <ol>
+      <li>Mở tệp <code>web/cloud-config.js</code> trong repo.</li>
+      <li>Thay URL cũ bằng URL <code>/exec</code> của Google mới.</li>
+      <li>Commit vào nhánh <code>main</code> và chờ workflow GitHub Pages hoàn tất.</li>
+      <li>Mở link đăng nhập chính, tải lại trang và kiểm tra trang chuyển đến Apps Script mới.</li>
+    </ol>
+    <div class="warning">Cấu hình Android có chữ ký và cấu hình Web là hai phần riêng. Phải hoàn thành cả A và B trước khi cho phép người dùng nhập liệu trở lại.</div>
+  </section>
+
+  <section id="kiem-tra" class="card">
+    <h2>Phần 5 · Kiểm tra trước khi đưa vào sử dụng</h2>
+    <p>Thực hiện lần lượt trên Web và ít nhất một điện thoại Android:</p>
+    <ul class="checklist">
+      <li>Đăng nhập Admin bằng tài khoản/mật khẩu ứng dụng cũ.</li>
+      <li>Kiểm tra đúng tên tổ chức, số xe, số NSD, phân công và bàn giao.</li>
+      <li>Mở một số giao dịch cũ và tệp đính kèm ngẫu nhiên.</li>
+      <li>Kiểm tra cảnh báo bảo hiểm, đăng kiểm, phí đường bộ, bảo dưỡng và bảo dưỡng cấp lớn.</li>
+      <li>Đăng nhập một NSD và một Admin xem để kiểm tra đúng quyền.</li>
+      <li>Tạo một giao dịch kiểm thử, đồng bộ trên thiết bị khác, sau đó xóa giao dịch kiểm thử.</li>
+      <li>Tải một bản sao lưu mới từ Google chủ mới.</li>
+      <li>Đăng xuất và đăng nhập lại để xác nhận phiên hoạt động ổn định.</li>
+    </ul>
+    <div class="success"><strong>Chỉ mở lại việc nhập liệu khi tất cả mục trên đạt.</strong> Ghi lại ngày chuyển, Google chủ cũ, Google chủ mới, URL cũ, URL mới và revision cấu hình Android vào sổ vận hành nội bộ.</div>
+  </section>
+
+  <section class="card">
+    <h2>Quay lui khi Google mới có lỗi</h2>
+    <ol>
+      <li>Yêu cầu người dùng ngừng nhập liệu ngay.</li>
+      <li>Mở workflow <strong>Update Android service endpoint</strong> và chạy lại với URL <code>/exec</code> cũ. Workflow tạo revision mới cao hơn nên APK chấp nhận quay lại.</li>
+      <li>Đổi <code>web/cloud-config.js</code> về URL cũ và triển khai Pages.</li>
+      <li>Yêu cầu người dùng đóng/mở lại APK và tải lại Web.</li>
+      <li>Kiểm tra dữ liệu trước khi tiếp tục.</li>
+    </ol>
+    <div class="warning danger"><strong>Dữ liệu đã nhập trên Google mới không tự quay về Google cũ.</strong> Nếu đã có phát sinh sau khi chuyển, phải quyết định nguồn dữ liệu chính và sao lưu trước khi quay lui. Không cho nhập đồng thời trên hai bên.</div>
+  </section>
+
+  <section id="xu-ly-loi" class="card">
+    <h2>Xử lý các lỗi thường gặp</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Hiện tượng</th><th>Nguyên nhân thường gặp</th><th>Cách xử lý</th></tr></thead>
+      <tbody>
+        <tr><td>URL Apps Script không hợp lệ</td><td>Dùng URL <code>/dev</code>, có <code>/u/...</code>, có tham số hoặc sai tên miền.</td><td>Sao chép lại URL trong phần quản lý triển khai. URL phải bắt đầu bằng <code>https://script.google.com/macros/s/</code> và kết thúc bằng <code>/exec</code>.</td></tr>
+        <tr><td>Google chủ mới không trả dữ liệu hợp lệ</td><td>Chưa triển khai Web App, quyền truy cập không phải “Bất kỳ ai”, hoặc dán sai URL.</td><td>Chỉnh deployment, mở URL trong cửa sổ ẩn danh và thử lại.</td></tr>
+        <tr><td>Chưa chạy initializeDeployment_</td><td>Project mới chưa được cấp quyền hoặc hàm khởi tạo chạy lỗi.</td><td>Chạy lại hàm, chọn đúng Google mới, cấp đủ quyền và lấy mã mới trong nhật ký.</td></tr>
+        <tr><td>Chuyển dừng giữa chừng</td><td>Mất mạng, máy ngủ, đóng hoặc tải lại trang.</td><td>Giữ nguyên Google cũ, mở lại công cụ và bắt đầu lại. Không tự xóa thư mục chuyển dở trên Drive.</td></tr>
+        <tr><td>Workflow Android thất bại ở bước URL</td><td>URL không đúng mẫu chính thức.</td><td>Dán lại URL <code>/exec</code>, không thêm dấu cách hoặc tham số.</td></tr>
+        <tr><td>Workflow báo khóa ký/công khai không khớp</td><td>GitHub Secrets hoặc khóa phát hành bị thay đổi.</td><td>Dừng thao tác. Không tạo khóa mới. Kiểm tra lại Secrets và khóa ký 4.7/4.8.4 đang dùng.</td></tr>
+        <tr><td>APK vẫn mở dữ liệu cũ</td><td>App chưa khởi động lại, cấu hình chưa triển khai xong, không có mạng hoặc dịch vụ mới không qua kiểm tra health.</td><td>Chờ workflow xanh, buộc dừng app rồi mở lại, kiểm tra Internet và mở URL mới trên trình duyệt.</td></tr>
+        <tr><td>APK tự dùng lại Google cũ</td><td>Cấu hình mới sai chữ ký hoặc dịch vụ mới lỗi.</td><td>Đây là cơ chế an toàn. Sửa deployment/URL rồi chạy lại workflow để tạo revision mới; không sửa JSON bằng tay.</td></tr>
+        <tr><td>Web vẫn mở Google cũ</td><td><code>cloud-config.js</code> chưa đổi hoặc Pages chưa triển khai xong.</td><td>Kiểm tra commit, workflow Pages và tải lại bằng cửa sổ ẩn danh.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>Phiếu ghi nhận sau chuyển đổi</h2>
+    <div class="field"><strong>Ngày/giờ chuyển</strong><span>........................................................</span></div>
+    <div class="field"><strong>Người thực hiện</strong><span>........................................................</span></div>
+    <div class="field"><strong>Google chủ cũ</strong><span>........................................................</span></div>
+    <div class="field"><strong>Google chủ mới</strong><span>........................................................</span></div>
+    <div class="field"><strong>URL Apps Script cũ</strong><span>........................................................</span></div>
+    <div class="field"><strong>URL Apps Script mới</strong><span>........................................................</span></div>
+    <div class="field"><strong>Revision Android mới</strong><span>........................................................</span></div>
+    <div class="field"><strong>Kết quả kiểm tra</strong><span>□ Web đạt &nbsp; □ Android đạt &nbsp; □ Backup mới đã tải</span></div>
+  </section>
+
+  <p><a class="button" href="chuyen-doi.html">Mở trang chuyển đổi</a><a class="button secondary" href="downloads.html">Trang tải ứng dụng</a><a class="button secondary" href="./">Mở trang đăng nhập</a></p>
+</main>
+<footer><div><strong>Sổ Xe Tổ Chức 4.8.4 Native</strong><br><span class="muted" style="color:#c5d6df">Tài liệu dành cho người vận hành. Không gửi mã thiết lập, mật khẩu Admin hoặc thông tin Google chủ cho NSD.</span></div></footer>
+</body>
+</html>
